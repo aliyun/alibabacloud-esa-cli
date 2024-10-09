@@ -1,0 +1,92 @@
+{
+  "name": "esa-cli",
+  "version": "0.0.1-beta.3",
+  "description": "A CLI for operating Alibaba Cloud ESA EdgeRoutine (Edge Functions).",
+  "main": "bin/enter.cjs",
+  "type": "module",
+  "files": [
+    "dist/"
+  ],
+  "bin": {
+    "esa": "bin/enter.cjs"
+  },
+  "scripts": {
+    "build": "rm -rf ./dist && rm -rf ./build && node ./genLocale.cjs && tsc && node ./copy.cjs",
+    "watch": "tsc --watch",
+    "eslint": "eslint src/ --ext .js,.jsx,.ts,.tsx",
+    "lint-staged": "lint-staged",
+    "prepare": "npm run build",
+    "test": "vitest",
+    "coverage": "vitest --coverage",
+    "preuninstall": "rm -rf ~/.esa/config"
+  },
+  "keywords": [
+    "cli",
+    "edge",
+    "esa",
+    "alibaba",
+    "ali"
+  ],
+  "author": "Kinice",
+  "license": "MIT",
+  "devDependencies": {
+    "@babel/plugin-syntax-import-attributes": "^7.24.7",
+    "@types/cli-table": "^0.3.4",
+    "@types/cross-spawn": "^6.0.6",
+    "@types/fs-extra": "^11.0.4",
+    "@types/jest": "^29.5.12",
+    "@types/lodash": "^4.14.202",
+    "@types/node": "^20.8.10",
+    "@types/node-fetch": "^2.6.9",
+    "@types/portscanner": "^2.1.4",
+    "@types/react": "^18.2.47",
+    "@types/yargs": "^17.0.32",
+    "@typescript-eslint/parser": "^6.9.1",
+    "eslint": "^8.52.0",
+    "eslint-config-prettier": "^9.0.0",
+    "eslint-plugin-react": "^7.33.2",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "husky": "^8.0.3",
+    "lint-staged": "^15.0.2",
+    "prettier": "^3.0.3",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "rimraf": "^6.0.1",
+    "tsc-files": "^1.1.4",
+    "typescript": "^5.2.2",
+    "vitest": "^2.0.4"
+  },
+  "dependencies": {
+    "@alicloud/openapi-client": "^0.4.7",
+    "@babel/parser": "^7.24.4",
+    "@babel/traverse": "^7.24.1",
+    "@iarna/toml": "^2.2.5",
+    "@tqman/ink-table": "^0.0.0-development",
+    "@types/inquirer": "^9.0.7",
+    "@vitest/coverage-istanbul": "^2.0.4",
+    "chalk": "^5.3.0",
+    "chokidar": "^3.5.3",
+    "cli-table3": "^0.6.5",
+    "cross-spawn": "^7.0.3",
+    "esbuild": "^0.21.1",
+    "esbuild-plugin-less": "^1.3.8",
+    "form-data": "^4.0.0",
+    "fs-extra": "^11.2.0",
+    "ink": "^5.0.1",
+    "ink-select-input": "^6.0.0",
+    "ink-text-input": "^6.0.0",
+    "inquirer": "^9.2.15",
+    "js-base64": "^3.7.7",
+    "node-fetch": "^3.3.2",
+    "open": "^9.1.0",
+    "ora": "^7.0.1",
+    "os-locale": "^6.0.2",
+    "portscanner": "^2.2.0",
+    "winston": "^3.11.0",
+    "yargs": "^17.7.2"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/aliyun/alibabacloud-esa-cli.git"
+  }
+}

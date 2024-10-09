@@ -1,0 +1,6 @@
+endpoint = "esa.cn-hangzhou.aliyuncs.com"
+lang = "en"
+
+[auth]
+accessKeyId = ""
+accessKeySecret = ""

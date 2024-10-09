@@ -1,0 +1,22 @@
+{
+  "exclude": ["tests", "template"],
+  "compilerOptions": {
+    "jsx": "react",
+
+    /* Language and Environment */
+    "target": "ES2016" /* Set the JavaScript language version for emitted JavaScript and include compatible library declarations. */,
+
+    /* Modules */
+    "module": "NodeNext" /* Specify what module code is generated. */ /* Specify the root folder within your source files. */,
+    "moduleResolution": "NodeNext" /* Specify how TypeScript looks up a file from a given module specifier. */,
+    "outDir": "./dist" /* Specify an output folder for all emitted files. */,
+    "allowSyntheticDefaultImports": true /* Allow 'import x from y' when a module doesn't have a default export. */,
+    "esModuleInterop": true /* Emit additional JavaScript to ease support for importing CommonJS modules. This enables 'allowSyntheticDefaultImports' for type compatibility. */,
+    "forceConsistentCasingInFileNames": true /* Ensure that casing is correct in imports. */,
+    "resolveJsonModule": true /* Include modules imported with .json extension. */,
+
+    /* Type Checking */
+    "strict": true /* Enable all strict type-checking options. */,
+    "skipLibCheck": true /* Skip type checking all .d.ts files. */
+  }
+}

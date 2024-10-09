@@ -1,0 +1,26 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`handle delete deployments > should handle delete routes fail 1`] = `[MockFunction log]`;
+
+exports[`handle delete deployments > should handle delete routes success 1`] = `
+[MockFunction log] {
+  "calls": [
+    [
+      "🎉 [42m SUCCESS [49m [32mDelete success: id1[39m",
+    ],
+    [
+      "🎉 [42m SUCCESS [49m [32mDelete success: id2[39m",
+    ],
+  ],
+  "results": [
+    {
+      "type": "return",
+      "value": undefined,
+    },
+    {
+      "type": "return",
+      "value": undefined,
+    },
+  ],
+}
+`;

@@ -1,0 +1,19 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`handleAddDomain > should handle adding a domain fail 1`] = `[MockFunction log]`;
+
+exports[`handleAddDomain > should handle adding a domain successful 1`] = `
+[MockFunction log] {
+  "calls": [
+    [
+      "🎉 [42m SUCCESS [49m [32mBinding domain test.com to routine successfully[39m",
+    ],
+  ],
+  "results": [
+    {
+      "type": "return",
+      "value": undefined,
+    },
+  ],
+}
+`;

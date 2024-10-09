@@ -1,0 +1,7 @@
+node_modules/
+dist/
+logs/
+src/commands/dev/er/
+build/
+coverage/
+test.txt

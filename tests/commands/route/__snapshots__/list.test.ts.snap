@@ -1,0 +1,30 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`handle list related routes > should handle displaying related routes success 1`] = `
+[MockFunction log] {
+  "calls": [
+    [
+      "📃 Related routes:",
+    ],
+    [
+      "[90m┌────────────[39m[90m┬──────────┐[39m
+[90m│[39m[31m Route      [39m[90m│[39m[31m Site     [39m[90m│[39m
+[90m├────────────[39m[90m┼──────────┤[39m
+[90m│[39m test.com/1 [90m│[39m test.com [90m│[39m
+[90m├────────────[39m[90m┼──────────┤[39m
+[90m│[39m test.com/2 [90m│[39m test.com [90m│[39m
+[90m└────────────[39m[90m┴──────────┘[39m",
+    ],
+  ],
+  "results": [
+    {
+      "type": "return",
+      "value": undefined,
+    },
+    {
+      "type": "return",
+      "value": undefined,
+    },
+  ],
+}
+`;

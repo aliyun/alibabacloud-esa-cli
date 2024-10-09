@@ -1,0 +1,766 @@
+{
+  "commit_describe": {
+    "en": "Commit your code, save as a new version",
+    "zh_CN": "提交代码，保存为一个版本"
+  },
+  "commit_er_not_exist": {
+    "en": "No routine found, creating a new one",
+    "zh_CN": "没有找到任何函数，正在创建新函数"
+  },
+  "commit_er_description": {
+    "en": "Enter a description for the routine",
+    "zh_CN": "请输入函数的描述"
+  },
+  "commit_version_description": {
+    "en": "Enter a description for the version",
+    "zh_CN": "请输入版本的描述"
+  },
+  "common_error_occurred": {
+    "en": "An error occurred",
+    "zh_CN": "发生错误"
+  },
+  "commit_create_er_success": {
+    "en": "Routine created successfully.",
+    "zh_CN": "Routine 创建成功。"
+  },
+  "commit_upload_success": {
+    "en": "Code uploaded successfully.",
+    "zh_CN": "代码上传成功。"
+  },
+  "commit_success": {
+    "en": "Code version committed successfully.",
+    "zh_CN": "代码版本提交成功。"
+  },
+  "commit_fail": {
+    "en": "An error occurred while trying to commit your code.",
+    "zh_CN": "提交代码时发生错误。"
+  },
+  "summery_cd": {
+    "en": "Enter your routine project folder",
+    "zh_CN": "进入您的 routine 项目文件夹"
+  },
+  "summery_commit": {
+    "en": "Save a new version of code",
+    "zh_CN": "保存一个新版本的代码"
+  },
+  "config_describe": {
+    "en": "Modify your local or global configuration using -l, -g",
+    "zh_CN": "使用 -l 或 -g 修改本地或全局配置"
+  },
+  "config_local_describe": {
+    "en": "Edit local config file",
+    "zh_CN": "编辑本地配置文件"
+  },
+  "config_global_describe": {
+    "en": "Edit global config file",
+    "zh_CN": "编辑全局配置文件"
+  },
+  "common_usage": {
+    "en": "Usage",
+    "zh_CN": "用法"
+  },
+  "config_local_not_exist": {
+    "en": "Local config file does not exist",
+    "zh_CN": "本地配置文件不存在"
+  },
+  "deploy_env_select_description": {
+    "en": "Please select which environment you want to deploy",
+    "zh_CN": "请选择您要部署的环境"
+  },
+  "deploy_env_staging": {
+    "en": "Staging",
+    "zh_CN": "测试环境"
+  },
+  "deploy_env_production": {
+    "en": "Production",
+    "zh_CN": "生产环境"
+  },
+  "deploy_env_canary": {
+    "en": "Canary",
+    "zh_CN": "灰度环境"
+  },
+  "deploy_description_routine": {
+    "en": "Enter the description of the routine",
+    "zh_CN": "请输入边缘函数的描述"
+  },
+  "deploy_description_version": {
+    "en": "Enter the description of the code version",
+    "zh_CN": "请输入代码版本的描述"
+  },
+  "deploy_describe": {
+    "en": "Deploy your project",
+    "zh_CN": "部署您的项目"
+  },
+  "deploy_version_select": {
+    "en": "Select the version you want to publish",
+    "zh_CN": "请选择您要发布的版本"
+  },
+  "deploy_spec_select": {
+    "en": "Please select the spec of the routine you want to create",
+    "zh_CN": "请选择您要创建的函数规格"
+  },
+  "deploy_create_formal_version_ques": {
+    "en": "Do you want to create a formal version to deploy on production environment?",
+    "zh_CN": "是否创建正式版本以部署到生产环境？"
+  },
+  "deploy_select_canary": {
+    "en": "Please select the canary area(s) you want to deploy to",
+    "zh_CN": "请选择您要部署的灰度区域"
+  },
+  "deploy_success": {
+    "en": "Your code has been successfully deployed",
+    "zh_CN": "您的代码已成功部署"
+  },
+  "deploy_success_guide": {
+    "en": "Run this command to add domains",
+    "zh_CN": "运行此命令以添加域名"
+  },
+  "deploy_table_header_version": {
+    "en": "Version",
+    "zh_CN": "版本"
+  },
+  "deploy_table_header_created": {
+    "en": "Created",
+    "zh_CN": "创建时间"
+  },
+  "deploy_table_header_description": {
+    "en": "Description",
+    "zh_CN": "描述"
+  },
+  "lang_describe": {
+    "en": "Set the language of the CLI",
+    "zh_CN": "选择语言"
+  },
+  "main_epilogue": {
+    "en": "For more information, visit DCDN",
+    "zh_CN": "访问DCDN获取更多信息"
+  },
+  "main_version_describe": {
+    "en": "Show version",
+    "zh_CN": "显示当前版本"
+  },
+  "main_help_describe": {
+    "en": "Show help",
+    "zh_CN": "显示帮助"
+  },
+  "commit_create_er_fail": {
+    "en": "An error occurred while trying to create a routine",
+    "zh_CN": "创建边缘函数时发生错误"
+  },
+  "commit_upload_fail": {
+    "en": "An error occurred while trying to upload your code",
+    "zh_CN": "上传代码时发生错误"
+  },
+  "summery_dev": {
+    "en": "Start a local development server for your project",
+    "zh_CN": "启动本地调试"
+  },
+  "summery_deploy": {
+    "en": "Deploy your project to different environments",
+    "zh_CN": "将您的项目部署到不同环境"
+  },
+  "deploy_error": {
+    "en": "An error occurred during the creation or publishing process",
+    "zh_CN": "创建或发布过程中发生错误"
+  },
+  "deployments_describe": {
+    "en": "Manage your deployments",
+    "zh_CN": "管理您的部署"
+  },
+  "common_help": {
+    "en": "Help",
+    "zh_CN": "帮助"
+  },
+  "common_sub_command_fail": {
+    "en": "Use esa <command> -h to see help",
+    "zh_CN": "使用 esa <command> -h 查看帮助"
+  },
+  "deployments_delete_describe": {
+    "en": "Delete one or more deployment versions",
+    "zh_CN": "删除一个或多个部署版本"
+  },
+  "deployments_delete_id_describe": {
+    "en": "The ID of the deployments to delete",
+    "zh_CN": "要删除的部署版本ID"
+  },
+  "deployments_delete_success": {
+    "en": "Delete success",
+    "zh_CN": "删除成功"
+  },
+  "deployments_delete_failed": {
+    "en": "Delete failed",
+    "zh_CN": "删除失败"
+  },
+  "deployments_list_describe": {
+    "en": "List all deployments",
+    "zh_CN": "查看所有部署"
+  },
+  "dev_pack_success": {
+    "en": "Build finished successfully",
+    "zh_CN": "构建完成"
+  },
+  "dev_describe": {
+    "en": "Start a local server for developing your routine",
+    "zh_CN": "启动本地调试"
+  },
+  "dev_port_describe": {
+    "en": "Port to listen on",
+    "zh_CN": "监听端口"
+  },
+  "dev_error_no_cli_config": {
+    "en": "Error reading cli configuration",
+    "zh_CN": "读取 CLI 配置错误"
+  },
+  "dev_error_no_project_config": {
+    "en": "Error reading project configuration esa.toml file.",
+    "zh_CN": "读取项目配置 esa.toml 文件错误"
+  },
+  "dev_build_start": {
+    "en": "Starting build process",
+    "zh_CN": "开始构建过程"
+  },
+  "dev_repacking": {
+    "en": "Detected local file changes, re-packaging",
+    "zh_CN": "检测到本地文件变化，重新打包"
+  },
+  "dev_server_closed": {
+    "en": "Worker server closed",
+    "zh_CN": "Worker server 已关闭"
+  },
+  "dev_server_restart": {
+    "en": "Worker server restarted",
+    "zh_CN": "Worker server 已重启"
+  },
+  "domain_add_describe": {
+    "en": "Bind a domain to a routine",
+    "zh_CN": "绑定域名到边缘函数"
+  },
+  "domain_describe": {
+    "en": "Manage the domain names bound to your routine",
+    "zh_CN": "管理绑定到边缘函数的域名"
+  },
+  "delete_describe": {
+    "en": "Delete a routine",
+    "zh_CN": "删除一个边缘函数"
+  },
+  "delete_routineName_positional_describe": {
+    "en": "The name of the routine to delete",
+    "zh_CN": "要删除的边缘函数名称"
+  },
+  "delete_success": {
+    "en": "Delete success!",
+    "zh_CN": "删除成功！"
+  },
+  "delete_error": {
+    "en": "Delete error!",
+    "zh_CN": "删除失败！"
+  },
+  "domain_delete_describe": {
+    "en": "Delete a related domain",
+    "zh_CN": "删除一个绑定域名"
+  },
+  "domain_delete_positional_describe": {
+    "en": "The names of the related domains to delete",
+    "zh_CN": "要删除的绑定域名"
+  },
+  "domain_delete_success": {
+    "en": "Delete domain success",
+    "zh_CN": "删除域名成功"
+  },
+  "domain_delete_failed": {
+    "en": "Delete domain failed",
+    "zh_CN": "删除域名失败"
+  },
+  "domain_list_describe": {
+    "en": "List all related domains",
+    "zh_CN": "查看所有绑定域名"
+  },
+  "domain_list_empty": {
+    "en": "No related domains found",
+    "zh_CN": "未找到绑定域名"
+  },
+  "domain_list_title": {
+    "en": "Related domains:",
+    "zh_CN": "绑定域名："
+  },
+  "init_describe": {
+    "en": "Initialize a routine with a template",
+    "zh_CN": "选择模版初始化项目"
+  },
+  "init_input_name": {
+    "en": "Enter the name of edgeRoutine:",
+    "zh_CN": "输入 edgeRoutine 的名称："
+  },
+  "init_skip_git": {
+    "en": "Git installation was skipped.",
+    "zh_CN": "已跳过 Git 安装。"
+  },
+  "lang_success": {
+    "en": "Language switched",
+    "zh_CN": "切换为中文"
+  },
+  "list_describe": {
+    "en": "List all your routines",
+    "zh_CN": "查看所有边缘函数"
+  },
+  "list_deployment_positional_describe": {
+    "en": "(Optional) ID or URL of the deployment to tail. Specify by environment if deployment ID is unknown.",
+    "zh_CN": "（可选）要跟踪的部署的ID或URL。如果未知部署ID，请按环境指定。"
+  },
+  "list_site_option_describe": {
+    "en": "List all site names of your account",
+    "zh_CN": "列出您账户的所有站点名称"
+  },
+  "list_site_name_title": {
+    "en": "List all of site names",
+    "zh_CN": "查看所有站点名称"
+  },
+  "list_routine_name_title": {
+    "en": "List all of routine",
+    "zh_CN": "查看所有边缘函数"
+  },
+  "login_describe": {
+    "en": "Login to the server",
+    "zh_CN": "登录"
+  },
+  "login_already": {
+    "en": "You are already logged in.",
+    "zh_CN": "您已登录。"
+  },
+  "login_existing_credentials_message": {
+    "en": "Existing credentials found. What do you want to do?",
+    "zh_CN": "发现已有凭证。您想做什么？"
+  },
+  "login_existing_credentials_action_overwrite": {
+    "en": "Overwrite existing credentials",
+    "zh_CN": "覆盖现有凭证"
+  },
+  "login_logging": {
+    "en": "Logging in",
+    "zh_CN": "正在登录"
+  },
+  "login_get_ak_sk": {
+    "en": "Please go to the following link to get your account's AccessKey ID and AccessKey Secret",
+    "zh_CN": "请访问以下链接以获取您的 AccessKey ID 和 AccessKey Secret"
+  },
+  "login_success": {
+    "en": "Login success!",
+    "zh_CN": "登录成功！"
+  },
+  "login_failed": {
+    "en": "An error occurred while trying to log in.",
+    "zh_CN": "尝试登录时发生错误。"
+  },
+  "logout_describe": {
+    "en": "Logout",
+    "zh_CN": "注销登录"
+  },
+  "logout_success": {
+    "en": "Logout successfully",
+    "zh_CN": "注销成功"
+  },
+  "route_add_describe": {
+    "en": "Bind a Route to a routine",
+    "zh_CN": "将路由绑定到边缘函数"
+  },
+  "route_add_route_describe": {
+    "en": "The name of route to add",
+    "zh_CN": "要添加的路由名称"
+  },
+  "route_add_invalid": {
+    "en": "The route does not correspond to the domain.",
+    "zh_CN": "该路由与域名不对应。"
+  },
+  "route_add_success": {
+    "en": "Add route success!",
+    "zh_CN": "路由添加成功！"
+  },
+  "route_add_fail": {
+    "en": "Add route fail!",
+    "zh_CN": "路由添加失败！"
+  },
+  "route_delete_describe": {
+    "en": "Delete a related route",
+    "zh_CN": "删除一个绑定路由"
+  },
+  "route_delete_positional_describe": {
+    "en": "The name of the routes to delete",
+    "zh_CN": "要删除的路由名称"
+  },
+  "route_not_exist": {
+    "en": "Route not exist!",
+    "zh_CN": "路由不存在！"
+  },
+  "route_delete_success": {
+    "en": "Delete route success!",
+    "zh_CN": "路由删除成功！"
+  },
+  "route_delete_fail": {
+    "en": "Delete route fail!",
+    "zh_CN": "路由删除失败！"
+  },
+  "route_describe": {
+    "en": "Manage the routes bound to your routine",
+    "zh_CN": "管理绑定到边缘函数的路由"
+  },
+  "route_list_describe": {
+    "en": "List all related routes",
+    "zh_CN": "查看所有绑定路由"
+  },
+  "route_list_empty": {
+    "en": "No related routes found",
+    "zh_CN": "未找到绑定路由"
+  },
+  "route_list_title": {
+    "en": "Related routes",
+    "zh_CN": "绑定路由"
+  },
+  "common_not_edge_project": {
+    "en": "You are not in an esa project, Please run ${initCommand} to initialize a project, or enter an esa project.",
+    "zh_CN": "您不在一个 esa 项目中，请运行 ${initCommand} 初始化项目，或者进入一个 esa 项目。"
+  },
+  "common_not_edge_project_help": {
+    "en": "Please run ${initCommand} first.",
+    "zh_CN": "请先运行 ${initCommand}。"
+  },
+  "common_eacces_intro": {
+    "en": "You do not have permission to ${localPath}, please use",
+    "zh_CN": "您没有 ${localPath} 的权限，请用下面的方法"
+  },
+  "open_in_browser_success": {
+    "en": "Opened: ${url}",
+    "zh_CN": "已打开：${url}"
+  },
+  "open_in_browser_error": {
+    "en": "Failed to open: ${url}",
+    "zh_CN": "打开失败：${url}"
+  },
+  "utils_git_not_commit": {
+    "en": "There are uncommitted changes in the repository.",
+    "zh_CN": "当前仓库有未提交的更改。"
+  },
+  "utils_git_error": {
+    "en": "An error occurred while checking the Git status",
+    "zh_CN": "Git状态检查错误"
+  },
+  "utils_bind_success": {
+    "en": "Binding domain ${domain} to routine successfully",
+    "zh_CN": "域名 ${domain} 绑定成功"
+  },
+  "utils_bind_error": {
+    "en": "Binding domain ${domain} to routine failed",
+    "zh_CN": "域名 ${domain} 绑定失败"
+  },
+  "utils_domain_error": {
+    "en": "Domain is not active",
+    "zh_CN": "域名不可用"
+  },
+  "utils_login_error": {
+    "en": "Maybe you are not logged in yet.",
+    "zh_CN": "您可能还没登录。"
+  },
+  "utils_login_error_config": {
+    "en": "Please run command to login: ${namedCommand}",
+    "zh_CN": "用这个命令登录：${namedCommand}"
+  },
+  "routine_describe": {
+    "en": "Manage your routine",
+    "zh_CN": "管理边缘函数"
+  },
+  "route_input": {
+    "en": "Enter a Route:",
+    "zh_CN": "请输入route："
+  },
+  "route_add_invalid_route": {
+    "en": "Invalid route",
+    "zh_CN": "route不合法"
+  },
+  "install_runtime_explain": {
+    "en": "Under the beta phase, we are temporarily using Deno as the local development runtime. It needs to be installed first.",
+    "zh_CN": "在Beta阶段，我们使用了Deno暂时作为本地开发运行时，需要先安装才可以dev。"
+  },
+  "install_runtime_tip": {
+    "en": "🔔 Runtime must be installed to use esa dev. Installing...",
+    "zh_CN": "必须安装运行时才能使用 esa dev。正在安装..."
+  },
+  "install_runtime_success": {
+    "en": "Runtime installed.",
+    "zh_CN": "安装完成"
+  },
+  "route_validate": {
+    "en": "You can add an asterisk (*) as the prefix or suffix to match more URLs, such as \"*.example.com/*\".",
+    "zh_CN": "您可以通过添加前缀或后缀通配符（*）来匹配更多的URL，例如: “*.example.com/*”。"
+  },
+  "domain_input": {
+    "en": "Enter the name of domain (Support fuzzy matching on tab press):",
+    "zh_CN": "请输入站点的名称（支持按Tab模糊匹配）："
+  },
+  "invalid_domain": {
+    "en": "Input domain is invalid",
+    "zh_CN": "输入的站点不在您的账号下"
+  },
+  "deploy_first_time": {
+    "en": "This is first time to deploy. Let's create a version first!",
+    "zh_CN": "这是您第一次部署此边缘函数，请先创建一个版本"
+  },
+  "deploy_select_version": {
+    "en": "Select which version you'd like to deploy",
+    "zh_CN": "选择要部署的版本"
+  },
+  "domain_delete_not_found": {
+    "en": "Domain doesn't exist",
+    "zh_CN": "域名不存在"
+  },
+  "init_config_file": {
+    "en": "Generate a config file for your project",
+    "zh_CN": "在您的项目中生成一个esa.toml配置文件"
+  },
+  "generate_config_error": {
+    "en": "esa.toml already exists",
+    "zh_CN": "esa.toml 文件已经存在"
+  },
+  "generate_config_success": {
+    "en": "Generated esa.toml",
+    "zh_CN": "生成esa.toml成功"
+  },
+  "commit_option_minify": {
+    "en": "Minify code before committing",
+    "zh_CN": "上传前压缩代码"
+  },
+  "dev_entry_describe": {
+    "en": "Entry file of the Routine",
+    "zh_CN": "入口文件路径"
+  },
+  "dev_option_minify": {
+    "en": "Minify code during development",
+    "zh_CN": "开发打包时压缩代码"
+  },
+  "dev_refresh_exec_start": {
+    "en": "Trying to execute command:",
+    "zh_CN": "尝试运行命令:"
+  },
+  "dev_refresh_exec_success": {
+    "en": "Command executed successfully.",
+    "zh_CN": "命令已运行"
+  },
+  "dev_refresh_exec_fail": {
+    "en": "Command execution failed:",
+    "zh_CN": "命令运行失败:"
+  },
+  "dev_refresh_exec_unsafe": {
+    "en": "Command execution failed: Invalid command",
+    "zh_CN": "命令运行失败: 非法命令"
+  },
+  "dev_create_config": {
+    "en": "Configuration file not found. Would you like to create one?",
+    "zh_CN": "没有找到配置文件，要创建一个吗?"
+  },
+  "dev_refresh_command_describe": {
+    "en": "Provide a command to be executed before the auto-refresh on save",
+    "zh_CN": "提供一个在保存自动刷新前执行的命令"
+  },
+  "init_git": {
+    "en": "Do you want to init git in your project?",
+    "zh_CN": "是否初始化git仓库？"
+  },
+  "route_site_not_match": {
+    "en": "The route does not correspond to the domain.",
+    "zh_CN": "该路由与域名不对应。"
+  },
+  "init_error": {
+    "en": "An error occurred while initializing.",
+    "zh_CN": "初始化时发生错误"
+  },
+  "dev_pack_config_success": {
+    "en": "Config created successfully",
+    "zh_CN": "配置文件已创建"
+  },
+  "dev_option_local_upstream": {
+    "en": "Host to act as origin in development",
+    "zh_CN": "在开发时作为源站的域名"
+  },
+  "dev_port_conflict": {
+    "en": "Port conflict",
+    "zh_CN": "端口已占用"
+  },
+  "dev_inspect_tip1": {
+    "en": "You just provided a new inspection port",
+    "zh_CN": "您刚刚提供了一个新的Inspect端口"
+  },
+  "dev_inspect_tip2": {
+    "en": "You need to open chrome://inspect",
+    "zh_CN": "需要打开 Chrome 浏览器的 chrome://inspect 页面"
+  },
+  "dev_inspect_tip3": {
+    "en": "Click Configure.. button behind the Discover network targets",
+    "zh_CN": "点击在 Discover network targets 后面的 Configure.. 按钮"
+  },
+  "dev_inspect_tip4": {
+    "en": "Config your new IP address and port in Target discovery settings",
+    "zh_CN": "将您的新地址和端口配置到弹出的 Target discovery settings 中"
+  },
+  "dev_inspect_tip5": {
+    "en": "Now you can use Chrome inspect with new port 😉",
+    "zh_CN": "然后就可以用新的端口在Chrome inspect中调试了😉"
+  },
+  "dev_port_used": {
+    "en": "Port ${stringDenoPort} already in use",
+    "zh_CN": "端口 ${stringDenoPort} 被占用"
+  },
+  "dev_port_used_ask": {
+    "en": "Would you like to use another port to start the dev server?",
+    "zh_CN": "是否使用其他端口启动 dev 服务？"
+  },
+  "dev_port_ask_input": {
+    "en": "Input a new port:",
+    "zh_CN": "输入新端口号:"
+  },
+  "dev_port_input_invalid": {
+    "en": "Input is invalid.",
+    "zh_CN": "输入不合法"
+  },
+  "dev_port_invalid": {
+    "en": "This port is invalid.",
+    "zh_CN": "端口号不合法"
+  },
+  "dev_port_used_advice": {
+    "en": "You can use ${option} to specify another port.",
+    "zh_CN": "可以使用 ${option} 指定另外的端口"
+  },
+  "dev_inspect_port_used": {
+    "en": "Inspect port ${stringInspectPort} already in use",
+    "zh_CN": "Inspect 端口 ${stringInspectPort} 已被占用"
+  },
+  "dev_inspect_port_used_ask": {
+    "en": "Would you like to use another port to start the Chrome inspect server?",
+    "zh_CN": "是否使用其他端口启动 Chrome inspect 服务？"
+  },
+  "dev_inspect_port_ask_input": {
+    "en": "Input a new Chrome inspect port:",
+    "zh_CN": "输入用于 Chrome inspect 的新端口号:"
+  },
+  "domain_add_positional_describe": {
+    "en": "The name of domain to add",
+    "zh_CN": "需要添加的域名"
+  },
+  "dev_inspect_port_describe": {
+    "en": "Chrome inspect devTool port",
+    "zh_CN": "用于 Chrome inspect 调试工具的端口"
+  },
+  "pre_login_failed": {
+    "en": "The previously entered Access Key ID (AK) and Secret Access Key (SK) are incorrect. Please enter them again.",
+    "zh_CN": "之前输入的 Access Key ID (AK) 和 Secret Access Key (SK) 不正确，请重新输入。"
+  },
+  "site_describe": {
+    "en": "Manage your sites",
+    "zh_CN": "管理站点"
+  },
+  "site_describe_list": {
+    "en": "List all your sites",
+    "zh_CN": "列出站点"
+  },
+  "interactive_mode": {
+    "en": "Interactive mode",
+    "zh_CN": "交互式模式"
+  },
+  "dev_import_port_invalid": {
+    "en": "Invalid port entered, default port will be used.",
+    "zh_CN": "输入了无效的端口，将使用默认的端口。"
+  },
+  "already_exist_file_error": {
+    "en": "Error: The project already exists. It looks like a folder named \"<project-name>\" is already present in the current directory. Please try the following options: 1. Choose a different project name. 2. Delete the existing folder if it\\'s not needed: `rm -rf <project-name>` (use with caution!). 3. Move to a different directory before running the init command.",
+    "zh_CN": "Error：项目已存在。\n看起来名为 \"<project-name>\" 的文件夹已经存在于当前目录中。\n\n请尝试以下选项：\n1. 选择一个不同的项目名称。\n2. 如果不需要，删除现有的文件夹：`rm -rf <project-name>`（请谨慎使用！）。\n3. 在运行初始化命令之前，移动到另一个目录。"
+  },
+  "init_name_error": {
+    "en": "Error: The project name must be at least 2 characters long and can only contain lowercase letters, numbers, and hyphens.",
+    "zh_CN": "错误：项目名称必须至少为 2 个字符，并且只能包含小写字母、数字和连字符。"
+  },
+  "delete_interactive_mode": {
+    "en": "Delete deployments by using interactive mode",
+    "zh_CN": "使用交互模式删除部署"
+  },
+  "delete_deployments_table_title": {
+    "en": "  Version ID            Description",
+    "zh_CN": "  版本ID                版本描述"
+  },
+  "commit_er_exist": {
+    "en": "Routine exists, updating the code",
+    "zh_CN": "边缘函数已存在，已更新代码"
+  },
+  "domain_add_invalid_name": {
+    "en": "Invalid name",
+    "zh_CN": "无效的名称"
+  },
+  "common_exit": {
+    "en": "Exit",
+    "zh_CN": "退出"
+  },
+  "route_add_tab_tip": {
+    "en": "Press Tab to select",
+    "zh_CN": "按 Tab 键选择"
+  },
+  "route_add_see_more": {
+    "en": "Do you wish to see all ${filteredData.length} possibilities? (y/n)",
+    "zh_CN": "你希望看到所有 ${filteredData.length} 个选项吗？（y/n）"
+  },
+  "deploy_select_table_tip": {
+    "en": "Use arrow keys to move, space to select, and enter to submit.",
+    "zh_CN": "方向键移动，空格键选择，回车键提交。"
+  },
+  "login_permission_denied": {
+    "en": "Permission denied: Access key or secret is incorrect, or does not have the necessary permissions.",
+    "zh_CN": "无权限：Access Key 或 Secret 错误，或没有必要的权限。"
+  },
+  "init_skip": {
+    "en": "Initialization was skipped.",
+    "zh_CN": "初始化已被跳过。"
+  },
+  "quick_deploy_success": {
+    "en": "Your code has been successfully deployed",
+    "zh_CN": "您的代码已成功部署。"
+  },
+  "quick_deploy_success_guide": {
+    "en": "Run this command to add domains",
+    "zh_CN": "运行此命令以添加域名。"
+  },
+  "quick_deploy_failed": {
+    "en": "Quick deploy failed",
+    "zh_CN": "快速部署失败。"
+  },
+  "auto_deploy": {
+    "en": "Do you want to deploy your project?",
+    "zh_CN": "您想要部署您的项目吗？"
+  },
+  "first_deploy": {
+    "en": "This is the first time to deploy, we will create a new routine for you.",
+    "zh_CN": "这是第一次部署，我们将为您创建一个新的函数。"
+  },
+  "no_formal_version_found": {
+    "en": "No formal version found, you need to create a version first.",
+    "zh_CN": "未找到正式版本，您需要先创建一个版本。"
+  },
+  "init_deploy_success": {
+    "en": "Project deployment completed. Visit: ",
+    "zh_CN": "项目部署完成。访问："
+  },
+  "show_default_url": {
+    "en": "You can visit:",
+    "zh_CN": "访问："
+  },
+  "routine_not_exist": {
+    "en": "Routine does not exist, please create a new one. Run command:",
+    "zh_CN": "函数不存在，请创建一个新函数。运行命令："
+  },
+  "dev_input_inspect_tip1": {
+    "en": "👉 Please visit ${inspectLink} in the Chrome browser",
+    "zh_CN": "👉 请在 Chrome 浏览器中访问 ${inspectLink} 页面"
+  },
+  "dev_input_inspect_tip2": {
+    "en": "👉 See your debugger under ${remoteTarget} and click the ${inspect} button",
+    "zh_CN": "👉 在 ${remoteTarget} 下方找到调试器，点击 ${inspect} 按钮"
+  },
+  "deploy_url_warn": {
+    "en": "The domain may take some time to take effect, please try again later.",
+    "zh_CN": "域名生效可能需要一段时间，请稍后再试。"
+  }
+}

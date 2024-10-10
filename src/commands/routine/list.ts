@@ -12,25 +12,7 @@ const list: CommandModule = {
   command: 'list',
   describe: `📋 ${t('list_describe').d('List all your routines')}`,
   builder: (yargs: Argv) => {
-    return (
-      yargs
-        // .positional('deployment', {
-        //   type: 'string',
-        //   description: t('list_deployment_positional_describe').d(
-        //     '(Optional) ID or URL of the deployment to tail. Specify by environment if deployment ID is unknown.'
-        //   ),
-        //   demandOption: true
-        // })
-        // .option('site', {
-        //   alias: 's',
-        //   describe: t('list_site_option_describe').d(
-        //     'List all site names of your account'
-        //   ),
-        //   type: 'boolean',
-        //   default: false
-        // })
-        .usage(`${t('common_usage').d('Usage')}: \$0 list []`)
-    );
+    return yargs.usage(`${t('common_usage').d('Usage')}: \$0 list []`);
   },
   handler: async (argv: ArgumentsCamelCase) => {
     handleList(argv);
@@ -78,15 +60,13 @@ export async function handleList(argv: ArgumentsCamelCase) {
 
 export async function displayRoutineList(versionList: EdgeFunctionItem[]) {
   const table = new Table({
-    head: ['Name', 'Created', 'Description', 'Specification']
+    head: ['Name', 'Created', 'Description']
   });
-
   versionList.forEach((version) => {
     table.push([
       version.RoutineName,
       new Date(version.CreateTime).toLocaleString(),
-      Base64.decode(version.Description),
-      version.SpecName ?? ' '
+      Base64.decode(version.Description)
     ]);
   });
 

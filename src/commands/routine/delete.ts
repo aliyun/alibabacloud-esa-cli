@@ -33,7 +33,6 @@ export async function handleDelete(argv: ArgumentsCamelCase) {
 
   const routineName: string = argv.routineName as string;
   const req: DeleteRoutineReq = { Name: routineName };
-  console.log(2);
   return await deleteRoutineFromUserAccount(req);
 }
 

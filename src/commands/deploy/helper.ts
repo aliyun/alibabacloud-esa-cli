@@ -89,10 +89,18 @@ export async function createAndDeployVersion(
     await prodBuild(false, customEntry);
     const code = readEdgeRoutineFile();
 
-    const specList = await server.listRoutineSpecs();
+    const specList = (
+      (await server.ListRoutineOptionalSpecs())?.data.Specs ?? []
+    ).reduce((acc, item) => {
+      if (item.IsAvailable) {
+        acc.push(item.SpecName);
+      }
+      return acc;
+    }, [] as string[]);
+
     let specName;
     if (createUnstable) {
-      specName = await displaySelectSpec(specList?.data.Specs ?? []);
+      specName = await displaySelectSpec(specList);
     } else {
       const req: GetRoutineReq = { Name: projectConfig.name ?? '' };
       const response = await server.getRoutine(req);

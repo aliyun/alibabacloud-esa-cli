@@ -27,13 +27,13 @@ import {
   CreateRoutineRes,
   CommitRoutineStagingCodeReq,
   CommitRoutineStagingCodeRes,
-  ListRoutineSpecsRes,
   CreateRoutineRelatedRecordReq,
   CreateRoutineRelatedRecordRes,
   DeleteRoutineRelatedRecordReq,
   DeleteRoutineRelatedRecordRes,
   PublishRoutineCodeVersionRes,
-  Environment
+  Environment,
+  ListRoutineOptionalSpecsRes
 } from './interface.js';
 import { getApiConfig } from '../utils/fileUtils/index.js';
 import chain from 'lodash';
@@ -812,11 +812,10 @@ export class ApiService {
     }
     return null;
   }
-
-  async listRoutineSpecs(): Promise<ListRoutineSpecsRes | null> {
+  async ListRoutineOptionalSpecs(): Promise<ListRoutineOptionalSpecsRes | null> {
     try {
       let params = {
-        action: 'ListRoutineSpecs',
+        action: 'ListRoutineOptionalSpecs',
         version: '2024-09-10',
         protocol: 'https',
         method: 'GET',
@@ -837,7 +836,7 @@ export class ApiService {
       };
       const res = await this.client.callApi(params, request, runtime);
       if (res.statusCode === 200 && res.body) {
-        const ret: ListRoutineSpecsRes = {
+        const ret: ListRoutineOptionalSpecsRes = {
           code: res.statusCode,
           data: {
             RequestId: res.body.RequestId,

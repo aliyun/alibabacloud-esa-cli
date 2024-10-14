@@ -762,5 +762,21 @@
   "deploy_url_warn": {
     "en": "The domain may take some time to take effect, please try again later.",
     "zh_CN": "域名生效可能需要一段时间，请稍后再试。"
+  },
+  "init_install_dependence": {
+    "en": "⌛️ Installing dependencies...",
+    "zh_CN": "⌛️ 正在安装依赖..."
+  },
+  "init_install_dependencies_success": {
+    "en": "Dependencies installed successfully.",
+    "zh_CN": "依赖安装成功。"
+  },
+  "init_build_project": {
+    "en": "⌛️ Building project...",
+    "zh_CN": "⌛️ 正在构建项目..."
+  },
+  "init_build_project_success": {
+    "en": "Project built successfully.",
+    "zh_CN": "项目构建成功。"
   }
 }

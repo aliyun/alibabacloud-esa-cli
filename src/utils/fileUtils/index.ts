@@ -43,7 +43,6 @@ export const getRoot = (root?: string): string => {
 const root = getRoot();
 
 export const projectConfigPath = path.join(root, projectConfigFile);
-// export const cliConfigPath = path.join(__dirname, '..', '..', cliConfigFile);
 export const cliConfigPath = path.join(
   os.homedir(),
   '.esa/config/default.toml'
@@ -238,5 +237,24 @@ export const getApiConfig = () => {
     },
     endpoint: combinedConfig.endpoint
   };
+  return config;
+};
+
+export const templateHubPath = path.join(
+  getDirName(import.meta.url),
+  '../../../node_modules/esa-template/src'
+);
+
+interface TemplateItem {
+  Title_EN: string;
+  Title_ZH: string;
+  Desc_EN: string;
+  Desc_ZH: string;
+  URL: string;
+}
+
+export const getTemplatesConfig = (): TemplateItem[] => {
+  const manifestPath = path.join(templateHubPath, 'manifest.json');
+  const config = JSON.parse(fs.readFileSync(manifestPath, 'utf-8'));
   return config;
 };

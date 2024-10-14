@@ -1,14 +1,15 @@
 import { CommandModule, ArgumentsCamelCase, Argv } from 'yargs';
 import SelectItems, { SelectItem } from '../../components/selectInput.js';
-import { rename } from 'fs/promises';
-import fs from 'fs';
+import fs from 'fs-extra';
 
 import Template from '../../libs/templates/index.js';
-import { cloneRepository, installGit } from '../../libs/git/index.js';
+import { installGit } from '../../libs/git/index.js';
 import { descriptionInput } from '../../components/descriptionInput.js';
 import {
   generateConfigFile,
   getProjectConfig,
+  getTemplatesConfig,
+  templateHubPath,
   updateProjectConfigFile
 } from '../../utils/fileUtils/index.js';
 import t from '../../i18n/index.js';
@@ -20,6 +21,7 @@ import { ApiService } from '../../libs/apiService.js';
 import { exit } from 'process';
 import { checkRoutineExist } from '../../utils/checkIsRoutineCreated.js';
 import path from 'path';
+import { execSync } from 'child_process';
 
 const secondSetOfItems = [
   { label: 'Yes', value: 'yesInstall' },
@@ -45,13 +47,6 @@ const init: CommandModule = {
 
 export default init;
 
-const downloadEntireTemplates = async (entry?: string) => {
-  await cloneRepository(
-    'https://github.com/aliyun/alibabacloud-esa-er-templates.git',
-    entry
-  );
-};
-
 export async function handleInit(argv: ArgumentsCamelCase) {
   const { config } = argv;
   if (config !== undefined) {
@@ -74,49 +69,62 @@ export async function handleInit(argv: ArgumentsCamelCase) {
     return;
   }
 
-  let hiddenFolder = process.cwd() + '/.hidden';
-
-  // 删除隐藏文件夹
-  if (fs.existsSync(hiddenFolder)) {
-    fs.rmdirSync(hiddenFolder, { recursive: true });
-  }
-
-  // 下载所有模板到隐藏文件夹
-  await downloadEntireTemplates(hiddenFolder);
-
-  //获取隐藏文件夹所有子目录
-  const templatePaths = fs.readdirSync(hiddenFolder).filter((item) => {
-    const itemPath = path.join(hiddenFolder, item);
+  const templatePaths = fs.readdirSync(templateHubPath).filter((item) => {
+    const itemPath = path.join(templateHubPath, item);
     const stats = fs.statSync(itemPath);
-    return stats.isDirectory() && item !== '.git';
+    return (
+      stats.isDirectory() &&
+      item !== '.git' &&
+      item !== 'node_modules' &&
+      item !== 'lib'
+    );
   });
 
   const templateList = templatePaths.map((item) => {
-    const projectPath = hiddenFolder + '/' + item;
+    const projectPath = templateHubPath + '/' + item;
     const projectConfig = getProjectConfig(projectPath);
     const templateName = projectConfig?.name ?? '';
     return new Template(projectPath, templateName);
   });
 
-  const firstSetOfItems = templateList.map((template, index: number) => {
-    return { label: template.title, value: template.path };
-  });
+  const templateConfig = getTemplatesConfig();
+  const firstSetOfItems = templateConfig
+    .map((template) => {
+      const name = template.Title_EN;
+      const templatePath = templateList.find((item) => {
+        return name === item.title;
+      });
+      return templatePath
+        ? {
+            label: name,
+            value: templatePath.path
+          }
+        : null;
+    })
+    .filter((item) => item !== null) as SelectItem[];
 
   let selectTemplate: Template;
   let targetPath: string;
   let projectConfig: ProjectConfig | null;
 
-  const handleSecondSelection = (item: SelectItem) => {
-    if (item.value === 'yesInstall') {
-      installGit(targetPath);
-    } else {
-      logger.info(t('init_skip_git').d('Git installation was skipped.'));
+  const preInstallDependencies = async () => {
+    const packageJsonPath = path.join(targetPath, 'package.json');
+    if (fs.existsSync(packageJsonPath)) {
+      logger.info(
+        t('init_install_dependence').d('⌛️ Installing dependencies...')
+      );
+      execSync('npm install', { stdio: 'inherit', cwd: targetPath });
+      logger.success(
+        t('init_install_dependencies_success').d(
+          'Dependencies installed successfully.'
+        )
+      );
+      logger.log(t('init_build_project').d('⌛️ Building project...'));
+      execSync('npm run build', { stdio: 'inherit', cwd: targetPath });
+      logger.success(
+        t('init_build_project_success').d('Project built successfully.')
+      );
     }
-    logger.info(t('auto_deploy').d('Do you want to deploy your project?'));
-    SelectItems({
-      items: secondSetOfItems,
-      handleSelect: handleThirdSelection
-    });
   };
 
   const handleFirstSelection = async (item: SelectItem) => {
@@ -129,23 +137,36 @@ export async function handleInit(argv: ArgumentsCamelCase) {
     const newPath = process.cwd() + '/' + name;
     targetPath = newPath;
     if (fs.existsSync(newPath)) {
-      fs.rmdirSync(hiddenFolder, { recursive: true });
       logger.error(
         t('already_exist_file_error').d(
           'Error: The project already exists. It looks like a folder named "<project-name>" is already present in the current directory. Please try the following options: 1. Choose a different project name. 2. Delete the existing folder if it\'s not needed: `rm -rf <project-name>` (use with caution!). 3. Move to a different directory before running the init command.'
         )
       );
-      return;
+      exit(0);
     }
-    await rename(configPath, newPath);
+    await fs.copy(configPath, newPath);
 
     projectConfig.name = name;
     updateProjectConfigFile(projectConfig, newPath);
+    preInstallDependencies();
 
     logger.info(t('init_git').d('Do you want to init git in your project?'));
     SelectItems({
       items: secondSetOfItems,
       handleSelect: handleSecondSelection
+    });
+  };
+
+  const handleSecondSelection = (item: SelectItem) => {
+    if (item.value === 'yesInstall') {
+      installGit(targetPath);
+    } else {
+      logger.info(t('init_skip_git').d('Git installation was skipped.'));
+    }
+    logger.info(t('auto_deploy').d('Do you want to deploy your project?'));
+    SelectItems({
+      items: secondSetOfItems,
+      handleSelect: handleThirdSelection
     });
   };
 
@@ -168,7 +189,7 @@ export async function handleInit(argv: ArgumentsCamelCase) {
       );
     }
     selectTemplate.printSummary();
-    exit();
+    exit(0);
   };
 
   try {
@@ -179,6 +200,5 @@ export async function handleInit(argv: ArgumentsCamelCase) {
   } catch (error) {
     logger.error(t('init_error').d('An error occurred while initializing.'));
     console.log(error);
-    fs.rmdirSync(hiddenFolder, { recursive: true });
   }
 }

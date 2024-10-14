@@ -4,7 +4,7 @@ exports[`handleInit > clones the repository and updates project config -- uninst
 [MockFunction log] {
   "calls": [
     [
-      "Repository cloned successfully.",
+      "/Users/mashengyuan/Project/alibabacloud-esa-cli/test",
     ],
     [
       "💬 Do you want to init git in your project?",
@@ -41,7 +41,7 @@ exports[`handleInit > clones the repository and updates project config --install
 [MockFunction log] {
   "calls": [
     [
-      "Repository cloned successfully.",
+      "/Users/mashengyuan/Project/alibabacloud-esa-cli/test-template-1",
     ],
     [
       "💬 Do you want to init git in your project?",

@@ -65,6 +65,14 @@ export interface Summary {
   command: string;
   projectName?: string; //暂时用不到
 }
+
+export interface ListRoutineOptionalSpecsRes {
+  code: string;
+  data: {
+    RequestId: string;
+    Specs: { SpecName: string; IsAvailable: boolean }[];
+  };
+}
 export interface CommitRoutineStagingCodeReq {
   Name: string;
   CodeDescription?: string;
@@ -140,10 +148,6 @@ export interface GetRoutineRes {
     RelatedRoutes: RelatedRouteProps[];
     DefaultRelatedRecord: string;
   };
-}
-export interface ListRoutineSpecsRes {
-  code: string;
-  data: { RequestId: string; Specs: string[] };
 }
 export interface GetRoutineUserInfoRes {
   Routines: EdgeFunctionItem[];

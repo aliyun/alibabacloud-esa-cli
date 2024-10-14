@@ -97,7 +97,7 @@ const mockGlobal = () => {
         .fn()
         .mockResolvedValue({ data: { IPV4: ['0.0.0.0'] } }),
       publishRoutineCodeVersion: vi.fn().mockResolvedValue({}),
-      listRoutineSpecs: vi.fn().mockResolvedValue({}),
+      ListRoutineOptionalSpecs: vi.fn().mockResolvedValue({}),
       getRoutineStagingCodeUploadInfo: vi.fn().mockResolvedValue(true),
       deleteRoutineRelatedRoute: vi.fn().mockResolvedValue({
         data: {
@@ -127,8 +127,8 @@ const mockGlobal = () => {
       await importOriginal<typeof import('../src/utils/fileUtils/index.js')>();
     return {
       ...actual,
-      getProjectConfig: vi.fn().mockResolvedValue({ name: 'test' }),
-      getCliConfig: vi.fn().mockResolvedValue({
+      getProjectConfig: vi.fn().mockReturnValue({ name: 'test-template-1' }),
+      getCliConfig: vi.fn().mockReturnValue({
         auth: {
           accessKeyId: 'test',
           accessKeySecret: 'test'
@@ -137,7 +137,7 @@ const mockGlobal = () => {
       checkDirectory: vi.fn().mockReturnValue(true),
       updateProjectConfigFile: vi.fn(),
       updateCliConfigFile: vi.fn(),
-      readEdgeRoutineFile: vi.fn().mockResolvedValue({})
+      readEdgeRoutineFile: vi.fn().mockReturnValue({})
     };
   });
 

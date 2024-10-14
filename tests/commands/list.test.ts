@@ -18,14 +18,12 @@ describe('displayRoutineList', () => {
       {
         RoutineName: 'routine1',
         CreateTime: '2022-01-01',
-        Description: 'SGVsbG8gd29ybGQ=',
-        SpecName: 'spec1'
+        Description: 'SGVsbG8gd29ybGQ='
       },
       {
         RoutineName: 'routine2',
         CreateTime: '2022-01-02',
-        Description: 'VGhpcyBpcyBhIHN0cmluZw==',
-        SpecName: 'spec2'
+        Description: 'VGhpcyBpcyBhIHN0cmluZw=='
       }
     ];
 
@@ -47,14 +45,12 @@ describe('displayRoutineList', () => {
         {
           RoutineName: 'routine1',
           Description: 'SGVsbG8gd29ybGQ=',
-          CreateTime: '2022-01-01',
-          SpecName: 'spec1'
+          CreateTime: '2022-01-01'
         },
         {
           RoutineName: 'routine2',
           Description: 'VGhpcyBpcyBhIHN0cmluZw==',
-          CreateTime: '2022-01-02',
-          SpecName: 'spec2'
+          CreateTime: '2022-01-02'
         }
       ],
       Subdomains: ['subdomain1', 'subdomain2']
@@ -72,22 +68,17 @@ describe('displayRoutineList', () => {
     expect(std.out).toHaveBeenCalledWith(
       expect.stringContaining('Description')
     );
-    expect(std.out).toHaveBeenCalledWith(
-      expect.stringContaining('Specification')
-    );
 
     expect(std.out).toHaveBeenCalledWith(expect.stringContaining('routine1'));
     expect(std.out).toHaveBeenCalledWith(
       expect.stringContaining('Hello world')
     );
     expect(std.out).toHaveBeenCalledWith(expect.stringContaining('2022/1/1'));
-    expect(std.out).toHaveBeenCalledWith(expect.stringContaining('spec1'));
 
     expect(std.out).toHaveBeenCalledWith(expect.stringContaining('routine2'));
     expect(std.out).toHaveBeenCalledWith(
       expect.stringContaining('This is a string')
     );
     expect(std.out).toHaveBeenCalledWith(expect.stringContaining('2022/1/2'));
-    expect(std.out).toHaveBeenCalledWith(expect.stringContaining('spec2'));
   });
 });

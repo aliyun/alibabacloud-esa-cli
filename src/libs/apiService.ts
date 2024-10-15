@@ -604,7 +604,7 @@ export class ApiService {
   ): Promise<GetRoutineRes | null> {
     try {
       let params = {
-        action: 'getRoutine',
+        action: 'GetRoutine',
         version: '2024-09-10',
         protocol: 'https',
         method: 'GET',

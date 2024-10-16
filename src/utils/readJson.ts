@@ -6,6 +6,6 @@ export const readJson = (jsonPath: string) => {
         const json = JSON.parse(readFileSync(jsonPath, 'utf8'));
         return json;
     } catch (_) {
-        throw new TypeError('locales.json is not a valid JSON file.');
+        throw new TypeError(`${jsonPath} is not a valid JSON file.`);
     }
 }

@@ -1,6 +1,10 @@
-import localesJson from './locales.json' assert { type: 'json' };
+import { resolve } from 'path';
+
 import { getCliConfig } from '../utils/fileUtils/index.js';
 import logger from '../libs/logger.js';
+import { readJson } from '../utils/readJson.js';
+
+const localesJson = readJson(resolve('./locales.json'));
 
 interface Locales {
   [key: string]: {

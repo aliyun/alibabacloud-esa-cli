@@ -3,7 +3,8 @@ import spawn from 'cross-spawn';
 import logger from '../../libs/logger.js';
 import path from 'path';
 import t from '../../i18n/index.js';
-import { getDevConf, getRoot } from '../../utils/fileUtils/index.js';
+import { getDevConf } from '../../utils/fileUtils/index.js';
+import { getRoot } from '../../utils/fileUtils/base.js';
 
 interface Props {
   command: string;

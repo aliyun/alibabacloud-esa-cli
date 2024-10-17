@@ -2,7 +2,7 @@ import esbuild from 'esbuild';
 import { lessLoader } from 'esbuild-plugin-less';
 import path from 'path';
 import fs from 'fs';
-import { getRoot } from '../../utils/fileUtils/index.js';
+import { getRoot } from '../../utils/fileUtils/base.js';
 import { NODE_EXTERNALS } from '../common/constant.js';
 
 const userRoot = getRoot();

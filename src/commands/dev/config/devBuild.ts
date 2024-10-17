@@ -1,7 +1,7 @@
 import esbuild from 'esbuild';
 import { lessLoader } from 'esbuild-plugin-less';
 import path from 'path';
-import { getRoot } from '../../../utils/fileUtils/index.js';
+import { getRoot } from '../../../utils/fileUtils/base.js';
 import { NODE_EXTERNALS } from '../../common/constant.js';
 
 interface BuildOptions {

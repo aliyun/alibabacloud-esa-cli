@@ -16,10 +16,8 @@ import logout from './commands/logout.js';
 import lang from './commands/lang.js';
 
 import { getCliConfig } from './utils/fileUtils/index.js';
-import { getDirName } from './utils/fileUtils/base.js';
 import { handleCheckVersion } from './utils/checkVersion.js';
 import t from './i18n/index.js';
-import logger from './libs/logger.js';
 import site from './commands/site/index.js';
 
 const main = async () => {
@@ -35,9 +33,9 @@ const main = async () => {
     .version(false)
     .wrap(null)
     .help(false)
-    // .epilogue(
-    //   `${t('main_epilogue').d('For more information, visit DCDN')}: ${chalk.underline.blue('https://dcdnnext.console.aliyun.com/')}`
-    // )
+    .epilogue(
+      `${t('main_epilogue').d('For more information, visit ESA')}: ${chalk.underline.blue('https://www.aliyun.com/product/esa')}`
+    )
     .options('version', {
       describe: t('main_version_describe').d('Show version'),
       alias: 'v'

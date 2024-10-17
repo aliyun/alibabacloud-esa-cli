@@ -42,8 +42,15 @@ export async function checkRoutineExist(name: string, entry?: string) {
     await prodBuild(false, entryFile, entry);
     const code = readEdgeRoutineFile(entry) || '';
     const server = await ApiService.getInstance();
-    const specList = await server.listRoutineSpecs();
-    const spec = await displaySelectSpec(specList?.data.Specs ?? []);
+    const specList = (
+      (await server.ListRoutineOptionalSpecs())?.data.Specs ?? []
+    ).reduce((acc, item) => {
+      if (item.IsAvailable) {
+        acc.push(item.SpecName);
+      }
+      return acc;
+    }, [] as string[]);
+    const spec = await displaySelectSpec(specList);
     await createEdgeRoutine({
       name: name,
       specName: spec,

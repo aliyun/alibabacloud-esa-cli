@@ -67,8 +67,15 @@ export async function handleCommit(argv: ArgumentsCamelCase) {
         `🖊️ ${t('commit_er_description').d('Enter a description for the routine')}:`,
         false
       );
-      const specList = await server.listRoutineSpecs();
-      specName = await displaySelectSpec(specList?.data.Specs ?? []);
+      const specList = (
+        (await server.ListRoutineOptionalSpecs())?.data.Specs ?? []
+      ).reduce((acc, item) => {
+        if (item.IsAvailable) {
+          acc.push(item.SpecName);
+        }
+        return acc;
+      }, [] as string[]);
+      specName = await displaySelectSpec(specList);
     } else {
       logger.log(
         `🔄 ${t('commit_er_exist').d('Routine exists, updating the code')}`

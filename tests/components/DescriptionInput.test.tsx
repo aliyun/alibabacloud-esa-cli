@@ -1,12 +1,9 @@
 // @vitest-environment jsdom
 
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
-import {
-  DescriptionInput,
-  descriptionInput
-} from '../../src/components/descriptionInput';
+import { DescriptionInput } from '../../src/components/descriptionInput';
 
 describe('DescriptionInput', () => {
   it('should render the prompt text', () => {

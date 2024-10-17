@@ -7,7 +7,6 @@ import { installGit } from '../../libs/git/index.js';
 import { descriptionInput } from '../../components/descriptionInput.js';
 import {
   generateConfigFile,
-  getDirName,
   getProjectConfig,
   getTemplatesConfig,
   templateHubPath,
@@ -50,10 +49,10 @@ export default init;
 
 export async function handleInit(argv: ArgumentsCamelCase) {
   const { config } = argv;
-  // 更新npm包
-  const __dirname = getDirName(import.meta.url);
-  const projectPath = path.join(__dirname, '../../..');
-  execSync('npm install', { stdio: 'ignore', cwd: projectPath });
+  // // 更新npm包
+  // const __dirname = getDirName(import.meta.url);
+  // const projectPath = path.join(__dirname, '../../..');
+  // execSync('npm install', { stdio: 'ignore', cwd: projectPath });
 
   if (config !== undefined) {
     await generateConfigFile(String(config));

@@ -1,5 +1,6 @@
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
+import chalk from 'chalk';
 
 import login from './commands/login/index.js';
 import config from './commands/config.js';
@@ -32,9 +33,9 @@ const main = async () => {
     .version(false)
     .wrap(null)
     .help(false)
-    // .epilogue(
-    //   `${t('main_epilogue').d('For more information, visit DCDN')}: ${chalk.underline.blue('https://dcdnnext.console.aliyun.com/')}`
-    // )
+    .epilogue(
+      `${t('main_epilogue').d('For more information, visit ESA')}: ${chalk.underline.blue('https://esa.console.aliyun.com/')}`
+    )
     .options('version', {
       describe: t('main_version_describe').d('Show version'),
       alias: 'v'

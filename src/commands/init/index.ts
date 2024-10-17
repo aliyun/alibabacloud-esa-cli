@@ -1,6 +1,6 @@
 import { CommandModule, ArgumentsCamelCase, Argv } from 'yargs';
-import SelectItems, { SelectItem } from '../../components/selectInput.js';
 import fs from 'fs-extra';
+import path from 'path';
 
 import Template from '../../libs/templates/index.js';
 import { installGit } from '../../libs/git/index.js';
@@ -14,13 +14,14 @@ import {
 } from '../../utils/fileUtils/index.js';
 import t from '../../i18n/index.js';
 import logger from '../../libs/logger.js';
+import SelectItems, { SelectItem } from '../../components/selectInput.js';
 import { quickDeploy } from '../deploy/index.js';
 import { ProjectConfig } from '../../utils/fileUtils/interface.js';
 import chalk from 'chalk';
 import { ApiService } from '../../libs/apiService.js';
 import { exit } from 'process';
 import { checkRoutineExist } from '../../utils/checkIsRoutineCreated.js';
-import path from 'path';
+
 import { execSync } from 'child_process';
 
 const secondSetOfItems = [

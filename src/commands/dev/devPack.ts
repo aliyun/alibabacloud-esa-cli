@@ -3,11 +3,8 @@ import fs from 'fs';
 import logger from '../../libs/logger.js';
 import devBuild from './config/devBuild.js';
 import t from '../../i18n/index.js';
-import {
-  getDevConf,
-  getRoot,
-  getDirName
-} from '../../utils/fileUtils/index.js';
+import { getDevConf } from '../../utils/fileUtils/index.js';
+import { getRoot, getDirName } from '../../utils/fileUtils/base.js';
 import { checkPort } from '../../utils/checkDevPort.js';
 
 const generateEntry = async (

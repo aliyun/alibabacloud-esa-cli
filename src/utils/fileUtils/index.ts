@@ -1,44 +1,16 @@
-import toml from '@iarna/toml';
-import path from 'path';
 import fs from 'fs';
+import os from 'os';
+import path from 'path';
+import toml from '@iarna/toml';
 import { promises as fsPromises } from 'fs';
 import { CliConfig, DevToolProps, ProjectConfig } from './interface.js';
-import { fileURLToPath } from 'url';
+import { getDirName, getRoot } from './base.js';
 import logger from '../../libs/logger.js';
 import t from '../../i18n/index.js';
-import os from 'os';
 
 const projectConfigFile = 'esa.toml';
-const cliConfigFile = 'cliconfig.toml';
-
-export const getDirName = (metaUrl: string) => {
-  const __filename = fileURLToPath(metaUrl);
-  const __dirname = path.dirname(__filename);
-  return __dirname;
-};
 
 const __dirname = getDirName(import.meta.url);
-
-export const getRoot = (root?: string): string => {
-  if (typeof root === 'undefined') {
-    root = process.cwd();
-  }
-  if (root === '/') {
-    return process.cwd();
-  }
-  const file = path.join(root, cliConfigFile);
-  const prev = path.resolve(root, '../');
-  try {
-    const hasToml = fs.existsSync(file);
-    if (hasToml) {
-      return root;
-    } else {
-      return getRoot(prev);
-    }
-  } catch (err) {
-    return getRoot(prev);
-  }
-};
 
 const root = getRoot();
 

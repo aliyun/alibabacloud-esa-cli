@@ -1,6 +1,5 @@
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
-import chalk from 'chalk';
 
 import login from './commands/login/index.js';
 import config from './commands/config.js';
@@ -18,7 +17,6 @@ import lang from './commands/lang.js';
 import { getCliConfig } from './utils/fileUtils/index.js';
 import { handleCheckVersion } from './utils/checkVersion.js';
 import t from './i18n/index.js';
-import logger from './libs/logger.js';
 import site from './commands/site/index.js';
 
 const main = async () => {

@@ -1,6 +1,6 @@
 import { exec, execSync } from 'child_process';
 import os from 'os';
-import { getDirName } from './fileUtils/index.js';
+import { getDirName } from './fileUtils/base.js';
 import logger from '../libs/logger.js';
 import path from 'path';
 import t from '../i18n/index.js';

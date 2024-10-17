@@ -4,10 +4,10 @@ import chokidar from 'chokidar';
 import doProcess from './doProcess.js';
 import {
   getProjectConfig,
-  getRoot,
   generateConfigFile,
   getDevConf
 } from '../../utils/fileUtils/index.js';
+import { getRoot } from '../../utils/fileUtils/base.js';
 import SelectItems, { SelectItem } from '../../components/selectInput.js';
 import logger from '../../libs/logger.js';
 import devPack from './devPack.js';

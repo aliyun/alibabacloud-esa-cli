@@ -9,11 +9,8 @@ import {
   GetRoutineRes,
   ListSitesReq
 } from '../libs/interface.js';
-import {
-  getCliConfig,
-  projectConfigPath,
-  getRoot
-} from '../utils/fileUtils/index.js';
+import { getCliConfig, projectConfigPath } from '../utils/fileUtils/index.js';
+import { getRoot } from '../utils/fileUtils/base.js';
 import chalk from 'chalk';
 import t from '../i18n/index.js';
 import { ApiService } from '../libs/apiService.js';

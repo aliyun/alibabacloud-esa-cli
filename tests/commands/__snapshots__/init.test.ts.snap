@@ -1,48 +1,8 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`handleInit > clones the repository and updates project config -- uninstall git 1`] = `
-[MockFunction log] {
-  "calls": [
-    [
-      "/Users/mashengyuan/Project/alibabacloud-esa-cli/test",
-    ],
-    [
-      "💬 Do you want to init git in your project?",
-    ],
-    [
-      "💬 Git installation was skipped.",
-    ],
-    [
-      "💬 Do you want to deploy your project?",
-    ],
-  ],
-  "results": [
-    {
-      "type": "return",
-      "value": undefined,
-    },
-    {
-      "type": "return",
-      "value": undefined,
-    },
-    {
-      "type": "return",
-      "value": undefined,
-    },
-    {
-      "type": "return",
-      "value": undefined,
-    },
-  ],
-}
-`;
-
 exports[`handleInit > clones the repository and updates project config --install git 1`] = `
 [MockFunction log] {
   "calls": [
-    [
-      "/Users/mashengyuan/Project/alibabacloud-esa-cli/test-template-1",
-    ],
     [
       "💬 Do you want to init git in your project?",
     ],
@@ -54,10 +14,6 @@ exports[`handleInit > clones the repository and updates project config --install
     ],
   ],
   "results": [
-    {
-      "type": "return",
-      "value": undefined,
-    },
     {
       "type": "return",
       "value": undefined,

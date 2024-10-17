@@ -15,7 +15,7 @@ import routeCommand from './commands/route/index.js';
 import logout from './commands/logout.js';
 import lang from './commands/lang.js';
 
-import { getCliConfig, getDirName } from './utils/fileUtils/index.js';
+import { getCliConfig } from './utils/fileUtils/index.js';
 import { handleCheckVersion } from './utils/checkVersion.js';
 import t from './i18n/index.js';
 import logger from './libs/logger.js';

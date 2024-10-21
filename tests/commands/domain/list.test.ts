@@ -27,6 +27,20 @@ describe('handleDeleteDomain', () => {
       $0: ''
     });
     expect(std.out).toBeCalledWith('🙅 No related domains found');
-    expect(std.out).matchSnapshot();
+    expect(std.out).toMatchInlineSnapshot(`
+      [MockFunction log] {
+        "calls": [
+          [
+            "🙅 No related domains found",
+          ],
+        ],
+        "results": [
+          {
+            "type": "return",
+            "value": undefined,
+          },
+        ],
+      }
+    `);
   });
 });

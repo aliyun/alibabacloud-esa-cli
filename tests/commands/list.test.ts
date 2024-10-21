@@ -29,14 +29,51 @@ describe('displayRoutineList', () => {
 
     displayRoutineList(versionList);
 
-    expect(std.out).toMatchSnapshot();
+    expect(std.out).toMatchInlineSnapshot(`
+      [MockFunction log] {
+        "calls": [
+          [
+            "┌────────────────────┬─────────────────────────┬──────────────────────────────┐
+      │ Name               │ Created                 │ Description                  │
+      ├────────────────────┼─────────────────────────┼──────────────────────────────┤
+      │ routine1           │ 2022/01/01 00:00:00     │ Hello world                  │
+      ├────────────────────┼─────────────────────────┼──────────────────────────────┤
+      │ routine2           │ 2022/01/02 00:00:00     │ This is a string             │
+      └────────────────────┴─────────────────────────┴──────────────────────────────┘",
+          ],
+        ],
+        "results": [
+          {
+            "type": "return",
+            "value": undefined,
+          },
+        ],
+      }
+    `);
   });
 
   it('should display empty table if versionList is empty', () => {
     const versionList: EdgeFunctionItem[] = [];
 
     displayRoutineList(versionList);
-    expect(std.out).toMatchSnapshot();
+
+    expect(std.out).toMatchInlineSnapshot(`
+      [MockFunction log] {
+        "calls": [
+          [
+            "┌────────────────────┬─────────────────────────┬──────────────────────────────┐
+      │ Name               │ Created                 │ Description                  │
+      └────────────────────┴─────────────────────────┴──────────────────────────────┘",
+          ],
+        ],
+        "results": [
+          {
+            "type": "return",
+            "value": undefined,
+          },
+        ],
+      }
+    `);
   });
 
   it('should display a routine list by calling getRoutineUserInfo', async () => {
@@ -62,23 +99,33 @@ describe('displayRoutineList', () => {
       _: [],
       $0: ''
     });
-    expect(std.out).toMatchSnapshot();
-    expect(std.out).toHaveBeenCalledWith(expect.stringContaining('Name'));
-    expect(std.out).toHaveBeenCalledWith(expect.stringContaining('Created'));
-    expect(std.out).toHaveBeenCalledWith(
-      expect.stringContaining('Description')
-    );
-
-    expect(std.out).toHaveBeenCalledWith(expect.stringContaining('routine1'));
-    expect(std.out).toHaveBeenCalledWith(
-      expect.stringContaining('Hello world')
-    );
-    expect(std.out).toHaveBeenCalledWith(expect.stringContaining('2022/1/1'));
-
-    expect(std.out).toHaveBeenCalledWith(expect.stringContaining('routine2'));
-    expect(std.out).toHaveBeenCalledWith(
-      expect.stringContaining('This is a string')
-    );
-    expect(std.out).toHaveBeenCalledWith(expect.stringContaining('2022/1/2'));
+    expect(std.out).toMatchInlineSnapshot(`
+      [MockFunction log] {
+        "calls": [
+          [
+            "📃 List all of routine:",
+          ],
+          [
+            "┌────────────────────┬─────────────────────────┬──────────────────────────────┐
+      │ Name               │ Created                 │ Description                  │
+      ├────────────────────┼─────────────────────────┼──────────────────────────────┤
+      │ routine1           │ 2022/01/01 00:00:00     │ Hello world                  │
+      ├────────────────────┼─────────────────────────┼──────────────────────────────┤
+      │ routine2           │ 2022/01/02 00:00:00     │ This is a string             │
+      └────────────────────┴─────────────────────────┴──────────────────────────────┘",
+          ],
+        ],
+        "results": [
+          {
+            "type": "return",
+            "value": undefined,
+          },
+          {
+            "type": "return",
+            "value": undefined,
+          },
+        ],
+      }
+    `);
   });
 });

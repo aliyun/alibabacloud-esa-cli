@@ -62,30 +62,86 @@ describe('handleInit', () => {
       _: [],
       $0: ''
     });
-    expect(std.out).toMatchSnapshot();
+    expect(std.out).toMatchInlineSnapshot(`
+      [MockFunction log] {
+        "calls": [
+          [
+            "💬 Do you want to init git in your project?",
+          ],
+          [
+            "Git has been installed successfully.",
+          ],
+          [
+            "💬 Do you want to deploy your project?",
+          ],
+        ],
+        "results": [
+          {
+            "type": "return",
+            "value": undefined,
+          },
+          {
+            "type": "return",
+            "value": undefined,
+          },
+          {
+            "type": "return",
+            "value": undefined,
+          },
+        ],
+      }
+    `);
   });
 
-  // it('clones the repository and updates project config -- uninstall git', async () => {
-  //   vi.spyOn(descriptionInput, 'descriptionInput').mockResolvedValue('test');
+  it('clones the repository and updates project config -- uninstall git', async () => {
+    vi.spyOn(descriptionInput, 'descriptionInput').mockResolvedValue('test');
 
-  //   vi.spyOn(selectInput, 'default').mockImplementationOnce(
-  //     ({ items, handleSelect }) => {
-  //       handleSelect(items[1]);
-  //       return () => {};
-  //     }
-  //   );
+    vi.spyOn(selectInput, 'default').mockImplementationOnce(
+      ({ items, handleSelect }) => {
+        handleSelect(items[1]);
+        return () => {};
+      }
+    );
 
-  //   vi.spyOn(selectInput, 'default').mockImplementationOnce(
-  //     ({ items, handleSelect }) => {
-  //       handleSelect(items[0]);
-  //       return () => {};
-  //     }
-  //   );
+    vi.spyOn(selectInput, 'default').mockImplementationOnce(
+      ({ items, handleSelect }) => {
+        handleSelect(items[0]);
+        return () => {};
+      }
+    );
 
-  //   await handleInit({
-  //     _: [],
-  //     $0: ''
-  //   });
-  //   expect(std.out).matchSnapshot();
-  // });
+    await handleInit({
+      _: [],
+      $0: ''
+    });
+    expect(std.out).toMatchInlineSnapshot(`
+      [MockFunction log] {
+        "calls": [
+          [
+            "💬 Do you want to init git in your project?",
+          ],
+          [
+            "💬 Git installation was skipped.",
+          ],
+          [
+            "💬 Do you want to deploy your project?",
+          ],
+        ],
+        "results": [
+          {
+            "type": "return",
+            "value": undefined,
+          },
+          {
+            "type": "return",
+            "value": undefined,
+          },
+          {
+            "type": "return",
+            "value": undefined,
+          },
+        ],
+      }
+    `);
+  });
 });

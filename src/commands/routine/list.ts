@@ -7,6 +7,7 @@ import { checkIsLoginSuccess } from '../utils.js';
 import chalk from 'chalk';
 import { ApiService } from '../../libs/apiService.js';
 import t from '../../i18n/index.js';
+import moment from 'moment';
 
 const list: CommandModule = {
   command: 'list',
@@ -49,7 +50,7 @@ export async function handleList(argv: ArgumentsCamelCase) {
   const res = await server.getRoutineUserInfo();
   const routineList = res?.Routines;
   if (routineList) {
-    console.log(
+    logger.log(
       chalk.bold.bgGray(
         `📃 ${t('list_routine_name_title').d('List all of routine')}:`
       )
@@ -60,15 +61,15 @@ export async function handleList(argv: ArgumentsCamelCase) {
 
 export async function displayRoutineList(versionList: EdgeFunctionItem[]) {
   const table = new Table({
-    head: ['Name', 'Created', 'Description']
+    head: ['Name', 'Created', 'Description'],
+    colWidths: [20, 25, 30]
   });
   versionList.forEach((version) => {
     table.push([
       version.RoutineName,
-      new Date(version.CreateTime).toLocaleString(),
+      moment(version.CreateTime).format('YYYY/MM/DD HH:mm:ss'),
       Base64.decode(version.Description)
     ]);
   });
-
-  console.log(table.toString());
+  console.table(table.toString());
 }

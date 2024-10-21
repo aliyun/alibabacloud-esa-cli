@@ -48,7 +48,8 @@ export async function handleListRoutes() {
 
 export async function displayRelatedRouteList(routeList: RelatedRouteProps[]) {
   const table = new Table({
-    head: ['Route', 'Site']
+    head: ['Route', 'Site'],
+    colWidths: [30, 30]
   });
   for (let i = 0; i < routeList.length; i++) {
     const route = routeList[i];

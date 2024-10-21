@@ -62,7 +62,36 @@ describe('handleInit', () => {
       _: [],
       $0: ''
     });
-    expect(std.out).toMatchSnapshot();
+    // expect(std.out).matchSnapshot();
+    expect(std.out).toMatchInlineSnapshot(`
+      [MockFunction log] {
+        "calls": [
+          [
+            "💬 Do you want to init git in your project?",
+          ],
+          [
+            "Git has been installed successfully.",
+          ],
+          [
+            "💬 Do you want to deploy your project?",
+          ],
+        ],
+        "results": [
+          {
+            "type": "return",
+            "value": undefined,
+          },
+          {
+            "type": "return",
+            "value": undefined,
+          },
+          {
+            "type": "return",
+            "value": undefined,
+          },
+        ],
+      }
+    `);
   });
 
   // it('clones the repository and updates project config -- uninstall git', async () => {

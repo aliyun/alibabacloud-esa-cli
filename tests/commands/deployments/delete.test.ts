@@ -25,7 +25,28 @@ describe('handle delete deployments', () => {
     expect(std.out).toBeCalledWith(
       expect.stringContaining('Delete success: id2')
     );
-    expect(std.out).matchSnapshot();
+    expect(std.out).toMatchInlineSnapshot(`
+      [MockFunction log] {
+        "calls": [
+          [
+            "🎉 [42m SUCCESS [49m [32mDelete success: id1[39m",
+          ],
+          [
+            "🎉 [42m SUCCESS [49m [32mDelete success: id2[39m",
+          ],
+        ],
+        "results": [
+          {
+            "type": "return",
+            "value": undefined,
+          },
+          {
+            "type": "return",
+            "value": undefined,
+          },
+        ],
+      }
+    `);
   });
 
   it('should handle delete routes fail', async () => {
@@ -43,6 +64,6 @@ describe('handle delete deployments', () => {
     });
     expect(logger.error).toBeCalledWith('🙅 Delete failed: id1');
     expect(logger.error).toBeCalledWith('🙅 Delete failed: id2');
-    expect(std.out).matchSnapshot();
+    expect(std.out).toMatchInlineSnapshot(`[MockFunction log]`);
   });
 });

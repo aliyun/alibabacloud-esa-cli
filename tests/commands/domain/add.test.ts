@@ -26,7 +26,21 @@ describe('handleAddDomain', () => {
       $0: ''
     });
 
-    expect(std.out).matchSnapshot();
+    expect(std.out).toMatchInlineSnapshot(`
+      [MockFunction log] {
+        "calls": [
+          [
+            "🎉 [42m SUCCESS [49m [32mBinding domain test.com to routine successfully[39m",
+          ],
+        ],
+        "results": [
+          {
+            "type": "return",
+            "value": undefined,
+          },
+        ],
+      }
+    `);
   });
 
   it('should handle adding a domain fail', async () => {
@@ -45,6 +59,6 @@ describe('handleAddDomain', () => {
       $0: ''
     });
 
-    expect(std.out).matchSnapshot();
+    expect(std.out).toMatchInlineSnapshot(`[MockFunction log]`);
   });
 });

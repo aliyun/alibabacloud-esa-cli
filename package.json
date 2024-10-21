@@ -16,7 +16,7 @@
     "eslint": "eslint src/ --ext .js,.jsx,.ts,.tsx",
     "lint-staged": "lint-staged",
     "prepare": "npm run build",
-    "test": "npx vitest tests/commands/init.test.ts",
+    "test": "vitest",
     "coverage": "vitest --coverage"
   },
   "keywords": [

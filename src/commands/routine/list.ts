@@ -49,6 +49,8 @@ export async function handleList(argv: ArgumentsCamelCase) {
   const res = await server.getRoutineUserInfo();
   const routineList = res?.Routines;
   if (routineList) {
+    console.log(chalk.bgGray('test'));
+    console.log('📃');
     console.log(t('test').d('test'));
     displayRoutineList(routineList);
   }

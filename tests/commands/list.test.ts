@@ -103,10 +103,24 @@ describe('displayRoutineList', () => {
       [MockFunction log] {
         "calls": [
           [
+            "[100mtest[49m",
+          ],
+          [
+            "📃",
+          ],
+          [
             "test",
           ],
         ],
         "results": [
+          {
+            "type": "return",
+            "value": undefined,
+          },
+          {
+            "type": "return",
+            "value": undefined,
+          },
           {
             "type": "return",
             "value": undefined,

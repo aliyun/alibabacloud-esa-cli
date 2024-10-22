@@ -70,5 +70,5 @@ export async function displayRoutineList(versionList: EdgeFunctionItem[]) {
     ]);
   });
 
-  console.log(table.toString());
+  // console.log(table.toString());
 }

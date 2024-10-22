@@ -778,5 +778,9 @@
   "init_build_project_success": {
     "en": "Project built successfully.",
     "zh_CN": "项目构建成功。"
+  },
+  "test": {
+    "en": "test",
+    "zh_CN": ""
   }
 }

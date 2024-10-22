@@ -99,33 +99,11 @@ describe('displayRoutineList', () => {
       _: [],
       $0: ''
     });
-    // expect(std.out).toMatchInlineSnapshot(`
-    //   [MockFunction log] {
-    //     "calls": [
-    //       [
-    //         "[100mtest[49m",
-    //       ],
-    //       [
-    //         "test",
-    //       ],
-    //     ],
-    //     "results": [
-    //       {
-    //         "type": "return",
-    //         "value": undefined,
-    //       },
-    //       {
-    //         "type": "return",
-    //         "value": undefined,
-    //       },
-    //     ],
-    //   }
-    // `);
     expect(std.out).toMatchInlineSnapshot(`
       [MockFunction log] {
         "calls": [
           [
-            "[100mtest[49m",
+            "test",
           ],
           [
             "test",
@@ -143,6 +121,7 @@ describe('displayRoutineList', () => {
         ],
       }
     `);
+
     // expect(std.out).toHaveBeenCalledWith(expect.stringContaining('Name'));
     // expect(std.out).toHaveBeenCalledWith(expect.stringContaining('Created'));
     // expect(std.out).toHaveBeenCalledWith(

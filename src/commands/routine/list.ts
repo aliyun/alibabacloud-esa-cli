@@ -49,11 +49,7 @@ export async function handleList(argv: ArgumentsCamelCase) {
   const res = await server.getRoutineUserInfo();
   const routineList = res?.Routines;
   if (routineList) {
-    console.log(
-      chalk.bold.bgGray(
-        `📃 ${t('list_routine_name_title').d('List all of routine')}:`
-      )
-    );
+    console.log('test');
     displayRoutineList(routineList);
   }
 }

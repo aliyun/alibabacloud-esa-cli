@@ -103,7 +103,7 @@ describe('displayRoutineList', () => {
       [MockFunction log] {
         "calls": [
           [
-            "[1m[100m📃 List all of routine:[49m[22m",
+            "test",
           ],
         ],
         "results": [

@@ -99,6 +99,28 @@ describe('displayRoutineList', () => {
       _: [],
       $0: ''
     });
+    // expect(std.out).toMatchInlineSnapshot(`
+    //   [MockFunction log] {
+    //     "calls": [
+    //       [
+    //         "[100mtest[49m",
+    //       ],
+    //       [
+    //         "test",
+    //       ],
+    //     ],
+    //     "results": [
+    //       {
+    //         "type": "return",
+    //         "value": undefined,
+    //       },
+    //       {
+    //         "type": "return",
+    //         "value": undefined,
+    //       },
+    //     ],
+    //   }
+    // `);
     expect(std.out).toMatchInlineSnapshot(`
       [MockFunction log] {
         "calls": [
@@ -106,17 +128,10 @@ describe('displayRoutineList', () => {
             "[100mtest[49m",
           ],
           [
-            "📃",
-          ],
-          [
             "test",
           ],
         ],
         "results": [
-          {
-            "type": "return",
-            "value": undefined,
-          },
           {
             "type": "return",
             "value": undefined,

@@ -3,12 +3,11 @@ name: CI for CLI Project
 on:
   push:
     branches:
-      - master # 在主分支推送时触发
-      - '**' # 任何分支推送时触发
+      - '**' 
   pull_request:
     branches:
-      - master # 在针对主分支的拉取请求时触发
-      - '**' # 任何分支的拉取请求
+      - '**' 
+      
 jobs:
   build:
     runs-on: macos-latest
@@ -23,15 +22,15 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
-
+          
       - name: Install dependencies
         run: npm install
-
+        
       - name: Run tests
-        run: npm test # 运行测试
-
+        run: npm test
+        
       - name: Build project
-        run: npm run build
-
+        run: npm run build  
+        
       - name: Package CLI
         run: npm pack

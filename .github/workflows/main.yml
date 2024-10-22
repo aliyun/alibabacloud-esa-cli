@@ -11,7 +11,7 @@ on:
       - '**'          # 任何分支的拉取请求
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     strategy:
       matrix:
         node-version: [18.x, 20.x, 22.x]    

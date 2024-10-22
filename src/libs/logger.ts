@@ -182,9 +182,10 @@ class Logger {
     this.log(chalk.green(`$ sudo chmod -R 777 ${localPath}`));
   }
 
-  table(head: string[], data: TableRow[]) {
+  table(head: string[], data: TableRow[], width: number[] = []): void {
     const table = new Table({
-      head
+      head,
+      colWidths: width
     });
     table.push(...data);
 

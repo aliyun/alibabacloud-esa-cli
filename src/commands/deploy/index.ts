@@ -37,6 +37,7 @@ import { exit } from 'process';
 import path from 'path';
 import { createEdgeRoutine } from '../commit/index.js';
 import { checkRoutineExist } from '../../utils/checkIsRoutineCreated.js';
+import moment from 'moment';
 
 const deploy: CommandModule = {
   command: 'deploy [entry]',
@@ -277,7 +278,7 @@ export async function displayVersionList(
   const data: string[][] = [];
   for (let i = 0; i < versionList.length; i++) {
     const version = versionList[i];
-    const createTime = new Date(version.CreateTime).toLocaleString();
+    const createTime = moment(version.CreateTime).format('YYYY/MM/DD HH:mm:ss');
     const tags = [
       version.CodeVersion === stagingVersion ? chalk.bgYellow('Active') : '',
       version.CodeVersion === productionVersion ? chalk.bgGreen('Active') : ''
@@ -296,6 +297,7 @@ export async function displayVersionList(
       t('deploy_table_header_created').d('Created'),
       t('deploy_table_header_description').d('Description')
     ],
-    data
+    data,
+    [25, 25, 15]
   );
 }

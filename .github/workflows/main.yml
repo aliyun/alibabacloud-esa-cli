@@ -3,22 +3,21 @@ name: CI for CLI Project
 on:
   push:
     branches:
-      - master        # 在主分支推送时触发
-      - '**'          # 任何分支推送时触发
+      - '**' 
   pull_request:
     branches:
-      - master        # 在针对主分支的拉取请求时触发
-      - '**'          # 任何分支的拉取请求
+      - '**' 
+      
 jobs:
   build:
     runs-on: macos-latest
     strategy:
       matrix:
-        node-version: [18.x, 20.x, 22.x]    
+        node-version: [18.x, 20.x, 22.x]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        
+
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
         with:
@@ -28,10 +27,10 @@ jobs:
         run: npm install
         
       - name: Run tests
-        run: npm test  # 运行测试
+        run: npm test
         
       - name: Build project
         run: npm run build  
         
       - name: Package CLI
-        run: npm pack 
+        run: npm pack

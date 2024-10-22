@@ -141,7 +141,6 @@ export async function handleInit(argv: ArgumentsCamelCase) {
     if (!projectConfig) return logger.notInProject();
 
     const newPath = process.cwd() + '/' + name;
-    console.log(newPath);
     targetPath = newPath;
     if (fs.existsSync(newPath)) {
       logger.error(

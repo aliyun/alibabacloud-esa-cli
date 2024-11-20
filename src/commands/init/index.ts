@@ -23,6 +23,7 @@ import { exit } from 'process';
 import { checkRoutineExist } from '../../utils/checkIsRoutineCreated.js';
 
 import { execSync } from 'child_process';
+import { getDirName } from '../../utils/fileUtils/base.js';
 
 const secondSetOfItems = [
   { label: 'Yes', value: 'yesInstall' },
@@ -50,10 +51,12 @@ export default init;
 
 export async function handleInit(argv: ArgumentsCamelCase) {
   const { config } = argv;
-  // // 更新npm包
-  // const __dirname = getDirName(import.meta.url);
-  // const projectPath = path.join(__dirname, '../../..');
-  // execSync('npm install', { stdio: 'ignore', cwd: projectPath });
+  // 更新npm包
+  const __dirname = getDirName(import.meta.url);
+  const projectPath = path.join(__dirname, '../../..');
+  logger.info(t('init_update_info').d('Updating template...'));
+  execSync('npm install esa-template', { stdio: 'ignore', cwd: projectPath });
+  logger.success(t('init_update_success').d('Template update complete.'));
 
   if (config !== undefined) {
     await generateConfigFile(String(config));

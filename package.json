@@ -71,7 +71,7 @@
     "chokidar": "^3.5.3",
     "cli-table3": "^0.6.5",
     "cross-spawn": "^7.0.3",
-    "esa-template": "^0.0.1-beta.2",
+    "esa-template": "^0.0.1-beta.6",
     "esbuild": "^0.21.1",
     "esbuild-plugin-less": "^1.3.8",
     "form-data": "^4.0.0",

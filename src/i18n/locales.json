@@ -782,5 +782,13 @@
   "test": {
     "en": "test",
     "zh_CN": ""
+  },
+  "init_update_info": {
+    "en": "Updating template...",
+    "zh_CN": "模版更新中..."
+  },
+  "init_update_success": {
+    "en": "Template update complete.",
+    "zh_CN": "模版更新完成"
   }
 }

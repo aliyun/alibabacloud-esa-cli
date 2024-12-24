@@ -63,11 +63,11 @@ export async function handleLogin(): Promise<void> {
           'The previously entered Access Key ID (AK) and Secret Access Key (SK) are incorrect. Please enter them again.'
         )
       );
-      logger.info(`${t('login_logging').d('Logging in')}...`);
+      logger.log(`${t('login_logging').d('Logging in')}...`);
       await getUserInputAuthInfo();
     }
   } else {
-    logger.info(`${t('login_logging').d('Logging in')}...`);
+    logger.log(`${t('login_logging').d('Logging in')}...`);
     await getUserInputAuthInfo();
   }
 }

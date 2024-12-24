@@ -28,7 +28,7 @@
     "zh_CN": "代码上传成功。"
   },
   "commit_success": {
-    "en": "Code version committed successfully.",
+    "en": "Generate code version success!",
     "zh_CN": "代码版本提交成功。"
   },
   "commit_fail": {
@@ -781,6 +781,62 @@
   },
   "test": {
     "en": "test",
+    "zh_CN": ""
+  },
+  "dev_server_start": {
+    "en": "Dev server starting...",
+    "zh_CN": ""
+  },
+  "dev_server_started": {
+    "en": "Dev server started successfully",
+    "zh_CN": ""
+  },
+  "dev_checking_runtime": {
+    "en": "Checking runtime",
+    "zh_CN": ""
+  },
+  "dev_process_fail": {
+    "en": "Dev server start failed.",
+    "zh_CN": ""
+  },
+  "dev_worker_timeout": {
+    "en": "Worker start timeout",
+    "zh_CN": ""
+  },
+  "upload_code_failed": {
+    "en": "An error occurred while trying to upload the code.",
+    "zh_CN": ""
+  },
+  "oss_config_not_found": {
+    "en": "Failed to retrieve OSS configuration information.",
+    "zh_CN": ""
+  },
+  "oss_upload_failed": {
+    "en": "Failed to upload to OSS",
+    "zh_CN": ""
+  },
+  "publish_success": {
+    "en": "Publish success!",
+    "zh_CN": ""
+  },
+  "start_quick_deploy": {
+    "en": "Starting quick deploy...",
+    "zh_CN": ""
+  },
+  "upload_oss_success": {
+    "en": "Upload code success!",
+    "zh_CN": ""
+  },
+  "upload_code": {
+    "en": "Uploading code...",
+    "zh_CN": ""
+  },
+  "commit_code": {
+    "en": "Generating code version...",
+    "zh_CN": ""
+  },
+  "publish_code": {
+    "en": "Publishing code to production environment...",
     "zh_CN": ""
   }
 }

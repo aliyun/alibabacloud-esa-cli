@@ -1,3 +1,9 @@
+import * as $Util from '@alicloud/tea-util';
+
+export type OptionalProps<T> = {
+  [K in keyof T as undefined extends T[K] ? K : never]: T[K];
+};
+
 export interface CodeVersionProps {
   codeVersion: string;
   codeDescription: string;
@@ -273,3 +279,20 @@ export interface IOssConfig {
   policy: string;
   'x:codeDescription': string;
 }
+
+export interface ApiMethod<RequestType = any, ResponseType = any> {
+  (runtime: $Util.RuntimeOptions): Promise<ResponseType>;
+  (request: RequestType, runtime: $Util.RuntimeOptions): Promise<ResponseType>;
+}
+
+export interface IApiClient {
+  [method: string]: ApiMethod; // 使用索引签名来表示所有的方法
+}
+
+export interface ApiError {
+  code: string;
+  message: string;
+  data: string;
+}
+
+export type Map = Record<string, any>;

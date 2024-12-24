@@ -3,12 +3,13 @@ import { Box, Text, useApp, useInput, useStdin, render } from 'ink';
 import chalk from 'chalk';
 import logger from '../../libs/logger.js';
 import openInBrowser from '../../utils/openInBrowser.js';
-import WorkerServer from './server.js';
+import WorkerServer from './mockWorker/server.js';
+import Ew2Server from './ew2/server.js';
 import { getDevOpenBrowserUrl } from '../../utils/fileUtils/index.js';
 import t from '../../i18n/index.js';
 
 const InteractionBox: FC<{
-  worker?: WorkerServer;
+  worker?: WorkerServer | Ew2Server;
 }> = ({ worker }) => {
   const { exit } = useApp();
   const inspectLink = chalk.underline.blue('chrome://inspect/#devices');
@@ -72,7 +73,7 @@ const InteractionBox: FC<{
   );
 };
 
-const doProcess = (worker?: WorkerServer) => {
+const doProcess = (worker?: WorkerServer | Ew2Server) => {
   const devElement = render(<InteractionBox worker={worker} />);
   return {
     devElement,

@@ -105,8 +105,9 @@ async function displayListPrompt(routineDetail: GetRoutineRes) {
     canaryEnv.SpecName,
     canaryEnv.CanaryAreaList?.join(', ')
   );
-  logger.info(
+  logger.log(
     `${t('show_default_url').d(`You can visit:`)} ${chalk.yellowBright(routineDetail.data.DefaultRelatedRecord)}`
   );
+  logger.info(routineDetail.data.DefaultRelatedRecord);
   logger.block();
 }

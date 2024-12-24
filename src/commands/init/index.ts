@@ -116,7 +116,8 @@ export async function handleInit(argv: ArgumentsCamelCase) {
   const preInstallDependencies = async () => {
     const packageJsonPath = path.join(targetPath, 'package.json');
     if (fs.existsSync(packageJsonPath)) {
-      logger.info(
+      logger.info('Install dependencies');
+      logger.log(
         t('init_install_dependence').d('⌛️ Installing dependencies...')
       );
       execSync('npm install', { stdio: 'inherit', cwd: targetPath });
@@ -156,7 +157,7 @@ export async function handleInit(argv: ArgumentsCamelCase) {
     updateProjectConfigFile(projectConfig, newPath);
     preInstallDependencies();
 
-    logger.info(t('init_git').d('Do you want to init git in your project?'));
+    logger.log(t('init_git').d('Do you want to init git in your project?'));
     SelectItems({
       items: secondSetOfItems,
       handleSelect: handleSecondSelection
@@ -167,9 +168,9 @@ export async function handleInit(argv: ArgumentsCamelCase) {
     if (item.value === 'yesInstall') {
       installGit(targetPath);
     } else {
-      logger.info(t('init_skip_git').d('Git installation was skipped.'));
+      logger.log(t('init_skip_git').d('Git installation was skipped.'));
     }
-    logger.info(t('auto_deploy').d('Do you want to deploy your project?'));
+    logger.log(t('auto_deploy').d('Do you want to deploy your project?'));
     SelectItems({
       items: secondSetOfItems,
       handleSelect: handleThirdSelection

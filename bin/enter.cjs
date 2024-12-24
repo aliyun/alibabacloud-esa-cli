@@ -35,7 +35,6 @@ const main = () => {
       process.disconnect && process.disconnect();
     })
     .on('exit', (code) => {
-      // console.log('Get exit', code);
       process.exit && process.exit(code);
     });
 };

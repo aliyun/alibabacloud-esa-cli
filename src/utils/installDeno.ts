@@ -5,8 +5,8 @@ import logger from '../libs/logger.js';
 import path from 'path';
 import t from '../i18n/index.js';
 
-export async function preCheckRuntime(): Promise<string | false> {
-  const command = await checkRuntimeInstalled();
+export async function preCheckDeno(): Promise<string | false> {
+  const command = await checkDenoInstalled();
   if (!command) {
     logger.error(
       t('install_runtime_explain').d(
@@ -19,20 +19,19 @@ export async function preCheckRuntime(): Promise<string | false> {
   return command;
 }
 
-function checkDeno(command: string) {
-  return new Promise((resolve, reject) => {
-    exec(`${command} --version`, (err) => {
-      if (err) {
-        reject();
-      } else {
-        resolve(command);
-      }
-    });
-  });
-}
-
-export function checkRuntimeInstalled(): Promise<string | false> {
+export function checkDenoInstalled(): Promise<string | false> {
   const homeDeno = path.resolve(os.homedir(), '.deno/bin/deno');
+  function checkDeno(command: string) {
+    return new Promise((resolve, reject) => {
+      exec(`${command} --version`, (err) => {
+        if (err) {
+          reject();
+        } else {
+          resolve(command);
+        }
+      });
+    });
+  }
   return new Promise((resolve) => {
     // @ts-ignore
     Promise.any([checkDeno('deno'), checkDeno(homeDeno)])

@@ -1,11 +1,11 @@
 import path from 'path';
 import fs from 'fs';
-import logger from '../../libs/logger.js';
-import devBuild from './config/devBuild.js';
-import t from '../../i18n/index.js';
-import { getDevConf } from '../../utils/fileUtils/index.js';
-import { getRoot, getDirName } from '../../utils/fileUtils/base.js';
-import { checkPort } from '../../utils/checkDevPort.js';
+import logger from '../../../libs/logger.js';
+import devBuild from '../build.js';
+import t from '../../../i18n/index.js';
+import { getDevConf } from '../../../utils/fileUtils/index.js';
+import { getRoot, getDirName } from '../../../utils/fileUtils/base.js';
+import { checkPort } from '../../../utils/checkDevPort.js';
 
 const generateEntry = async (
   id: string,
@@ -16,11 +16,11 @@ const generateEntry = async (
 
   const devDir = path.resolve(userRoot, '.dev');
   const devEntry = path.resolve(devDir, `devEntry-${id}.js`);
-  const devEntryTemp = path.resolve(__dirname, './config/devEntry.js');
+  const devEntryTemp = path.resolve(__dirname, './devEntry.js');
   const devEntryTempFile = fs.readFileSync(devEntryTemp, 'utf-8');
 
   const mockDevDir = path.resolve(userRoot, '.dev/mock');
-  const mockDir = path.resolve(__dirname, './config/mock');
+  const mockDir = path.resolve(__dirname, './mock');
 
   if (!fs.existsSync(devDir)) {
     await fs.promises.mkdir(devDir);
@@ -53,10 +53,12 @@ const prepare = async (
 ) => {
   const options: Record<string, any> = {};
   const currentOptions = { entry, port, localUpstream };
+  // 支持同时跑多个 deno
   const id = new Date().getTime().toString();
   // @ts-ignore
   global.id = id;
   await generateEntry(id, entry, userRoot);
+  // 给每一次 dev 的配置项，在一个文件中通过 id 区分
   if (fs.existsSync(configPath)) {
     const currentConfig = fs
       .readFileSync(configPath, 'utf-8')

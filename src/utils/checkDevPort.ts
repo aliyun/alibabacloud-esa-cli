@@ -93,7 +93,7 @@ const checkAndInputPort = async (denoPort: number, inspectPort: number) => {
       }
     } catch (_) {
       const option = chalk.green('esa dev --port <port>');
-      logger.info(
+      logger.log(
         t('dev_port_used_advice', { option }).d(
           `You can use ${option} to specify another port.`
         )
@@ -126,7 +126,7 @@ const checkAndInputPort = async (denoPort: number, inspectPort: number) => {
       ).port;
     } catch (_) {
       const option = chalk.green('esa dev --inspect-port <port>');
-      logger.info(
+      logger.log(
         t('dev_port_used_advice', { option }).d(
           `You can use ${option} to specify another port.`
         )

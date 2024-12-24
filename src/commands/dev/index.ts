@@ -10,12 +10,16 @@ import {
 import { getRoot } from '../../utils/fileUtils/base.js';
 import SelectItems, { SelectItem } from '../../components/selectInput.js';
 import logger from '../../libs/logger.js';
-import devPack from './devPack.js';
-import WorkerServer from './server.js';
-import { preCheckRuntime } from '../../utils/installRuntime.js';
+import MockServer from './mockWorker/server.js';
+import mockPack from './mockWorker/devPack.js';
+import Ew2Server from './ew2/server.js';
+import ew2Pack from './ew2/devPack.js';
+import { preCheckDeno } from '../../utils/installDeno.js';
+import { preCheckEw2 } from '../../utils/installEw2.js';
 import debounce from '../../utils/debounce.js';
 import t from '../../i18n/index.js';
 import checkAndInputPort from '../../utils/checkDevPort.js';
+import { checkOS, Platforms } from '../../utils/checkOS.js';
 
 let yargsIns: Argv;
 const dev: CommandModule = {
@@ -61,7 +65,7 @@ const dev: CommandModule = {
   },
   handler: async (argv: ArgumentsCamelCase) => {
     let { port, inspectPort } = argv;
-    let userFileRepacking = false; // flag of user code repack not .dev file change
+    let userFileRepacking = false; // Indicates that user code repacking does not change the .dev file
     const { entry, minify, refreshCommand, localUpstream, help } = argv;
 
     if (yargsIns && help) {
@@ -69,19 +73,23 @@ const dev: CommandModule = {
       return;
     }
 
+    // Get options and set global variables
     const projectConfig = getProjectConfig();
+
     if (!projectConfig) {
-      if (entry) {
-        try {
-          await selectToCreateConf(entry as string);
-        } catch (_) {
-          logger.notInProject();
-          process.exit(1);
-        }
-      } else {
+      if (!entry) {
         return logger.notInProject();
       }
-    } else if (entry) {
+      try {
+        // If no config is found and an entry is provided, create a new one.
+        await selectToCreateConf(entry as string);
+      } catch (_) {
+        logger.notInProject();
+        process.exit(1);
+      }
+    }
+
+    if (entry) {
       // @ts-ignore
       global.entry = entry;
     }
@@ -104,14 +112,20 @@ const dev: CommandModule = {
     }
 
     if (inspectPort) {
-      inspectPort = Number(inspectPort);
+      if (Array.isArray(inspectPort)) {
+        inspectPort = Number(inspectPort[0]);
+      } else {
+        inspectPort = Number(inspectPort);
+        if (isNaN(inspectPort as number)) {
+          logger.warn(
+            t('dev_import_port_invalid').d(
+              'Invalid port entered, default port will be used.'
+            )
+          );
+        }
+      }
       // @ts-ignore
       global.inspectPort = inspectPort;
-    }
-
-    if (minify) {
-      // @ts-ignore
-      global.minify = minify;
     }
 
     if (minify) {
@@ -123,32 +137,59 @@ const dev: CommandModule = {
       // @ts-ignore
       global.localUpstream = localUpstream;
     }
-    const runtimeCommand = await preCheckRuntime();
-    if (!runtimeCommand) {
-      return;
+
+    const OS = checkOS();
+    let useEw2 = false;
+
+    if (OS === Platforms.AppleArm || Platforms.AppleIntel) {
+      useEw2 = true;
     }
+
+    const checkFunc = useEw2 ? preCheckEw2 : preCheckDeno;
+    const checkResult = await checkFunc();
+    if (!checkResult) {
+      process.exit(1);
+    }
+    console.log('next');
     const speDenoPort = getDevConf('port', 'dev', 18080);
     const speInspectPort = getDevConf('inspectPort', 'dev', 9229);
+    const result = await checkAndInputPort(speDenoPort, speInspectPort);
+    // @ts-ignore
+    global.port = result.denoPort;
+    // @ts-ignore
+    global.inspectPort = result.inspectPort;
+
+    const devPack = useEw2 ? ew2Pack : mockPack;
     try {
-      const result = await checkAndInputPort(speDenoPort, speInspectPort);
-      // @ts-ignore
-      global.port = result.denoPort;
-      // @ts-ignore
-      global.inspectPort = result.inspectPort;
+      await devPack();
     } catch (err) {
       process.exit(1);
     }
 
-    logger.info(`${t('dev_build_start').d('Starting build process')}...`);
-    await devPack();
-    const worker = new WorkerServer({ command: runtimeCommand });
+    let worker;
+
+    if (useEw2) {
+      worker = new Ew2Server({ onClose: onWorkerClosed });
+    } else {
+      worker = new MockServer({ command: checkResult as string });
+    }
+
+    try {
+      await worker.start();
+    } catch (err) {
+      console.log('Track err', err);
+      process.exit(1);
+    }
+
     const ignored = (path: string) => {
       return /(^|[\/\\])\.(?!dev($|[\/\\]))/.test(path);
     };
+
     const watcher = chokidar.watch([`${getRoot()}/src`, `${getRoot()}/.dev`], {
       ignored,
       persistent: true
     });
+
     watcher.on(
       'change',
       debounce(async (path: string) => {
@@ -160,7 +201,8 @@ const dev: CommandModule = {
           worker.restart();
           return;
         }
-        logger.info(
+        logger.info('Dev repack');
+        logger.log(
           `${t('dev_repacking').d('Detected local file changes, re-packaging')}...`
         );
         if (refreshCommand) {
@@ -173,9 +215,14 @@ const dev: CommandModule = {
         await worker.restart();
       }, 500)
     );
-    const { devElement } = doProcess(worker);
+
+    var { devElement, exit } = doProcess(worker);
     const { waitUntilExit } = devElement;
+
     await waitUntilExit();
+    function onWorkerClosed() {
+      exit && exit();
+    }
     watcher.close();
   }
 };
@@ -239,7 +286,8 @@ async function execRefreshCommand(cmd: string) {
 
 function selectToCreateConf(entry: string) {
   return new Promise((resolve, reject) => {
-    logger.info(
+    logger.info('Configuration file not found');
+    logger.log(
       t('dev_create_config').d(
         'Configuration file not found. Would you like to create one?'
       )

@@ -168,7 +168,7 @@ class Logger {
 
   notInProject() {
     const initCommand = chalk.green('esa init');
-    this.logger.error(
+    this.error(
       t('common_not_edge_project', { initCommand }).d(
         `You are not in an esa project, Please run ${initCommand} to initialize a project, or enter an esa project.`
       )

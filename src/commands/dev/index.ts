@@ -150,7 +150,6 @@ const dev: CommandModule = {
     if (!checkResult) {
       process.exit(1);
     }
-    console.log('next');
     const speDenoPort = getDevConf('port', 'dev', 18080);
     const speInspectPort = getDevConf('inspectPort', 'dev', 9229);
     const result = await checkAndInputPort(speDenoPort, speInspectPort);

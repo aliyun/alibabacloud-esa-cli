@@ -1,6 +1,4 @@
-import path from 'path';
-import { execSync } from 'child_process';
-import { getSummary, SUMMARIES_LIST } from '../../commands/common/constant.js';
+import { getSummary } from '../../commands/common/constant.js';
 import chalk from 'chalk';
 
 interface TemplateInterface {

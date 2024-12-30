@@ -10,6 +10,7 @@ import {
   getProjectConfig,
   getTemplatesConfig,
   templateHubPath,
+  TemplateItem,
   updateProjectConfigFile
 } from '../../utils/fileUtils/index.js';
 import t from '../../i18n/index.js';
@@ -23,7 +24,26 @@ import { exit } from 'process';
 import { checkRoutineExist } from '../../utils/checkIsRoutineCreated.js';
 
 import { execSync } from 'child_process';
-import { getDirName } from '../../utils/fileUtils/base.js';
+
+import MultiLevelSelect from '../../components/mutiLevelSelect.js';
+
+export const getTemplateInstances = (templateHubPath: string) => {
+  return fs
+    .readdirSync(templateHubPath)
+    .filter((item) => {
+      const itemPath = path.join(templateHubPath, item);
+      return (
+        fs.statSync(itemPath).isDirectory() &&
+        !['.git', 'node_modules', 'lib'].includes(item)
+      );
+    })
+    .map((item) => {
+      const projectPath = path.join(templateHubPath, item);
+      const projectConfig = getProjectConfig(projectPath);
+      const templateName = projectConfig?.name ?? '';
+      return new Template(projectPath, templateName);
+    });
+};
 
 const secondSetOfItems = [
   { label: 'Yes', value: 'yesInstall' },
@@ -49,14 +69,61 @@ const init: CommandModule = {
 
 export default init;
 
+export const preInstallDependencies = async (targetPath: string) => {
+  const packageJsonPath = path.join(targetPath, 'package.json');
+  if (fs.existsSync(packageJsonPath)) {
+    logger.info(
+      t('init_install_dependence').d('⌛️ Installing dependencies...')
+    );
+    execSync('npm install esa-template', {
+      stdio: 'inherit',
+      cwd: targetPath
+    });
+    logger.success(
+      t('init_install_dependencies_success').d(
+        'Dependencies installed successfully.'
+      )
+    );
+    logger.log(t('init_build_project').d('⌛️ Building project...'));
+    execSync('npm run build', { stdio: 'inherit', cwd: targetPath });
+    logger.success(
+      t('init_build_project_success').d('Project built successfully.')
+    );
+  }
+};
+
+export const transferTemplatesToSelectItem = (
+  configs: TemplateItem[],
+  templateInstanceList: Template[]
+): SelectItem[] => {
+  if (!configs) return [];
+  return configs.map((config) => {
+    const name = config.Title_EN;
+    const value =
+      templateInstanceList.find((template) => {
+        return name === template.title;
+      })?.path ?? '';
+    const children = transferTemplatesToSelectItem(
+      config.children,
+      templateInstanceList
+    );
+    return {
+      label: name,
+      value: value,
+      key: name,
+      children
+    };
+  });
+};
+
 export async function handleInit(argv: ArgumentsCamelCase) {
   const { config } = argv;
   // 更新npm包
-  const __dirname = getDirName(import.meta.url);
-  const projectPath = path.join(__dirname, '../../..');
-  logger.info(t('init_update_info').d('Updating template...'));
-  execSync('npm install esa-template', { stdio: 'ignore', cwd: projectPath });
-  logger.success(t('init_update_success').d('Template update complete.'));
+  // const __dirname = getDirName(import.meta.url);
+  // const projectPath = path.join(__dirname, '../../..');
+  // logger.info(t('init_update_info').d('Updating template...'));
+  // execSync('npm install esa-template', { stdio: 'ignore', cwd: projectPath });
+  // logger.success(t('init_update_success').d('Template update complete.'));
 
   if (config !== undefined) {
     await generateConfigFile(String(config));
@@ -78,63 +145,16 @@ export async function handleInit(argv: ArgumentsCamelCase) {
     return;
   }
 
-  const templatePaths = fs.readdirSync(templateHubPath).filter((item) => {
-    const itemPath = path.join(templateHubPath, item);
-    const stats = fs.statSync(itemPath);
-    return (
-      stats.isDirectory() &&
-      item !== '.git' &&
-      item !== 'node_modules' &&
-      item !== 'lib'
-    );
-  });
-
-  const templateList = templatePaths.map((item) => {
-    const projectPath = templateHubPath + '/' + item;
-    const projectConfig = getProjectConfig(projectPath);
-    const templateName = projectConfig?.name ?? '';
-    return new Template(projectPath, templateName);
-  });
-
+  const templateInstanceList = getTemplateInstances(templateHubPath);
   const templateConfig = getTemplatesConfig();
-  const firstSetOfItems = templateConfig
-    .map((template) => {
-      const name = template.Title_EN;
-      const templatePath = templateList.find((item) => {
-        return name === item.title;
-      });
-      return templatePath
-        ? {
-            label: name,
-            value: templatePath.path
-          }
-        : null;
-    })
-    .filter((item) => item !== null) as SelectItem[];
 
+  const firstSetOfItems = transferTemplatesToSelectItem(
+    templateConfig,
+    templateInstanceList
+  );
   let selectTemplate: Template;
   let targetPath: string;
   let projectConfig: ProjectConfig | null;
-
-  const preInstallDependencies = async () => {
-    const packageJsonPath = path.join(targetPath, 'package.json');
-    if (fs.existsSync(packageJsonPath)) {
-      logger.info(
-        t('init_install_dependence').d('⌛️ Installing dependencies...')
-      );
-      execSync('npm install', { stdio: 'inherit', cwd: targetPath });
-      logger.success(
-        t('init_install_dependencies_success').d(
-          'Dependencies installed successfully.'
-        )
-      );
-      logger.log(t('init_build_project').d('⌛️ Building project...'));
-      execSync('npm run build', { stdio: 'inherit', cwd: targetPath });
-      logger.success(
-        t('init_build_project_success').d('Project built successfully.')
-      );
-    }
-  };
 
   const handleFirstSelection = async (item: SelectItem) => {
     const configPath = item.value;
@@ -157,7 +177,7 @@ export async function handleInit(argv: ArgumentsCamelCase) {
 
     projectConfig.name = name;
     updateProjectConfigFile(projectConfig, newPath);
-    preInstallDependencies();
+    preInstallDependencies(targetPath);
 
     logger.info(t('init_git').d('Do you want to init git in your project?'));
     SelectItems({
@@ -202,7 +222,7 @@ export async function handleInit(argv: ArgumentsCamelCase) {
   };
 
   try {
-    SelectItems({
+    MultiLevelSelect({
       items: firstSetOfItems,
       handleSelect: handleFirstSelection
     });

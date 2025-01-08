@@ -779,65 +779,61 @@
     "en": "Project built successfully.",
     "zh_CN": "项目构建成功。"
   },
-  "test": {
-    "en": "test",
-    "zh_CN": ""
-  },
   "dev_server_start": {
     "en": "Dev server starting...",
-    "zh_CN": ""
+    "zh_CN": "Dev 服务启动中..."
   },
   "dev_server_started": {
     "en": "Dev server started successfully",
-    "zh_CN": ""
+    "zh_CN": "Dev 服务已启动"
   },
   "dev_checking_runtime": {
     "en": "Checking runtime",
-    "zh_CN": ""
+    "zh_CN": "检查运行时环境"
   },
   "dev_process_fail": {
     "en": "Dev server start failed.",
-    "zh_CN": ""
+    "zh_CN": "Dev 服务启动失败"
   },
   "dev_worker_timeout": {
     "en": "Worker start timeout",
-    "zh_CN": ""
+    "zh_CN": "Worker 启动超时"
   },
   "upload_code_failed": {
     "en": "An error occurred while trying to upload the code.",
-    "zh_CN": ""
+    "zh_CN": "上传代码时发生错误。"
   },
   "oss_config_not_found": {
     "en": "Failed to retrieve OSS configuration information.",
-    "zh_CN": ""
+    "zh_CN": "无法获取OSS配置信息。"
   },
   "oss_upload_failed": {
     "en": "Failed to upload to OSS",
-    "zh_CN": ""
+    "zh_CN": "上传到OSS失败"
   },
   "publish_success": {
     "en": "Publish success!",
-    "zh_CN": ""
+    "zh_CN": "发布成功！"
   },
   "start_quick_deploy": {
     "en": "Starting quick deploy...",
-    "zh_CN": ""
+    "zh_CN": "开始快速部署..."
   },
   "upload_oss_success": {
     "en": "Upload code success!",
-    "zh_CN": ""
+    "zh_CN": "上传代码成功！"
   },
   "upload_code": {
     "en": "Uploading code...",
-    "zh_CN": ""
+    "zh_CN": "正在上传代码..."
   },
   "commit_code": {
     "en": "Generating code version...",
-    "zh_CN": ""
+    "zh_CN": "生成代码版本..."
   },
   "publish_code": {
     "en": "Publishing code to production environment...",
-    "zh_CN": ""
+    "zh_CN": "正在将代码发布到生产环境..."
   },
   "init_update_info": {
     "en": "Updating template...",

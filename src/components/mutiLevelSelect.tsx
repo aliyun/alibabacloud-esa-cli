@@ -3,6 +3,7 @@ import { render, Text, useApp } from 'ink';
 import SelectInput from 'ink-select-input';
 import Item from './selectItem.js';
 import { SelectItem } from './selectInput.js';
+import t from '../i18n/index.js';
 
 export interface Props {
   items: SelectItem[];
@@ -15,13 +16,13 @@ const Indicator: React.FC<{ isSelected?: boolean }> = ({ isSelected }) => {
 };
 
 const EXIT_ITEM: SelectItem = {
-  label: '退出',
+  label: t('exit_select_init_template').d('Exit'),
   key: 'exit',
   value: '__exit__'
 };
 
 const RETURN_ITEM: SelectItem = {
-  label: '返回',
+  label: t('return_select_init_template').d('Return'),
   key: 'return',
   value: '__return__'
 };

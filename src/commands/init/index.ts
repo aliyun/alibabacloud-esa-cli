@@ -7,6 +7,7 @@ import { installGit } from '../../libs/git/index.js';
 import { descriptionInput } from '../../components/descriptionInput.js';
 import {
   generateConfigFile,
+  getCliConfig,
   getProjectConfig,
   getTemplatesConfig,
   templateHubPath,
@@ -94,7 +95,8 @@ export const preInstallDependencies = async (targetPath: string) => {
 
 export const transferTemplatesToSelectItem = (
   configs: TemplateItem[],
-  templateInstanceList: Template[]
+  templateInstanceList: Template[],
+  lang?: string
 ): SelectItem[] => {
   if (!configs) return [];
   return configs.map((config) => {
@@ -108,7 +110,7 @@ export const transferTemplatesToSelectItem = (
       templateInstanceList
     );
     return {
-      label: name,
+      label: lang === 'en' ? config.Title_EN : config.Title_ZH,
       value: value,
       key: name,
       children
@@ -147,16 +149,24 @@ export async function handleInit(argv: ArgumentsCamelCase) {
 
   const templateInstanceList = getTemplateInstances(templateHubPath);
   const templateConfig = getTemplatesConfig();
+  const cliConfig = getCliConfig();
+  const lang = cliConfig?.lang ?? 'en';
 
   const firstSetOfItems = transferTemplatesToSelectItem(
     templateConfig,
-    templateInstanceList
+    templateInstanceList,
+    lang
   );
+
   let selectTemplate: Template;
   let targetPath: string;
   let projectConfig: ProjectConfig | null;
 
   const handleFirstSelection = async (item: SelectItem) => {
+    if (item.key === 'exit') {
+      process.exit(0);
+    }
+
     const configPath = item.value;
     selectTemplate = new Template(configPath, name);
 

@@ -790,5 +790,13 @@
   "init_update_success": {
     "en": "Template update complete.",
     "zh_CN": "模版更新完成"
+  },
+  "exit_select_init_template": {
+    "en": "Exit",
+    "zh_CN": "退出"
+  },
+  "return_select_init_template": {
+    "en": "Return",
+    "zh_CN": "返回"
   }
 }

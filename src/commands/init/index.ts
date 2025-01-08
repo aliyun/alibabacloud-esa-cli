@@ -27,6 +27,8 @@ import { checkRoutineExist } from '../../utils/checkIsRoutineCreated.js';
 import { execSync } from 'child_process';
 
 import MultiLevelSelect from '../../components/mutiLevelSelect.js';
+import { getDirName } from '../../utils/fileUtils/base.js';
+import { yesNoPromptAndExecute } from '../deploy/helper.js';
 
 export const getTemplateInstances = (templateHubPath: string) => {
   return fs
@@ -73,9 +75,7 @@ export default init;
 export const preInstallDependencies = async (targetPath: string) => {
   const packageJsonPath = path.join(targetPath, 'package.json');
   if (fs.existsSync(packageJsonPath)) {
-    logger.info(
-      t('init_install_dependence').d('⌛️ Installing dependencies...')
-    );
+    logger.log(t('init_install_dependence').d('⌛️ Installing dependencies...'));
     execSync('npm install esa-template', {
       stdio: 'inherit',
       cwd: targetPath
@@ -118,14 +118,77 @@ export const transferTemplatesToSelectItem = (
   });
 };
 
+async function checkAndUpdatePackage(packageName: string): Promise<void> {
+  try {
+    // 获取当前安装的版本
+    const __dirname = getDirName(import.meta.url);
+    const packageJsonPath = path.join(__dirname, '../../../');
+    const versionInfo = execSync(`npm list ${packageName}`, {
+      cwd: packageJsonPath
+    }).toString();
+    const match = versionInfo.match(new RegExp(`(${packageName})@([0-9.]+)`));
+    const currentVersion = match ? match[2] : '';
+    // 获取最新版本
+    const latestVersion: string = execSync(`npm view ${packageName} version`)
+      .toString()
+      .trim();
+
+    if (currentVersion !== latestVersion) {
+      logger.log(
+        t('display_current_esa_template_version').d(
+          `Current esa-template version:`
+        ) +
+          chalk.green(currentVersion) +
+          '    ' +
+          t('display_latest_esa_template_version').d(
+            `Latest esa-template version:`
+          ) +
+          chalk.green(latestVersion)
+      );
+
+      await yesNoPromptAndExecute(
+        t('is_update_to_latest_version').d(
+          'Do you want to update templates to latest version?'
+        ),
+        async () => {
+          logger.log(
+            t('updating_esa_template_to_latest_version', { packageName }).d(
+              `Updating ${packageName} to the latest version...`
+            )
+          );
+          execSync(
+            `rm -rf node_modules/${packageName} &&rm -rf package-lock.json &&npm install ${packageName}@latest`,
+            {
+              cwd: packageJsonPath
+            }
+          );
+
+          logger.log(
+            t('updated_esa_template_to_latest_version', { packageName }).d(
+              `${packageName} updated successfully`
+            )
+          );
+          return true;
+        }
+      );
+    } else {
+      logger.log(
+        t('esa_template_is_latest_version', { packageName }).d(
+          `${packageName} is latest.`
+        )
+      );
+    }
+  } catch (error) {
+    if (error instanceof Error) {
+      logger.error('检测和更新包时发生错误，跳过更新模版');
+    }
+  }
+}
+
 export async function handleInit(argv: ArgumentsCamelCase) {
   const { config } = argv;
-  // 更新npm包
-  // const __dirname = getDirName(import.meta.url);
-  // const projectPath = path.join(__dirname, '../../..');
-  // logger.info(t('init_update_info').d('Updating template...'));
-  // execSync('npm install esa-template', { stdio: 'ignore', cwd: projectPath });
-  // logger.success(t('init_update_success').d('Template update complete.'));
+  // 更新template npm包
+  await checkAndUpdatePackage('esa-template');
 
   if (config !== undefined) {
     await generateConfigFile(String(config));
@@ -165,7 +228,7 @@ export async function handleInit(argv: ArgumentsCamelCase) {
   const preInstallDependencies = async () => {
     const packageJsonPath = path.join(targetPath, 'package.json');
     if (fs.existsSync(packageJsonPath)) {
-      logger.info('Install dependencies');
+      logger.log('Install dependencies');
       logger.log(
         t('init_install_dependence').d('⌛️ Installing dependencies...')
       );

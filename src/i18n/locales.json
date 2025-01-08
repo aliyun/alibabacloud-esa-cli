@@ -838,6 +838,7 @@
   "publish_code": {
     "en": "Publishing code to production environment...",
     "zh_CN": ""
+  },
   "init_update_info": {
     "en": "Updating template...",
     "zh_CN": "模版更新中..."
@@ -853,5 +854,29 @@
   "return_select_init_template": {
     "en": "Return",
     "zh_CN": "返回"
+  },
+  "display_current_esa_template_version": {
+    "en": "Current esa-template version:",
+    "zh_CN": "当前esa-template版本："
+  },
+  "display_latest_esa_template_version": {
+    "en": "Latest esa-template version:",
+    "zh_CN": "最新esa-template版本："
+  },
+  "is_update_to_latest_version": {
+    "en": "Do you want to update templates to latest version?",
+    "zh_CN": "是否更新模版到最新版本？"
+  },
+  "updating_esa_template_to_latest_version": {
+    "en": "Updating ${packageName} to the latest version...",
+    "zh_CN": "更新 ${packageName} 到最新版本..."
+  },
+  "updated_esa_template_to_latest_version": {
+    "en": "${packageName} updated successfully",
+    "zh_CN": "${packageName} 更新完成!"
+  },
+  "esa_template_is_latest_version": {
+    "en": "${packageName} is latest.",
+    "zh_CN": "${packageName} 已是最新版本."
   }
 }

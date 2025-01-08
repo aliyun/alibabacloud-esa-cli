@@ -1,8 +1,6 @@
 import { CommandModule, ArgumentsCamelCase, Argv } from 'yargs';
-import { EdgeFunctionItem, ListSitesReq } from '../../libs/interface.js';
-import Table from 'cli-table3';
+import { ListSitesReq } from '../../libs/interface.js';
 import logger from '../../libs/logger.js';
-import { Base64 } from 'js-base64';
 import { checkIsLoginSuccess } from '../utils.js';
 import chalk from 'chalk';
 import { ApiService } from '../../libs/apiService.js';

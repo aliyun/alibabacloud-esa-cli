@@ -1,4 +1,4 @@
-import { CommandModule, ArgumentsCamelCase, Argv } from 'yargs';
+import { CommandModule } from 'yargs';
 import { getProjectConfig } from '../../utils/fileUtils/index.js';
 import { GetRoutineReq, RelatedRouteProps } from '../../libs/interface.js';
 import Table from 'cli-table3';

@@ -217,12 +217,13 @@ export const templateHubPath = path.join(
   '../../../node_modules/esa-template/src'
 );
 
-interface TemplateItem {
+export interface TemplateItem {
   Title_EN: string;
   Title_ZH: string;
   Desc_EN: string;
   Desc_ZH: string;
   URL: string;
+  children: TemplateItem[];
 }
 
 export const getTemplatesConfig = (): TemplateItem[] => {

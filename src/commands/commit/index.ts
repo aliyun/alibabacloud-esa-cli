@@ -149,7 +149,7 @@ export async function uploadEdgeRoutineCode(
           'An error occurred while trying to upload your code'
         )
       );
-      return false;
+      process.exit(0);
     }
     logger.success(t('commit_upload_success').d('Code uploaded successfully.'));
     return true;
@@ -157,7 +157,7 @@ export async function uploadEdgeRoutineCode(
     logger.error(
       `${t('common_error_occurred').d('An error occurred:')} ${error}`
     );
-    return false;
+    process.exit(0);
   }
 }
 

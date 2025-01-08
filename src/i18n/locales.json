@@ -838,5 +838,20 @@
   "publish_code": {
     "en": "Publishing code to production environment...",
     "zh_CN": ""
+  "init_update_info": {
+    "en": "Updating template...",
+    "zh_CN": "模版更新中..."
+  },
+  "init_update_success": {
+    "en": "Template update complete.",
+    "zh_CN": "模版更新完成"
+  },
+  "exit_select_init_template": {
+    "en": "Exit",
+    "zh_CN": "退出"
+  },
+  "return_select_init_template": {
+    "en": "Return",
+    "zh_CN": "返回"
   }
 }

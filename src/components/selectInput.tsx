@@ -7,6 +7,8 @@ import Item from './selectItem.js';
 export interface SelectItem {
   label: string;
   value: string;
+  key?: string;
+  children?: SelectItem[];
 }
 
 const Indicator: React.FC<{ isSelected?: boolean }> = ({ isSelected }) => {

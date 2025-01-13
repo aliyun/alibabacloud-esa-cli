@@ -214,7 +214,7 @@ export const getApiConfig = () => {
 
 export const templateHubPath = path.join(
   getDirName(import.meta.url),
-  '../../../node_modules/esa-template/src'
+  '../../node_modules/esa-template/src'
 );
 
 export interface TemplateItem {

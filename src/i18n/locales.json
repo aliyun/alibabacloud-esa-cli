@@ -874,5 +874,9 @@
   "esa_template_is_latest_version": {
     "en": "${packageName} is latest.",
     "zh_CN": "${packageName} 已是最新版本."
+  },
+  "not_login_auto_deploy": {
+    "en": "Since you are not logged in, automatic deployment cannot be performed. Please log in later and manually deploy.",
+    "zh_CN": "因为您未登陆，不能自动部署。请稍后登陆后，手动进行部署"
   }
 }

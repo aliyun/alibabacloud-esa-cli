@@ -29,6 +29,7 @@ import { execSync } from 'child_process';
 import MultiLevelSelect from '../../components/mutiLevelSelect.js';
 import { getDirName } from '../../utils/fileUtils/base.js';
 import { yesNoPromptAndExecute } from '../deploy/helper.js';
+import { checkIsLoginSuccess } from '../utils.js';
 
 export const getTemplateInstances = (templateHubPath: string) => {
   return fs
@@ -280,12 +281,24 @@ export async function handleInit(argv: ArgumentsCamelCase) {
     });
   };
 
-  const handleSecondSelection = (item: SelectItem) => {
+  const handleSecondSelection = async (item: SelectItem) => {
     if (item.value === 'yesInstall') {
       installGit(targetPath);
     } else {
       logger.log(t('init_skip_git').d('Git installation was skipped.'));
     }
+    const isLoginSuccess = await checkIsLoginSuccess();
+    if (!isLoginSuccess) {
+      logger.log(
+        chalk.yellow(
+          t('not_login_auto_deploy').d(
+            'You are not logged in, automatic deployment cannot be performed. Please log in later and manually deploy.'
+          )
+        )
+      );
+      process.exit(0);
+    }
+
     logger.log(t('auto_deploy').d('Do you want to deploy your project?'));
     SelectItems({
       items: secondSetOfItems,

@@ -22,8 +22,6 @@ export async function handleLogout(argv: ArgumentsCamelCase) {
   if (!cliConfig) {
     return;
   }
-  const isSuccess = await checkIsLoginSuccess();
-  if (!isSuccess) return;
 
   if (!cliConfig.auth) {
     cliConfig.auth = { accessKeyId: '', accessKeySecret: '' };

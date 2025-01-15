@@ -81,6 +81,7 @@ export async function quickDeploy(entry: string, projectConfig: ProjectConfig) {
     );
   } else {
     logger.error(t('quick_deploy_failed').d('Quick deploy failed'));
+    process.exit(0);
   }
 }
 

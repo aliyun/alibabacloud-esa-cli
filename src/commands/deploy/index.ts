@@ -299,6 +299,6 @@ export async function displayVersionList(
       t('deploy_table_header_description').d('Description')
     ],
     data,
-    [25, 25, 15]
+    [30, 25, 15]
   );
 }

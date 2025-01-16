@@ -19,7 +19,7 @@ else
 	esac
 fi
 
-deno_uri="http://edgestar-runtime.myalicdn.com/runtime/deno-${target}.zip"
+deno_uri="http://esa-runtime.myalicdn.com/runtime/deno-${target}.zip"
 deno_install="${DENO_INSTALL:-$HOME/.deno}"
 bin_dir="$deno_install/bin"
 exe="$bin_dir/deno"

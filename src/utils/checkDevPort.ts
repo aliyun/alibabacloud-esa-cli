@@ -59,24 +59,21 @@ const echoNewInspectTip = () => {
   logger.block();
 };
 
-const checkAndInputPort = async (denoPort: number, inspectPort: number) => {
-  let finalDenoPort = denoPort;
+const checkAndInputPort = async (port: number, inspectPort?: number) => {
+  let finalPort = port;
   let finalInspectPort = inspectPort;
 
-  const isDenoPortAvailable = await checkPort(denoPort);
+  const isPortAvailable = await checkPort(port);
 
-  const stringDenoPort = denoPort.toString();
-  const stringInspectPort = inspectPort.toString();
+  const stringPort = port.toString();
 
-  if (!isDenoPortAvailable) {
+  if (!isPortAvailable) {
     logger.error(
-      t('dev_port_used', { stringDenoPort }).d(
-        `Port ${stringDenoPort} already in use.`
-      )
+      t('dev_port_used', { stringPort }).d(`Port ${stringPort} already in use.`)
     );
     try {
-      const availablePort = await findAvailablePort(denoPort);
-      finalDenoPort = (
+      const availablePort = await findAvailablePort(port);
+      finalPort = (
         await inquirer.prompt([
           {
             type: 'number',
@@ -86,8 +83,8 @@ const checkAndInputPort = async (denoPort: number, inspectPort: number) => {
           }
         ])
       ).port;
-      const isNewDenoPortAvailable = await checkPort(finalDenoPort);
-      if (!isNewDenoPortAvailable) {
+      const isNewPortAvailable = await checkPort(finalPort);
+      if (!isNewPortAvailable) {
         logger.error(t('dev_port_invalid').d('This port is invalid.'));
         throw new Error('Specified port already in use.');
       }
@@ -102,6 +99,12 @@ const checkAndInputPort = async (denoPort: number, inspectPort: number) => {
     }
   }
 
+  if (!inspectPort) {
+    return {
+      port: finalPort
+    };
+  }
+  const stringInspectPort = inspectPort.toString();
   const isInspectPortAvailable = await checkPort(inspectPort);
 
   if (!isInspectPortAvailable) {
@@ -138,7 +141,7 @@ const checkAndInputPort = async (denoPort: number, inspectPort: number) => {
     echoNewInspectTip();
   }
   return {
-    denoPort: finalDenoPort,
+    port: finalPort,
     inspectPort: finalInspectPort
   };
 };

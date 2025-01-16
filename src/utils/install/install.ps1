@@ -13,7 +13,7 @@ $BinDir = if ($DenoInstall) {
 $DenoZip = "$BinDir\deno.zip"
 $Target = 'x86_64-pc-windows-msvc'
 
-$DownloadUrl = "http://edgestar-runtime.myalicdn.com/runtime/deno-${Target}.zip"
+$DownloadUrl = "http://esa-runtime.myalicdn.com/runtime/deno-${Target}.zip"
 
 if (!(Test-Path $BinDir)) {
   New-Item $BinDir -ItemType Directory | Out-Null

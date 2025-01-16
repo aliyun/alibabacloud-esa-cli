@@ -1,14 +1,22 @@
 #!/bin/sh
 set -e
 
-case $(uname -sm) in
-"Darwin x86_64") target="darwin-x86_64" ;;
-"Darwin arm64") target="darwin-arm64" ;;
-"Linux aarch64") target="linux" ;;
-*) target="x86_64-unknown-linux-gnu" ;;
-esac
+os_type=$(uname -s)
 
-ew2_uri="http://edgestar-runtime.myalicdn.com/ew2/${target}/edgeworker2"
+if [ "$os_type" = "Darwin" ]; then
+  cpu_info=$(sysctl -n machdep.cpu.brand_string)
+  if echo "$cpu_info" | grep -q "Apple M"; then
+    target="darwin-arm64"
+  else
+    target="darwin-x86_64"
+  fi
+else
+  target="linux-x86_64"
+fi
+
+version="$1"
+ew2_uri="http://esa-runtime.myalicdn.com/ew2/${version}/${target}/edgeworker2"
+echo "${ew2_uri}"
 bin_dir="$HOME/.ew2"
 exe="$bin_dir/edgeworker2"
 
@@ -18,7 +26,8 @@ fi
 
 curl --fail --location --progress-bar --output "$exe" "$ew2_uri"
 
-chmod +x "$exe"
+chmod +rwx "$exe"
+chmod +rw "$bin_dir"
 
 echo "Runtime was installed successfully to $exe"
 

@@ -1,7 +1,8 @@
 const fs = require('fs');
 const path = require('path');
 
-const translationRegex = /t\('(.+?)'\).*?\.d\([\n\s]*['`"](.+?)['`"][\n\s]*\)/g;
+const translationRegex =
+  /t\('(.+?)'\s*,\s*{[^}]*?}\s*\)\s*\.d\(\s*`([^`]+)`\s*\)/g;
 const outputPath = './src/i18n/locales.json';
 let translations = {};
 

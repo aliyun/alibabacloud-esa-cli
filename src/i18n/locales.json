@@ -481,7 +481,7 @@
   },
   "install_runtime_tip": {
     "en": "🔔 Runtime must be installed to use esa dev. Installing...",
-    "zh_CN": "必须安装运行时才能使用 esa dev。正在安装..."
+    "zh_CN": "必须安装Runtime才能使用 esa dev。正在安装..."
   },
   "install_runtime_success": {
     "en": "Runtime installed.",
@@ -604,7 +604,7 @@
     "zh_CN": "然后就可以用新的端口在Chrome inspect中调试了😉"
   },
   "dev_port_used": {
-    "en": "Port ${stringDenoPort} already in use",
+    "en": "Port ${stringPort} already in use.",
     "zh_CN": "端口 ${stringDenoPort} 被占用"
   },
   "dev_port_used_ask": {
@@ -628,7 +628,7 @@
     "zh_CN": "可以使用 ${option} 指定另外的端口"
   },
   "dev_inspect_port_used": {
-    "en": "Inspect port ${stringInspectPort} already in use",
+    "en": "Inspect port ${stringInspectPort} already in use.",
     "zh_CN": "Inspect 端口 ${stringInspectPort} 已被占用"
   },
   "dev_inspect_port_used_ask": {
@@ -876,7 +876,23 @@
     "zh_CN": "${packageName} 已是最新版本."
   },
   "not_login_auto_deploy": {
-    "en": "Since you are not logged in, automatic deployment cannot be performed. Please log in later and manually deploy.",
+    "en": "You are not logged in, automatic deployment cannot be performed. Please log in later and manually deploy.",
     "zh_CN": "因为您未登陆，不能自动部署。请稍后登陆后，手动进行部署"
+  },
+  "dev_option_debugger": {
+    "en": "Output debug logs",
+    "zh_CN": "输出debug日志"
+  },
+  "install_runtime_update_tip": {
+    "en": "🔔 Runtime must be update to use esa dev. Installing...",
+    "zh_CN": "必须更新Runtime才能使用 esa dev。正在安装..."
+  },
+  "dev_ip_not_allowed": {
+    "en": "Direct access to IP addresses is not allowed when setting local-upstream: ${url}",
+    "zh_CN": "不允许直接设置 local-upstream 为 IP 地址：${url}"
+  },
+  "dev_url_invalid": {
+    "en": "Invalid URL: ${url}. Please enter a valid URL.",
+    "zh_CN": "不是正确的URL: ${url}. 请输入正确的URL."
   }
 }

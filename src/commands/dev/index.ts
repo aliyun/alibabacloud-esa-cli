@@ -1,5 +1,6 @@
 import { CommandModule, ArgumentsCamelCase, Argv } from 'yargs';
 import { exec } from 'child_process';
+import { isIP } from 'net';
 import chokidar from 'chokidar';
 import doProcess from './doProcess.js';
 import {
@@ -26,12 +27,24 @@ const dev: CommandModule = {
   command: 'dev [entry]',
   describe: `💻 ${t('dev_describe').d('Start a local server for developing your routine')}`,
   builder: (yargs: Argv) => {
-    yargsIns = yargs;
-    return yargs
+    const OS = checkOS();
+    const useEw2 = OS === Platforms.AppleArm || Platforms.AppleIntel;
+    yargsIns = yargs
       .positional('entry', {
         describe: t('dev_entry_describe').d('Entry file of the Routine'),
         type: 'string',
         demandOption: false
+      })
+      .option('p', {
+        alias: 'port',
+        describe: t('dev_port_describe').d('Port to listen on'),
+        type: 'number'
+      })
+      .option('m', {
+        alias: 'minify',
+        describe: t('dev_option_minify').d('Minify code during development'),
+        type: 'boolean',
+        default: false
       })
       .option('refresh-command', {
         describe: t('dev_refresh_command_describe').d(
@@ -45,32 +58,38 @@ const dev: CommandModule = {
         ),
         type: 'string'
       })
-      .option('m', {
-        alias: 'minify',
-        describe: t('dev_option_minify').d('Minify code during development'),
+      .option('debug', {
+        describe: t('dev_option_debugger').d('Output debug logs'),
         type: 'boolean',
         default: false
-      })
-      .option('inspect-port', {
+      });
+
+    if (!useEw2) {
+      yargsIns.option('inspect-port', {
         describe: t('dev_inspect_port_describe').d(
           'Chrome inspect devTool port'
         ),
         type: 'number'
-      })
-      .option('p', {
-        alias: 'port',
-        describe: t('dev_port_describe').d('Port to listen on'),
-        type: 'number'
       });
+    }
+    return yargsIns;
   },
   handler: async (argv: ArgumentsCamelCase) => {
     let { port, inspectPort } = argv;
     let userFileRepacking = false; // Indicates that user code repacking does not change the .dev file
-    const { entry, minify, refreshCommand, localUpstream, help } = argv;
+    const { entry, minify, refreshCommand, localUpstream, help, debug } = argv;
 
     if (yargsIns && help) {
       yargsIns.showHelp('log');
-      return;
+      process.exit(0);
+    }
+
+    const OS = checkOS();
+    const useEw2 =
+      OS === Platforms.AppleArm || Platforms.AppleIntel || Platforms.LinuxX86;
+
+    if (debug) {
+      logger.setLogLevel('debug');
     }
 
     // Get options and set global variables
@@ -78,7 +97,8 @@ const dev: CommandModule = {
 
     if (!projectConfig) {
       if (!entry) {
-        return logger.notInProject();
+        logger.notInProject();
+        process.exit(1);
       }
       try {
         // If no config is found and an entry is provided, create a new one.
@@ -109,6 +129,7 @@ const dev: CommandModule = {
       }
       // @ts-ignore
       global.port = port;
+      logger.debug(`Entered port: ${port}`);
     }
 
     if (inspectPort) {
@@ -134,15 +155,27 @@ const dev: CommandModule = {
     }
 
     if (localUpstream) {
+      const url = localUpstream as string;
       // @ts-ignore
       global.localUpstream = localUpstream;
-    }
-
-    const OS = checkOS();
-    let useEw2 = false;
-
-    if (OS === Platforms.AppleArm || Platforms.AppleIntel) {
-      useEw2 = true;
+      try {
+        const hostname = new URL(url).hostname;
+        if (isIP(hostname)) {
+          logger.error(
+            t('dev_ip_not_allowed', { url }).d(
+              `Direct access to IP addresses is not allowed when setting local-upstream: ${url}`
+            )
+          );
+          process.exit(1);
+        }
+      } catch (err) {
+        logger.error(
+          t('dev_url_invalid', { url }).d(
+            `Invalid URL: ${url}. Please enter a valid URL.`
+          )
+        );
+        process.exit(1);
+      }
     }
 
     const checkFunc = useEw2 ? preCheckEw2 : preCheckDeno;
@@ -150,13 +183,21 @@ const dev: CommandModule = {
     if (!checkResult) {
       process.exit(1);
     }
-    const speDenoPort = getDevConf('port', 'dev', 18080);
-    const speInspectPort = getDevConf('inspectPort', 'dev', 9229);
-    const result = await checkAndInputPort(speDenoPort, speInspectPort);
-    // @ts-ignore
-    global.port = result.denoPort;
-    // @ts-ignore
-    global.inspectPort = result.inspectPort;
+
+    if (useEw2) {
+      const speEw2Port = getDevConf('port', 'dev', 18080);
+      const result = await checkAndInputPort(speEw2Port);
+      // @ts-ignore
+      global.port = result.port;
+    } else {
+      const speDenoPort = getDevConf('port', 'dev', 18080);
+      const speInspectPort = getDevConf('inspectPort', 'dev', 9229);
+      const result = await checkAndInputPort(speDenoPort, speInspectPort);
+      // @ts-ignore
+      global.port = result.port;
+      // @ts-ignore
+      global.inspectPort = result.inspectPort;
+    }
 
     const devPack = useEw2 ? ew2Pack : mockPack;
     try {

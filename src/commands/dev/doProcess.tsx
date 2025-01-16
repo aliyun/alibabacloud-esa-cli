@@ -79,6 +79,9 @@ const doProcess = (worker?: WorkerServer | Ew2Server) => {
     devElement,
     exit: () => {
       devElement.unmount();
+      setTimeout(() => {
+        process.exit(0);
+      }, 500);
     }
   };
 };

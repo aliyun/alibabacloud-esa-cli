@@ -6,6 +6,7 @@ import t from '../../../i18n/index.js';
 import { getDevConf } from '../../../utils/fileUtils/index.js';
 import { getRoot, getDirName } from '../../../utils/fileUtils/base.js';
 import { checkPort } from '../../../utils/checkDevPort.js';
+import { EW2Path } from '../../../utils/installEw2.js';
 
 // 生成可用的Ew2端口
 const generateEw2Port = async () => {
@@ -23,14 +24,34 @@ const generateEw2Port = async () => {
 const writeEw2config = (id: string, port: number, userRoot: string) => {
   const devDir = path.resolve(userRoot, '.dev');
   const devIndex = path.resolve(devDir, `index-${id}.js`);
+  const devConfPath = path.resolve(devDir, `config-${id}.toml`);
+  const erConfPath = path.resolve(EW2Path, `er.conf`);
   const config = `
 port = ${port}
 [debugger_cli_options]
 enable = true
 code_path = "${devIndex}"
+conf_path = "${erConfPath}"
 `;
-  console.log('write', `${devDir}/config-${id}.toml`);
-  return fs.promises.writeFile(`${devDir}/config-${id}.toml`, config);
+  const erConf = JSON.stringify({
+    Ttl: 301,
+    ServiceOptions: {
+      service_status: 'active'
+    },
+    InstanceOptions: {
+      allow_node_module: true
+    },
+    ContextOptions: {
+      vm_max_cpu_time: 100
+    },
+    ServiceOptionsMd5: '1',
+    InstanceOptionsMd5: '2',
+    ContextOptionsMd5: '3'
+  });
+  return Promise.all([
+    fs.promises.writeFile(devConfPath, config),
+    fs.promises.writeFile(erConfPath, erConf)
+  ]);
 };
 
 // 生成入口文件

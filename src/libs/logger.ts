@@ -1,10 +1,5 @@
 import chalk from 'chalk';
-import {
-  format,
-  createLogger,
-  transports,
-  Logger as WinstonLogger
-} from 'winston';
+import { format, createLogger, Logger as WinstonLogger } from 'winston';
 import DailyRotateFile from 'winston-daily-rotate-file';
 import Table from 'cli-table3';
 import path from 'path';
@@ -113,6 +108,9 @@ class Logger {
 
   debug(message: string) {
     this.logger.debug(message);
+    if (this.logger.level === 'debug') {
+      console.log(`${chalk.grey('[DEBUG]')} ${message}`);
+    }
   }
 
   info(message: string) {

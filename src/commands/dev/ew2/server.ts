@@ -4,10 +4,11 @@ import spawn from 'cross-spawn';
 import fetch from 'node-fetch';
 import logger from '../../../libs/logger.js';
 import { getRoot } from '../../../utils/fileUtils/base.js';
-import { EW2BinPath, EW2Path } from '../../../utils/installEw2.js';
+import { EW2BinPath } from '../../../utils/installEw2.js';
 import { HttpProxyAgent } from 'http-proxy-agent';
 import chalk from 'chalk';
 import t from '../../../i18n/index.js';
+import sleep from '../../../utils/sleep.js';
 
 interface Props {
   port?: number;
@@ -39,6 +40,8 @@ class Ew2Server {
   private port = 18080;
   private onClose?: () => void;
   constructor(props: Props) {
+    // @ts-ignore
+    if (global.port) this.port = global.port;
     if (props.port) this.port = props.port;
     if (props.onClose) this.onClose = props.onClose;
   }
@@ -63,7 +66,12 @@ class Ew2Server {
     return new Promise((resolve, reject) => {
       this.worker = spawn(
         EW2BinPath,
-        ['--config_file', `${root}/.dev/config-${id}.toml`],
+        [
+          '--config_file',
+          `${root}/.dev/config-${id}.toml`,
+          '--log_stdout',
+          '-v'
+        ],
         {
           stdio: ['pipe', 'pipe', 'pipe']
         }
@@ -71,40 +79,46 @@ class Ew2Server {
 
       this.workerStartTimeout = setTimeout(() => {
         reject(new Error(t('dev_worker_timeout').d('Worker start timeout')));
-      }, 15000);
+        this.worker && this.worker.kill();
+      }, 60000);
 
-      const workerCommonHandler = (
-        handler: (data: any) => void,
-        isError = false
-      ) => {
-        return (chunk: any) => {
-          handler(chunk);
-          this.clearTimeout();
-          if (this.startingWorker) {
-            this.startingWorker = false;
-            setTimeout(() => {
-              resolve(!isError);
-            }, 500);
-          }
-        };
+      const sendToRuntime = () => {
+        return new Promise((resolveStart) => {
+          // @ts-ignore
+          const ew2Port = global.ew2Port;
+          const options = {
+            hostname: '127.0.0.1',
+            port: ew2Port,
+            method: 'GET'
+          };
+          const req = http.get(options, (res) => {
+            resolveStart(res.statusCode);
+          });
+          req.on('error', (err) => {
+            resolveStart(null);
+          });
+          req.end();
+        });
       };
 
+      const checkRuntimeStart = async () => {
+        while (this.startingWorker) {
+          const [result] = await Promise.all([sendToRuntime(), sleep(500)]);
+          if (result) {
+            this.startingWorker = false;
+            this.clearTimeout();
+            resolve(result);
+          }
+        }
+      };
+
+      checkRuntimeStart();
       this.worker.stdout?.setEncoding('utf8');
-      this.worker.stdout?.on(
-        'data',
-        workerCommonHandler(this.stdoutHandler.bind(this))
-      );
-      this.worker.stderr?.on(
-        'data',
-        workerCommonHandler(this.stderrHandler.bind(this), true)
-      );
+      this.worker.stdout?.on('data', this.stdoutHandler.bind(this));
+      this.worker.stderr?.on('data', this.stderrHandler.bind(this));
       this.worker.on('close', this.closeHandler.bind(this));
-      this.worker.on(
-        'error',
-        workerCommonHandler(this.errorHandler.bind(this), true)
-      );
+      this.worker.on('error', this.errorHandler.bind(this));
       process.on('SIGTERM', () => {
-        console.log('kill');
         this.worker && this.worker.kill();
       });
     });
@@ -150,7 +164,7 @@ class Ew2Server {
             res.writeHead(workerRes.status, workerHeaders);
             workerRes.body.pipe(res);
           }
-          console.log(
+          logger.log(
             `[ESA Dev] ${req.method} ${url} ${getColorForStatusCode(workerRes.status, workerRes.statusText)}`
           );
         } else {
@@ -162,7 +176,7 @@ class Ew2Server {
       }
     });
     this.server.listen(this.port, () => {
-      console.log(`listening on port ${this.port}`);
+      logger.log(`listening on port ${this.port}`);
     });
   }
 
@@ -189,12 +203,13 @@ class Ew2Server {
       this.restarting = false;
       return;
     }
-    this.stop();
-    logger.log(t('dev_server_closed').d('Worker server closed'));
-    logger.info('Worker server closed');
-    // @ts-ignore
-    global.port = undefined;
-    this.onClose && this.onClose();
+    this.stop().then(() => {
+      logger.log(t('dev_server_closed').d('Worker server closed'));
+      logger.info('Worker server closed');
+      // @ts-ignore
+      global.port = undefined;
+      this.onClose && this.onClose();
+    });
   }
 
   runCommand(command: string) {

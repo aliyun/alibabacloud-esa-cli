@@ -9,9 +9,10 @@
 - [边缘安全加速(ESA)](https://www.aliyun.com/product/esa)
 - [边缘函数概述](https://help.aliyun.com/document_detail/2710021.html)
 
-> **注意**: ESA CLI 处于公测阶段，如果您在使用中遇到任何问题，或者有任何建议，请随时提交 issue 或 pull request。
->
-> 我们正在积极改进，并欢迎任何反馈。感谢您的理解与支持！
+> **注意**: **ESA CLI 在0.0.2以上版本的本地开发模式替换成了ESA边缘函数相同的Runtime，目前实际表现与线上相同，欢迎体验！**
+
+ESA CLI 处于公测阶段，如果您在使用中遇到任何问题，或者有任何建议，请随时提交 issue 或 pull request。
+我们正在积极改进，并欢迎任何反馈。感谢您的理解与支持！
 
 ## 安装
 
@@ -75,8 +76,6 @@ export default {
 ![调试界面](https://github.com/aliyun/alibabacloud-esa-cli/blob/master/docs/dev.png)
 
 - 在界面上按 `b` 即可在浏览器中打开调试页面。
-- 在界面上按 `d` 可以查看调试引导。**Chrome 不允许命令行打开调试页面。**
-- 在 Chrome 浏览器中打开 `Chrome://inspect#devices` 页面，可以看到一个运行的`Remote Target`，点击下面的`inspect`即可查看 console 信息。**注意，EdgeRoutine 的代码为服务端代码，所以预览页面的控制台并不会输出入口文件中的 `console`，只能通过`inspect`调试。**
 - 在界面上按 `c` 可以清空面板。
 - 在界面上按 `x` 可以退出调试。
 - 可以用 `esa dev --port <port>` 临时指定端口，也可以使用 `esa config -l` 按照项目配置端口。

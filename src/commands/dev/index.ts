@@ -23,12 +23,13 @@ import checkAndInputPort from '../../utils/checkDevPort.js';
 import { checkOS, Platforms } from '../../utils/checkOS.js';
 
 let yargsIns: Argv;
+const OS = checkOS();
+const useEw2 =
+  OS === Platforms.AppleArm || Platforms.AppleIntel || Platforms.LinuxX86;
 const dev: CommandModule = {
   command: 'dev [entry]',
   describe: `💻 ${t('dev_describe').d('Start a local server for developing your routine')}`,
   builder: (yargs: Argv) => {
-    const OS = checkOS();
-    const useEw2 = OS === Platforms.AppleArm || Platforms.AppleIntel;
     yargsIns = yargs
       .positional('entry', {
         describe: t('dev_entry_describe').d('Entry file of the Routine'),
@@ -83,10 +84,6 @@ const dev: CommandModule = {
       yargsIns.showHelp('log');
       process.exit(0);
     }
-
-    const OS = checkOS();
-    const useEw2 =
-      OS === Platforms.AppleArm || Platforms.AppleIntel || Platforms.LinuxX86;
 
     if (debug) {
       logger.setLogLevel('debug');

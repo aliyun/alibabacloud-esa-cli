@@ -1,15 +1,18 @@
 {
   "name": "esa-cli",
-  "version": "0.0.2-beta.0",
+  "version": "0.0.2-beta.1",
   "description": "A CLI for operating Alibaba Cloud ESA EdgeRoutine (Edge Functions).",
   "main": "bin/enter.cjs",
   "type": "module",
-  "files": [
-    "dist/"
-  ],
   "bin": {
     "esa": "bin/enter.cjs"
   },
+  "files": [
+    "bin",
+    "dist/",
+    "zh_CN.md",
+    "README.md"
+  ],
   "scripts": {
     "build": "rm -rf ./dist && rm -rf ./build && node ./genLocale.cjs && tsc && node ./copy.cjs",
     "watch": "tsc --watch",

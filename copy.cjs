@@ -1,8 +1,8 @@
 const fs = require('fs-extra');
 
-fs.copySync('README.md', 'dist/README.md');
-fs.copySync('zh_CN.md', 'dist/zh_CN.md');
-fs.copySync('package.json', 'dist/package.json');
+// fs.copySync('README.md', 'dist/README.md');
+// fs.copySync('zh_CN.md', 'dist/zh_CN.md');
+// fs.copySync('package.json', 'dist/package.json');
 fs.copySync('bin', 'dist/bin');
 fs.copySync('docs', 'dist/docs');
 fs.copySync(

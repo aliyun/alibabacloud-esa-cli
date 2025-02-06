@@ -25,7 +25,7 @@ export type LogLevel =
 const transport: DailyRotateFile = new DailyRotateFile({
   filename: path.join(os.homedir(), '.esa-logs/esa-debug-%DATE%.log'),
   level: 'info',
-  datePattern: 'YYYY-MM-DD-HH:mm:ss',
+  datePattern: 'YYYY-MM-DD-HH',
   zippedArchive: true,
   maxSize: '10m',
   maxFiles: '7d'

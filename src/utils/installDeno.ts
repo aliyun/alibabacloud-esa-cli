@@ -14,7 +14,7 @@ export async function preCheckDeno(): Promise<string | false> {
         'Under the beta phase, we are temporarily using Deno as the local development runtime. It needs to be installed first.'
       )
     );
-    installDeno();
+    await installDeno();
     return false;
   }
   return command;

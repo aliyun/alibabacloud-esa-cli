@@ -7,6 +7,7 @@ import { exec } from 'child_process';
 import { promisify } from 'util';
 import t from '../i18n/index.js';
 import logger from '../libs/logger.js';
+import chalk from 'chalk';
 
 const execAsync = promisify(exec);
 
@@ -160,6 +161,11 @@ export async function downloadRuntimeAndUnzipForWindows() {
     }
 
     logger.success(t('deno_install_success').d('Runtime install success!'));
+    logger.block();
+    const dev = chalk.green('esa dev');
+    logger.log(
+      t('deno_install_success_tips', { dev }).d(`Please run ${dev} again`)
+    );
   } catch (error) {
     const err = error as Error;
     logger.error(`Download Error: ${err.message}`);

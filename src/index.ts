@@ -19,7 +19,6 @@ import { getCliConfig } from './utils/fileUtils/index.js';
 import { handleCheckVersion } from './utils/checkVersion.js';
 import t from './i18n/index.js';
 import site from './commands/site/index.js';
-import { quickDeployRoutine } from './libs/service.js';
 
 const main = async () => {
   const argv = hideBin(process.argv);
@@ -87,19 +86,6 @@ const main = async () => {
   esa.command(config);
 
   esa.command(lang);
-
-  esa.command(
-    't',
-    false,
-    () => {},
-    async (args) => {
-      const res = await quickDeployRoutine({
-        name: 'test',
-        code: 'test'
-      });
-      // console.log(res);
-    }
-  );
 
   esa.group(['help', 'version'], 'Options:');
 

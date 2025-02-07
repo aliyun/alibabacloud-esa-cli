@@ -40,7 +40,10 @@ const generateEntry = async (
 
   return fs.promises.writeFile(
     devEntry,
-    devEntryTempFile.replace(/'\$userPath'/g, `'${projectEntry}'`)
+    devEntryTempFile.replace(
+      /'\$userPath'/g,
+      `'${projectEntry.replace(/\\/g, '/')}'`
+    )
   );
 };
 

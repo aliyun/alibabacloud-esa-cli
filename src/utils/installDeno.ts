@@ -1,8 +1,9 @@
 import { exec, execSync } from 'child_process';
 import os from 'os';
-import { getDirName } from './fileUtils/base.js';
-import logger from '../libs/logger.js';
 import path from 'path';
+import logger from '../libs/logger.js';
+import { getDirName } from './fileUtils/base.js';
+import { downloadRuntimeAndUnzipForWindows } from './download.js';
 import t from '../i18n/index.js';
 
 export async function preCheckDeno(): Promise<string | false> {
@@ -52,8 +53,8 @@ export async function installDeno(): Promise<boolean> {
 
   switch (os.platform()) {
     case 'win32':
-      installCommand = `powershell.exe -Command "Get-Content '${p}/install.ps1' | iex"`;
-      break;
+      await downloadRuntimeAndUnzipForWindows();
+      return true;
     case 'darwin':
     case 'linux':
       installCommand = `sh ${p}/install.sh`;

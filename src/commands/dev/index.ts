@@ -24,8 +24,8 @@ import { checkOS, Platforms } from '../../utils/checkOS.js';
 
 let yargsIns: Argv;
 const OS = checkOS();
-const useEw2 =
-  OS === Platforms.AppleArm || Platforms.AppleIntel || Platforms.LinuxX86;
+const EW2OS = [Platforms.AppleArm, Platforms.AppleIntel, Platforms.LinuxX86];
+const useEw2 = EW2OS.includes(OS);
 const dev: CommandModule = {
   command: 'dev [entry]',
   describe: `💻 ${t('dev_describe').d('Start a local server for developing your routine')}`,

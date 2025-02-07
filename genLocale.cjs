@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 
 const translationRegex =
-  /t\('(.+?)'\s*,\s*{[^}]*?}\s*\)\s*\.d\(\s*`([^`]+)`\s*\)/g;
+  /t\(\s*['"]([^'"]+)['"](?:\s*,\s*\{[^}]*\})?\s*\)\.d\(\s*(['"`])(.*?)\2\s*\)/g;
 const outputPath = './src/i18n/locales.json';
 let translations = {};
 
@@ -13,7 +13,7 @@ const parseFile = (filePath) => {
   const content = fs.readFileSync(filePath, 'utf-8');
   let match;
   while ((match = translationRegex.exec(content)) !== null) {
-    const [_, key, msg] = match;
+    const [_, key, __, msg] = match;
     if (!translations[key]) {
       translations[key] = {
         en: msg,

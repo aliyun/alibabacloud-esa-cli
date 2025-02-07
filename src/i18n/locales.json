@@ -894,5 +894,25 @@
   "dev_url_invalid": {
     "en": "Invalid URL: ${url}. Please enter a valid URL.",
     "zh_CN": "不是正确的URL: ${url}. 请输入正确的URL."
+  },
+  "deno_download_failed": {
+    "en": "Download failed",
+    "zh_CN": "下载失败"
+  },
+  "deno_unzip_failed": {
+    "en": "Unzip failed",
+    "zh_CN": "解压失败"
+  },
+  "deno_add_path_failed": {
+    "en": "Add BinDir to Path failed",
+    "zh_CN": "添加环境变量失败"
+  },
+  "deno_install_success": {
+    "en": "Runtime install success!",
+    "zh_CN": "Runtime 安装成功！"
+  },
+  "deno_download_success": {
+    "en": "Download success",
+    "zh_CN": "下载成功"
   }
 }

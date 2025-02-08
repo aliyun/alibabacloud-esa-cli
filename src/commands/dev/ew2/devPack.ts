@@ -122,36 +122,15 @@ const prepare = async (
     if (currentIds[0] && /^\d+$/.test(currentIds[0])) {
       // 删除没有用到的入口
       for (let currentId of currentIds) {
-        const useful = await checkPort(currentConfigObj[currentId].port);
-        if (useful) {
-          const unusedEntry = path.resolve(
-            userRoot,
-            `.dev/index-${currentId}.js`
+        const unused = await checkPort(currentConfigObj[currentId].port);
+        if (unused) {
+          const devDir = path.resolve(userRoot, '.dev');
+          const files = fs.readdirSync(devDir);
+          const filesToDelete = files.filter((file) =>
+            file.includes(currentId)
           );
-          const unusedTemp = path.resolve(
-            userRoot,
-            `.dev/devEntry-${currentId}.js`
-          );
-          const unusedConfig = path.resolve(
-            userRoot,
-            `.dev/config-${currentId}.toml`
-          );
-          if (fs.existsSync(unusedEntry)) {
-            fs.rmSync(unusedEntry, {
-              force: true,
-              recursive: true,
-              maxRetries: 5
-            });
-          }
-          if (fs.existsSync(unusedTemp)) {
-            fs.rmSync(unusedTemp, {
-              force: true,
-              recursive: true,
-              maxRetries: 5
-            });
-          }
-          if (fs.existsSync(unusedConfig)) {
-            fs.rmSync(unusedConfig, {
+          for (const file of filesToDelete) {
+            fs.rmSync(path.resolve(devDir, file), {
               force: true,
               recursive: true,
               maxRetries: 5
@@ -203,8 +182,7 @@ const devPack = async (restarting = false) => {
         t('dev_pack_config_success').d('Config created successfully')
       );
       return devBuild({
-        minify,
-        isNode: true
+        minify
       });
     })
     .then(() => {

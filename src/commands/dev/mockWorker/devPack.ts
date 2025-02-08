@@ -67,21 +67,25 @@ const prepare = async (
       .readFileSync(configPath, 'utf-8')
       .replace('export default ', '');
     const currentConfigObj = JSON.parse(currentConfig);
-    const cIds = Object.keys(currentConfigObj);
-    if (cIds[0] && /^\d+$/.test(cIds[0])) {
-      for (let cid of cIds) {
-        const useful = await checkPort(currentConfigObj[cid].port);
-        if (useful) {
-          const unusedEntry = path.resolve(userRoot, `.dev/index-${cid}.js`);
-          const unusedTemp = path.resolve(userRoot, `.dev/devEntry-${cid}.js`);
-          if (fs.existsSync(unusedEntry)) {
-            fs.rmSync(unusedEntry);
-          }
-          if (fs.existsSync(unusedTemp)) {
-            fs.rmSync(unusedTemp);
+    const currentIds = Object.keys(currentConfigObj);
+    if (currentIds[0] && /^\d+$/.test(currentIds[0])) {
+      for (let currentId of currentIds) {
+        const unused = await checkPort(currentConfigObj[currentId].port);
+        if (unused) {
+          const devDir = path.resolve(userRoot, '.dev');
+          const files = fs.readdirSync(devDir);
+          const filesToDelete = files.filter((file) =>
+            file.includes(currentId)
+          );
+          for (const file of filesToDelete) {
+            fs.rmSync(path.resolve(devDir, file), {
+              force: true,
+              recursive: true,
+              maxRetries: 5
+            });
           }
         } else {
-          options[cid] = currentConfigObj[cid];
+          options[currentId] = currentConfigObj[currentId];
         }
       }
     }

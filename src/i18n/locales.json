@@ -476,8 +476,8 @@
     "zh_CN": "route不合法"
   },
   "install_runtime_explain": {
-    "en": "Under the beta phase, we are temporarily using Deno as the local development runtime. It needs to be installed first.",
-    "zh_CN": "在Beta阶段，我们使用了Deno暂时作为本地开发运行时，需要先安装才可以dev。"
+    "en": "Our runtime does not yet support this OS. We are temporarily using Deno as the local development runtime, which needs to be installed first.",
+    "zh_CN": "我们的Runtime还不支持此操作系统，我们暂时使用Deno作为本地开发runtime，需要先安装。"
   },
   "install_runtime_tip": {
     "en": "🔔 Runtime must be installed to use esa dev. Installing...",
@@ -914,5 +914,9 @@
   "deno_download_success": {
     "en": "Download success",
     "zh_CN": "下载成功"
+  },
+  "deno_install_success_tips": {
+    "en": "Please run ${dev} again",
+    "zh_CN": "请重新运行 ${dev}"
   }
 }

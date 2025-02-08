@@ -104,22 +104,21 @@ export async function downloadRuntimeAndUnzipForWindows() {
     const DenoZip = path.join(BinDir, 'deno.zip');
     const Target = 'x86_64-pc-windows-msvc';
     const DownloadUrl = `http://esa-runtime.myalicdn.com/runtime/deno-${Target}.zip`;
-
+    logger.ora.start('Downloading...');
     try {
       await fs.mkdir(BinDir, { recursive: true });
     } catch (error) {
       const err = error as Error;
+      logger.ora.fail();
       logger.error(`mkdir error ${BinDir}: ${err.message}`);
       process.exit(1);
     }
 
     try {
       await downloadFile(DownloadUrl, DenoZip);
-      logger.success(
-        `${t('deno_download_success').d('Download success')}: ${DenoZip}`
-      );
     } catch (error) {
       const err = error as Error;
+      logger.ora.fail();
       logger.error(
         `${t('deno_download_failed').d('Download failed')}: ${err.message}`
       );
@@ -128,9 +127,11 @@ export async function downloadRuntimeAndUnzipForWindows() {
 
     logger.info(`Unzip file to: ${BinDir}`);
     try {
+      logger.ora.text = 'Unzip...';
       unzipFile(DenoZip, BinDir);
     } catch (error) {
       const err = error as Error;
+      logger.ora.fail();
       logger.error(
         `${t('deno_unzip_failed').d('Unzip failed')}: ${err.message}`
       );
@@ -138,22 +139,26 @@ export async function downloadRuntimeAndUnzipForWindows() {
     }
 
     try {
+      logger.ora.text = 'Deleting temp file...';
       await fs.unlink(DenoZip);
+      logger.ora.succeed('Download success');
       logger.info(`Delete temp file: ${DenoZip}`);
     } catch (error) {
       logger.warn(`Delete temp file ${DenoZip} failed: ${error}`);
     }
 
     try {
+      logger.ora.text = 'Adding Bin dir to PATH...';
       const inPath = await isBinDirInPath(BinDir);
       if (!inPath) {
-        logger.info(`${BinDir} not in PATH, adding...`);
+        logger.info(`${BinDir} not in PATH`);
         await addBinDirToPath(BinDir);
       } else {
         logger.info(`${BinDir} in PATH already`);
       }
     } catch (error) {
       const err = error as Error;
+      logger.ora.fail();
       logger.error(
         `${t('deno_add_path_failed').d('Add BinDir to Path failed')}: ${err.message}`
       );
@@ -168,6 +173,7 @@ export async function downloadRuntimeAndUnzipForWindows() {
     );
   } catch (error) {
     const err = error as Error;
+    logger.ora.fail();
     logger.error(`Download Error: ${err.message}`);
     process.exit(1);
   }

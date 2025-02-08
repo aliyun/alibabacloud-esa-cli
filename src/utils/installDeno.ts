@@ -11,7 +11,7 @@ export async function preCheckDeno(): Promise<string | false> {
   if (!command) {
     logger.error(
       t('install_runtime_explain').d(
-        'Under the beta phase, we are temporarily using Deno as the local development runtime. It needs to be installed first.'
+        'Our runtime does not yet support this OS. We are temporarily using Deno as the local development runtime, which needs to be installed first.'
       )
     );
     await installDeno();
@@ -40,7 +40,6 @@ export function checkDenoInstalled(): Promise<string | false> {
         resolve(res);
       })
       .catch((err: any) => {
-        console.log(err);
         resolve(false);
       });
   });

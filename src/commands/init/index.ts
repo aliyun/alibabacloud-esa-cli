@@ -108,7 +108,8 @@ export const transferTemplatesToSelectItem = (
       })?.path ?? '';
     const children = transferTemplatesToSelectItem(
       config.children,
-      templateInstanceList
+      templateInstanceList,
+      lang
     );
     return {
       label: lang === 'en' ? config.Title_EN : config.Title_ZH,

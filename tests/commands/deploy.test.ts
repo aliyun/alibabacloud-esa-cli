@@ -37,7 +37,22 @@ describe('handleDeploy', () => {
       $0: ''
     });
 
-    expect(std.out).not.toBeCalled();
+    expect(std.out).toMatchInlineSnapshot(`
+      [MockFunction log] {
+        "calls": [
+          [
+            "
+      ❌  ERROR  You are not in an esa project, Please run esa init to initialize a project, or enter an esa project.",
+          ],
+        ],
+        "results": [
+          {
+            "type": "return",
+            "value": undefined,
+          },
+        ],
+      }
+    `);
   });
 
   it('should return early if login check fails', async () => {

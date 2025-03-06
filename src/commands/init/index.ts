@@ -1,58 +1,34 @@
 import { CommandModule, ArgumentsCamelCase, Argv } from 'yargs';
 import fs from 'fs-extra';
 import path from 'path';
+import inquirer from 'inquirer';
+import { exit } from 'process';
 
 import Template from '../../libs/templates/index.js';
 import { installGit } from '../../libs/git/index.js';
-import { descriptionInput } from '../../components/descriptionInput.js';
+import multiLevelSelect from '../../components/mutiLevelSelect.js';
 import {
   generateConfigFile,
   getCliConfig,
   getProjectConfig,
   getTemplatesConfig,
   templateHubPath,
-  TemplateItem,
   updateProjectConfigFile
 } from '../../utils/fileUtils/index.js';
 import t from '../../i18n/index.js';
 import logger from '../../libs/logger.js';
-import SelectItems, { SelectItem } from '../../components/selectInput.js';
 import { quickDeploy } from '../deploy/index.js';
-import { ProjectConfig } from '../../utils/fileUtils/interface.js';
-import chalk from 'chalk';
 import { ApiService } from '../../libs/apiService.js';
-import { exit } from 'process';
 import { checkRoutineExist } from '../../utils/checkIsRoutineCreated.js';
-
-import { execSync } from 'child_process';
-
-import MultiLevelSelect from '../../components/mutiLevelSelect.js';
-import { getDirName } from '../../utils/fileUtils/base.js';
-import { yesNoPromptAndExecute } from '../deploy/helper.js';
 import { checkIsLoginSuccess } from '../utils.js';
+import chalk from 'chalk';
 
-export const getTemplateInstances = (templateHubPath: string) => {
-  return fs
-    .readdirSync(templateHubPath)
-    .filter((item) => {
-      const itemPath = path.join(templateHubPath, item);
-      return (
-        fs.statSync(itemPath).isDirectory() &&
-        !['.git', 'node_modules', 'lib'].includes(item)
-      );
-    })
-    .map((item) => {
-      const projectPath = path.join(templateHubPath, item);
-      const projectConfig = getProjectConfig(projectPath);
-      const templateName = projectConfig?.name ?? '';
-      return new Template(projectPath, templateName);
-    });
-};
-
-const secondSetOfItems = [
-  { label: 'Yes', value: 'yesInstall' },
-  { label: 'No', value: 'noInstall' }
-];
+import {
+  checkAndUpdatePackage,
+  getTemplateInstances,
+  preInstallDependencies,
+  transferTemplatesToSelectItem
+} from './helper.js';
 
 const init: CommandModule = {
   command: 'init',
@@ -68,274 +44,186 @@ const init: CommandModule = {
   },
   handler: async (argv: ArgumentsCamelCase) => {
     await handleInit(argv);
+    exit(0);
   }
 };
 
 export default init;
 
-export const preInstallDependencies = async (targetPath: string) => {
-  const packageJsonPath = path.join(targetPath, 'package.json');
-  if (fs.existsSync(packageJsonPath)) {
-    logger.log(t('init_install_dependence').d('⌛️ Installing dependencies...'));
-    execSync('npm install esa-template', {
-      stdio: 'inherit',
-      cwd: targetPath
-    });
-    logger.success(
-      t('init_install_dependencies_success').d(
-        'Dependencies installed successfully.'
-      )
-    );
-    logger.log(t('init_build_project').d('⌛️ Building project...'));
-    execSync('npm run build', { stdio: 'inherit', cwd: targetPath });
-    logger.success(
-      t('init_build_project_success').d('Project built successfully.')
-    );
-  }
-};
-
-export const transferTemplatesToSelectItem = (
-  configs: TemplateItem[],
-  templateInstanceList: Template[],
-  lang?: string
-): SelectItem[] => {
-  if (!configs) return [];
-  return configs.map((config) => {
-    const name = config.Title_EN;
-    const value =
-      templateInstanceList.find((template) => {
-        return name === template.title;
-      })?.path ?? '';
-    const children = transferTemplatesToSelectItem(
-      config.children,
-      templateInstanceList,
-      lang
-    );
-    return {
-      label: lang === 'en' ? config.Title_EN : config.Title_ZH,
-      value: value,
-      key: name,
-      children
-    };
-  });
-};
-
-async function checkAndUpdatePackage(packageName: string): Promise<void> {
-  try {
-    // 获取当前安装的版本
-    const __dirname = getDirName(import.meta.url);
-    const packageJsonPath = path.join(__dirname, '../../../');
-    const versionInfo = execSync(`npm list ${packageName}`, {
-      cwd: packageJsonPath
-    }).toString();
-    const match = versionInfo.match(new RegExp(`(${packageName})@([0-9.]+)`));
-    const currentVersion = match ? match[2] : '';
-    // 获取最新版本
-    const latestVersion: string = execSync(`npm view ${packageName} version`)
-      .toString()
-      .trim();
-
-    if (currentVersion !== latestVersion) {
-      logger.log(
-        t('display_current_esa_template_version').d(
-          `Current esa-template version:`
-        ) +
-          chalk.green(currentVersion) +
-          '    ' +
-          t('display_latest_esa_template_version').d(
-            `Latest esa-template version:`
-          ) +
-          chalk.green(latestVersion)
-      );
-
-      await yesNoPromptAndExecute(
-        t('is_update_to_latest_version').d(
-          'Do you want to update templates to latest version?'
-        ),
-        async () => {
-          logger.log(
-            t('updating_esa_template_to_latest_version', { packageName }).d(
-              `Updating ${packageName} to the latest version...`
-            )
+export async function promptProjectName(): Promise<string> {
+  const { name } = await inquirer.prompt([
+    {
+      type: 'input',
+      name: 'name',
+      message: `🖊️ ${t('init_input_name').d('Enter the name of edgeRoutine:')}`,
+      validate: (input) => {
+        const regex = /^[a-z0-9-]{2,}$/;
+        if (!regex.test(input)) {
+          return t('init_name_error').d(
+            'Error: The project name must be at least 2 characters long and can only contain lowercase letters, numbers, and hyphens.'
           );
-          execSync(
-            `rm -rf node_modules/${packageName} &&rm -rf package-lock.json &&npm install ${packageName}@latest`,
-            {
-              cwd: packageJsonPath
-            }
-          );
-
-          logger.log(
-            t('updated_esa_template_to_latest_version', { packageName }).d(
-              `${packageName} updated successfully`
-            )
-          );
-          return true;
         }
-      );
-    } else {
-      logger.log(
-        t('esa_template_is_latest_version', { packageName }).d(
-          `${packageName} is latest.`
-        )
-      );
+        return true;
+      }
     }
-  } catch (error) {
-    if (error instanceof Error) {
-      logger.error('检测和更新包时发生错误，跳过更新模版');
-    }
-  }
+  ]);
+  return name;
 }
 
-export async function handleInit(argv: ArgumentsCamelCase) {
-  const { config } = argv;
-  // 更新template npm包
-  await checkAndUpdatePackage('esa-template');
-
-  if (config !== undefined) {
-    await generateConfigFile(String(config));
-    return;
-  }
-
-  const name = await descriptionInput(
-    `🖊️ ${t('init_input_name').d('Enter the name of edgeRoutine:')}`,
-    true
-  );
-  const regex = /^[a-z0-9-]{2,}$/;
-
-  if (!regex.test(name)) {
-    logger.error(
-      t('init_name_error').d(
-        'Error: The project name must be at least 2 characters long and can only contain lowercase letters, numbers, and hyphens.'
-      )
-    );
-    return;
-  }
-
+export function prepareTemplateItems(): {
+  label: string;
+  value: string;
+  children?: any;
+}[] {
   const templateInstanceList = getTemplateInstances(templateHubPath);
   const templateConfig = getTemplatesConfig();
   const cliConfig = getCliConfig();
   const lang = cliConfig?.lang ?? 'en';
-
-  const firstSetOfItems = transferTemplatesToSelectItem(
+  return transferTemplatesToSelectItem(
     templateConfig,
     templateInstanceList,
     lang
   );
+}
 
-  let selectTemplate: Template;
-  let targetPath: string;
-  let projectConfig: ProjectConfig | null;
-
-  const preInstallDependencies = async () => {
-    const packageJsonPath = path.join(targetPath, 'package.json');
-    if (fs.existsSync(packageJsonPath)) {
-      logger.log('Install dependencies');
-      logger.log(
-        t('init_install_dependence').d('⌛️ Installing dependencies...')
-      );
-      execSync('npm install', { stdio: 'inherit', cwd: targetPath });
-      logger.success(
-        t('init_install_dependencies_success').d(
-          'Dependencies installed successfully.'
-        )
-      );
-      logger.log(t('init_build_project').d('⌛️ Building project...'));
-      execSync('npm run build', { stdio: 'inherit', cwd: targetPath });
-      logger.success(
-        t('init_build_project_success').d('Project built successfully.')
-      );
-    }
-  };
-
-  const handleFirstSelection = async (item: SelectItem) => {
-    if (item.key === 'exit') {
-      process.exit(0);
-    }
-
-    const configPath = item.value;
-    selectTemplate = new Template(configPath, name);
-
-    projectConfig = getProjectConfig(configPath);
-    if (!projectConfig) return logger.notInProject();
-
-    const newPath = process.cwd() + '/' + name;
-    targetPath = newPath;
-    if (fs.existsSync(newPath)) {
-      logger.error(
-        t('already_exist_file_error').d(
-          'Error: The project already exists. It looks like a folder named "<project-name>" is already present in the current directory. Please try the following options: 1. Choose a different project name. 2. Delete the existing folder if it\'s not needed: `rm -rf <project-name>` (use with caution!). 3. Move to a different directory before running the init command.'
-        )
-      );
-      exit(0);
-    }
-    await fs.copy(configPath, newPath);
-
-    projectConfig.name = name;
-    updateProjectConfigFile(projectConfig, newPath);
-    preInstallDependencies();
-
-    logger.log(t('init_git').d('Do you want to init git in your project?'));
-    SelectItems({
-      items: secondSetOfItems,
-      handleSelect: handleSecondSelection
-    });
-  };
-
-  const handleSecondSelection = async (item: SelectItem) => {
-    if (item.value === 'yesInstall') {
-      installGit(targetPath);
-    } else {
-      logger.log(t('init_skip_git').d('Git installation was skipped.'));
-    }
-    const isLoginSuccess = await checkIsLoginSuccess();
-    if (!isLoginSuccess) {
-      logger.log(
-        chalk.yellow(
-          t('not_login_auto_deploy').d(
-            'You are not logged in, automatic deployment cannot be performed. Please log in later and manually deploy.'
-          )
-        )
-      );
-      process.exit(0);
-    }
-
-    logger.log(t('auto_deploy').d('Do you want to deploy your project?'));
-    SelectItems({
-      items: secondSetOfItems,
-      handleSelect: handleThirdSelection
-    });
-  };
-
-  const handleThirdSelection = async (item: SelectItem) => {
-    // 选择自动生成版本并发布
-    if (item.value === 'yesInstall') {
-      await checkRoutineExist(projectConfig?.name ?? '', targetPath);
-      projectConfig && (await quickDeploy(targetPath, projectConfig));
-      const service = await ApiService.getInstance();
-      const res = await service.getRoutine({ Name: projectConfig?.name ?? '' });
-      const defaultUrl = res?.data?.DefaultRelatedRecord;
-      const visitUrl = defaultUrl ? 'http://' + defaultUrl : '';
-      logger.success(
-        `${t('init_deploy_success').d('Project deployment completed. Visit: ')}${chalk.yellowBright(visitUrl)}`
-      );
-      logger.warn(
-        t('deploy_url_warn').d(
-          'The domain may take some time to take effect, please try again later.'
-        )
-      );
-    }
-    selectTemplate.printSummary();
-    exit(0);
-  };
-
-  try {
-    MultiLevelSelect({
-      items: firstSetOfItems,
-      handleSelect: handleFirstSelection
-    });
-  } catch (error) {
-    logger.error(t('init_error').d('An error occurred while initializing.'));
-    console.log(error);
+export async function selectTemplate(
+  items: { label: string; value: string; children?: any }[]
+): Promise<string | null> {
+  const selectedTemplatePath = await multiLevelSelect(
+    items,
+    'Select a template:'
+  );
+  if (!selectedTemplatePath) {
+    logger.log(t('init_cancel').d('User canceled the operation.'));
+    return null;
   }
+  return selectedTemplatePath;
+}
+
+export async function initializeProject(
+  selectedTemplatePath: string,
+  name: string
+): Promise<{ template: Template; targetPath: string } | null> {
+  const selectTemplate = new Template(selectedTemplatePath, name);
+  const projectConfig = getProjectConfig(selectedTemplatePath);
+  if (!projectConfig) {
+    logger.notInProject();
+    return null;
+  }
+
+  const targetPath = path.join(process.cwd(), name);
+  if (fs.existsSync(targetPath)) {
+    logger.error(
+      t('already_exist_file_error').d(
+        'Error: The project already exists. It looks like a folder named "<project-name>" is already present in the current directory. Please try the following options: 1. Choose a different project name. 2. Delete the existing folder if it\'s not needed: `rm -rf <project-name>` (use with caution!). 3. Move to a different directory before running the init command.'
+      )
+    );
+    return null;
+  }
+
+  await fs.copy(selectedTemplatePath, targetPath);
+  projectConfig.name = name;
+  await updateProjectConfigFile(projectConfig, targetPath);
+  await preInstallDependencies(targetPath);
+
+  return { template: selectTemplate, targetPath };
+}
+
+export async function handleGitInitialization(
+  targetPath: string
+): Promise<void> {
+  const { initGit } = await inquirer.prompt([
+    {
+      type: 'list',
+      name: 'initGit',
+      message: t('init_git').d('Do you want to init git in your project?'),
+      choices: ['Yes', 'No']
+    }
+  ]);
+
+  if (initGit === 'Yes') {
+    installGit(targetPath);
+  } else {
+    logger.log(t('init_skip_git').d('Git installation was skipped.'));
+  }
+}
+
+export async function handleDeployment(
+  targetPath: string,
+  projectConfig: any
+): Promise<void> {
+  const isLoginSuccess = await checkIsLoginSuccess();
+  if (!isLoginSuccess) {
+    logger.log(
+      chalk.yellow(
+        t('not_login_auto_deploy').d(
+          'You are not logged in, automatic deployment cannot be performed. Please log in later and manually deploy.'
+        )
+      )
+    );
+    return;
+  }
+
+  const { deploy } = await inquirer.prompt([
+    {
+      type: 'list',
+      name: 'deploy',
+      message: t('auto_deploy').d('Do you want to deploy your project?'),
+      choices: ['Yes', 'No']
+    }
+  ]);
+  if (deploy === 'Yes') {
+    await checkRoutineExist(projectConfig?.name ?? '', targetPath);
+    await quickDeploy(targetPath, projectConfig);
+    const service = await ApiService.getInstance();
+    const res = await service.getRoutine({ Name: projectConfig?.name ?? '' });
+    const defaultUrl = res?.data?.DefaultRelatedRecord;
+    const visitUrl = defaultUrl ? 'http://' + defaultUrl : '';
+    logger.success(
+      `${t('init_deploy_success').d('Project deployment completed. Visit: ')}${chalk.yellowBright(visitUrl)}`
+    );
+    logger.warn(
+      t('deploy_url_warn').d(
+        'The domain may take some time to take effect, please try again later.'
+      )
+    );
+  }
+}
+
+export async function handleInit(argv: ArgumentsCamelCase) {
+  // Update the template package (currently commented out)
+  await checkAndUpdatePackage('esa-template');
+
+  // If config option is provided, generate config file and exit
+  const config = getCliConfig();
+  if (config === undefined) {
+    await generateConfigFile(String(config));
+  }
+
+  const name = await promptProjectName();
+
+  const templateItems = prepareTemplateItems();
+
+  // Select a template
+  const selectedTemplatePath = await selectTemplate(templateItems);
+  if (!selectedTemplatePath) {
+    return;
+  }
+
+  // Initialize project files and configuration
+  const project = await initializeProject(selectedTemplatePath, name);
+  if (!project) {
+    return;
+  }
+  const { template, targetPath } = project;
+
+  // Handle Git initialization
+  await handleGitInitialization(targetPath);
+
+  // Handle deployment
+  const projectConfig = getProjectConfig(targetPath);
+  await handleDeployment(targetPath, projectConfig);
+
+  template.printSummary();
+  return;
 }

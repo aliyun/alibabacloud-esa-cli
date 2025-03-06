@@ -97,6 +97,7 @@ const mockGlobal = () => {
         .fn()
         .mockResolvedValue({ data: { IPV4: ['0.0.0.0'] } }),
       publishRoutineCodeVersion: vi.fn().mockResolvedValue({}),
+      quickDeployRoutine: vi.fn().mockResolvedValue({}),
       ListRoutineOptionalSpecs: vi.fn().mockResolvedValue({}),
       getRoutineStagingCodeUploadInfo: vi.fn().mockResolvedValue(true),
       deleteRoutineRelatedRoute: vi.fn().mockResolvedValue({

@@ -30,7 +30,8 @@ describe('handleAddDomain', () => {
       [MockFunction log] {
         "calls": [
           [
-            "🎉  SUCCESS  Binding domain test.com to routine successfully",
+            "
+      🎉  SUCCESS  Binding domain test.com to routine successfully",
           ],
         ],
         "results": [

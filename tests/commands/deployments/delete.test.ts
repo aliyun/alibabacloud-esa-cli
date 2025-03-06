@@ -29,10 +29,12 @@ describe('handle delete deployments', () => {
       [MockFunction log] {
         "calls": [
           [
-            "🎉  SUCCESS  Delete success: id1",
+            "
+      🎉  SUCCESS  Delete success: id1",
           ],
           [
-            "🎉  SUCCESS  Delete success: id2",
+            "
+      🎉  SUCCESS  Delete success: id2",
           ],
         ],
         "results": [

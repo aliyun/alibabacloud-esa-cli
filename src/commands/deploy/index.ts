@@ -35,7 +35,6 @@ import t from '../../i18n/index.js';
 import prodBuild from '../commit/prodBuild.js';
 import { exit } from 'process';
 import path from 'path';
-import { createEdgeRoutine } from '../commit/index.js';
 import { checkRoutineExist } from '../../utils/checkIsRoutineCreated.js';
 import moment from 'moment';
 

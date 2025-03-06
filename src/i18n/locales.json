@@ -918,5 +918,21 @@
   "deno_install_success_tips": {
     "en": "Please run ${dev} again",
     "zh_CN": "请重新运行 ${dev}"
+  },
+  "no_build_script": {
+    "en": "No build script found in package.json, skipping build step.",
+    "zh_CN": "在 package.json 中未找到构建脚本，跳过构建步骤。"
+  },
+  "init_cancel": {
+    "en": "User canceled the operation.",
+    "zh_CN": "用户取消了操作。"
+  },
+  "routine_create_success": {
+    "en": "Routine created successfully.",
+    "zh_CN": "边缘函数创建成功"
+  },
+  "routine_create_fail": {
+    "en": "Routine created failed.",
+    "zh_CN": "边缘函数创建失败"
   }
 }

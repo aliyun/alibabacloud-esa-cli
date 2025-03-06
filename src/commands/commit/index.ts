@@ -101,7 +101,6 @@ export async function handleCommit(argv: ArgumentsCamelCase) {
       if (!(await uploadEdgeRoutineCode(edgeRoutine))) return;
       await releaseOfficialVersion(edgeRoutine);
     }
-    exit(0);
   } catch (error) {
     logger.error(
       `${t('common_error_occurred').d('An error occurred:')} ${error}`
@@ -154,6 +153,7 @@ export async function uploadEdgeRoutineCode(
     logger.success(t('commit_upload_success').d('Code uploaded successfully.'));
     return true;
   } catch (error) {
+    logger.error('123');
     logger.error(
       `${t('common_error_occurred').d('An error occurred:')} ${error}`
     );

@@ -51,10 +51,22 @@ export async function checkRoutineExist(name: string, entry?: string) {
       return acc;
     }, [] as string[]);
     const spec = await displaySelectSpec(specList);
-    await createEdgeRoutine({
+    console.log({
       name: name,
       specName: spec,
       code: code
     });
+    const res = await createEdgeRoutine({
+      name: name,
+      specName: spec,
+      code: code
+    });
+    if (res) {
+      logger.success(
+        t('routine_create_success').d('Routine created successfully.')
+      );
+    } else {
+      logger.error(t('routine_create_fail').d('Routine created failed.'));
+    }
   }
 }

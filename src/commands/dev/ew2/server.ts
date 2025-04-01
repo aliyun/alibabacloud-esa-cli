@@ -153,17 +153,20 @@ class Ew2Server {
         // 解决 gzip 兼容性问题，防止net::ERR_CONTENT_DECODING_FAILED
         workerHeaders['content-encoding'] = 'identity';
         if (workerRes.body) {
-          if (workerRes.headers.get('content-type')?.includes('text/')) {
-            const text = await workerRes.text();
-            // 出现换行符之类会导致 content-length 不一致
-            workerHeaders['content-length'] =
-              Buffer.byteLength(text).toString();
-            res.writeHead(workerRes.status, workerHeaders);
-            res.end(text);
-          } else {
-            res.writeHead(workerRes.status, workerHeaders);
-            workerRes.body.pipe(res);
-          }
+          // if (workerRes.headers.get('content-type')?.includes('text/')) {
+          //   const text = await workerRes.text();
+          //   // 出现换行符之类会导致 content-length 不一致
+          //   workerHeaders['content-length'] =
+          //     Buffer.byteLength(text).toString();
+          //     console.log(workerHeaders['content-length']);
+          //   res.writeHead(workerRes.status, workerHeaders);
+          //   res.end(text);
+          // } else {
+          //   res.writeHead(workerRes.status, workerHeaders);
+          //   workerRes.body.pipe(res);
+          // }
+          res.writeHead(workerRes.status, workerHeaders);
+          workerRes.body.pipe(res);
           logger.log(
             `[ESA Dev] ${req.method} ${url} ${getColorForStatusCode(workerRes.status, workerRes.statusText)}`
           );

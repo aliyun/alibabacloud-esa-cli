@@ -76,12 +76,10 @@ describe('handleDeploy', () => {
         Envs: [
           {
             CodeVersion: 'staging',
-            SpecName: '',
             Env: ''
           },
           {
             CodeVersion: 'production',
-            SpecName: '',
             Env: ''
           }
         ]
@@ -112,12 +110,10 @@ describe('handleDeploy', () => {
         Envs: [
           {
             CodeVersion: 'staging',
-            SpecName: '',
             Env: ''
           },
           {
             CodeVersion: 'production',
-            SpecName: '',
             Env: ''
           }
         ]

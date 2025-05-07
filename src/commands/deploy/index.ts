@@ -80,7 +80,7 @@ export async function quickDeploy(entry: string, projectConfig: ProjectConfig) {
     );
   } else {
     logger.error(t('quick_deploy_failed').d('Quick deploy failed'));
-    process.exit(0);
+    throw Error(t('quick_deploy_failed').d('Quick deploy failed'));
   }
 }
 
@@ -137,21 +137,6 @@ export async function handleDeploy(argv: ArgumentsCamelCase) {
       selectedVersion
     );
   }
-}
-
-export async function displaySelectSpec(specList: string[]): Promise<string> {
-  logger.log(
-    `📃 ${t('deploy_spec_select').d('Please select the spec of the routine you want to create')}`
-  );
-  const selectItems: SelectItem[] = specList.map((spec) => {
-    return { label: spec, value: spec };
-  });
-  return new Promise((resolve) => {
-    const handleSelection = async (item: SelectItem) => {
-      resolve(item.value);
-    };
-    SelectItems({ items: selectItems, handleSelect: handleSelection });
-  });
 }
 
 async function handleNoVersionsFound(

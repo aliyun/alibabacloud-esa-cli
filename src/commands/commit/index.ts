@@ -9,7 +9,6 @@ import {
   EdgeRoutineProps,
   GetRoutineReq
 } from '../../libs/interface.js';
-import { displaySelectSpec } from '../deploy/index.js';
 import { descriptionInput } from '../../components/descriptionInput.js';
 import { ApiService } from '../../libs/apiService.js';
 import prodBuild from './prodBuild.js';
@@ -55,7 +54,6 @@ export async function handleCommit(argv: ArgumentsCamelCase) {
     const server = await ApiService.getInstance();
     const req: GetRoutineReq = { Name: projectConfig.name };
     const response = await server.getRoutine(req, false);
-    let specName = response?.data.Envs[0].SpecName ?? '50ms';
     let action = 'Creating';
     let description;
 
@@ -67,15 +65,6 @@ export async function handleCommit(argv: ArgumentsCamelCase) {
         `🖊️ ${t('commit_er_description').d('Enter a description for the routine')}:`,
         false
       );
-      const specList = (
-        (await server.ListRoutineOptionalSpecs())?.data.Specs ?? []
-      ).reduce((acc, item) => {
-        if (item.IsAvailable) {
-          acc.push(item.SpecName);
-        }
-        return acc;
-      }, [] as string[]);
-      specName = await displaySelectSpec(specList);
     } else {
       logger.log(
         `🔄 ${t('commit_er_exist').d('Routine exists, updating the code')}`
@@ -91,8 +80,7 @@ export async function handleCommit(argv: ArgumentsCamelCase) {
     const edgeRoutine: CreateRoutineReq = {
       name: projectConfig.name,
       code,
-      description,
-      specName
+      description
     };
 
     if (action === 'Creating') {

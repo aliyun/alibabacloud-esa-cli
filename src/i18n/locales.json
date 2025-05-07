@@ -934,5 +934,49 @@
   "routine_create_fail": {
     "en": "Routine created failed.",
     "zh_CN": "边缘函数创建失败"
+  },
+  "create_route_route": {
+    "en": "Enter a Route:",
+    "zh_CN": ""
+  },
+  "route_name_input_required": {
+    "en": "Route name is required",
+    "zh_CN": ""
+  },
+  "create_route_mode": {
+    "en": "Which mode of route do you want to use?",
+    "zh_CN": ""
+  },
+  "create_route_site": {
+    "en": "Select a site that is active in your account:",
+    "zh_CN": ""
+  },
+  "route_input_required": {
+    "en": "Route is required",
+    "zh_CN": ""
+  },
+  "create_route_rule": {
+    "en": "Enter a Rule Expression:",
+    "zh_CN": ""
+  },
+  "rule_input_required": {
+    "en": "Rule is required",
+    "zh_CN": ""
+  },
+  "route_list_simple_title": {
+    "en": "Related simple mode routes",
+    "zh_CN": ""
+  },
+  "route_list_custom_title": {
+    "en": "Related custom mode routes",
+    "zh_CN": ""
+  },
+  "create_route_route_name": {
+    "en": "Enter a Route Name (Aliases):",
+    "zh_CN": ""
+  },
+  "no_route_found": {
+    "en": "No route found! Please check the route name.",
+    "zh_CN": ""
   }
 }

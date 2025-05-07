@@ -14,21 +14,18 @@ export interface CodeVersionProps {
  * Represents the properties of an routine.
  * @param name - 函数名称
  * @param description - 函数描述
- * @param specName - 规格 单个请求可用CPU时间片
  * @param code - 边缘函数代码
  */
 
 export interface EdgeRoutineProps {
   name: string;
   description?: string;
-  specName?: string;
   code: string;
 }
 
 export interface CreateRoutineReq {
   name: string;
   description?: string;
-  specName: string;
   code: string;
 }
 
@@ -72,13 +69,6 @@ export interface Summary {
   projectName?: string; //暂时用不到
 }
 
-export interface ListRoutineOptionalSpecsRes {
-  code: string;
-  data: {
-    RequestId: string;
-    Specs: { SpecName: string; IsAvailable: boolean }[];
-  };
-}
 export interface CommitRoutineStagingCodeReq {
   Name: string;
   CodeDescription?: string;
@@ -125,16 +115,14 @@ export interface RelatedRecordProps {
 }
 
 export interface RelatedRouteProps {
-  SiteId: string;
+  RouteName: string;
   SiteName: string;
   Route: string;
-  RouteId: string;
 }
 
 export interface EnvProps {
-  CanaryCodeVersion?: string; // 灰度版本
-  CanaryAreaList?: string[]; // 灰度区域
-  SpecName: string;
+  CanaryCodeVersion?: string;
+  CanaryAreaList?: string[];
   Env: string;
   CodeVersion: string;
 }
@@ -147,11 +135,9 @@ export interface GetRoutineRes {
   data: {
     RequestId: string;
     CodeVersions: CodeVersionProps[];
-    RelatedRecords: RelatedRecordProps[];
     Envs: EnvProps[];
     CreateTime: string;
     Description: string;
-    RelatedRoutes: RelatedRouteProps[];
     DefaultRelatedRecord: string;
   };
 }
@@ -164,7 +150,6 @@ export interface EdgeFunctionItem {
   RoutineName: string;
   Description: string;
   CreateTime: string;
-  SpecName?: string;
 }
 
 export interface DeleteRoutineRes {
@@ -296,3 +281,41 @@ export interface ApiError {
 }
 
 export type Map = Record<string, any>;
+
+export interface ListRoutineRelatedRecordsReq {
+  Name: string;
+  PageNumber?: number;
+  PageSize?: number;
+  SearchKeyWord?: string;
+  RegionId?: string;
+}
+export interface ListRoutineRelatedRecordsRes {
+  code: string;
+  data: {
+    PageNumber: number;
+    PageSize: number;
+    TotalCount: number;
+    RelatedRecords: {
+      RecordName: string;
+      SiteId: number;
+      SiteName: string;
+      RecordId: number;
+    }[];
+  };
+}
+
+export interface CreateRoutineRouteReq {
+  SiteId: number;
+  RouteName?: string;
+  RouteEnable?: string;
+  Rule?: string;
+  RoutineName: string;
+  Bypass?: 'on' | 'off';
+  Mode?: 'simple' | 'custom';
+  Sequence?: number;
+  RegionId?: string;
+}
+export interface CreateRoutineRouteRes {
+  code: string;
+  data: { RequestId: string; ConfigId: number };
+}

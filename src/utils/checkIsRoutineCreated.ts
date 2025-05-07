@@ -1,6 +1,5 @@
 import path from 'path';
 import { createEdgeRoutine } from '../commands/commit/index.js';
-import { displaySelectSpec } from '../commands/deploy/index.js';
 import { ApiService } from '../libs/apiService.js';
 import { readEdgeRoutineFile } from './fileUtils/index.js';
 import { GetRoutineReq } from '../libs/interface.js';
@@ -41,24 +40,8 @@ export async function checkRoutineExist(name: string, entry?: string) {
     const entryFile = path.resolve(entry ?? '', 'src/index.js');
     await prodBuild(false, entryFile, entry);
     const code = readEdgeRoutineFile(entry) || '';
-    const server = await ApiService.getInstance();
-    const specList = (
-      (await server.ListRoutineOptionalSpecs())?.data.Specs ?? []
-    ).reduce((acc, item) => {
-      if (item.IsAvailable) {
-        acc.push(item.SpecName);
-      }
-      return acc;
-    }, [] as string[]);
-    const spec = await displaySelectSpec(specList);
-    console.log({
-      name: name,
-      specName: spec,
-      code: code
-    });
     const res = await createEdgeRoutine({
       name: name,
-      specName: spec,
       code: code
     });
     if (res) {

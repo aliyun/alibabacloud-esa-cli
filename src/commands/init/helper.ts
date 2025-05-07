@@ -8,8 +8,6 @@ import logger from '../../libs/logger.js';
 import { execSync } from 'child_process';
 import t from '../../i18n/index.js';
 import chalk from 'chalk';
-import { getDirName } from '../../utils/fileUtils/base.js';
-import { yesNoPromptAndExecute } from '../deploy/helper.js';
 import { SelectItem } from '../../components/mutiLevelSelect.js';
 import inquirer from 'inquirer';
 
@@ -90,13 +88,18 @@ export async function checkAndUpdatePackage(
 ): Promise<void> {
   try {
     // 获取当前安装的版本
-    const __dirname = getDirName(import.meta.url);
+    const __dirname = __filename;
     const packageJsonPath = path.join(__dirname, '../../../');
-    const versionInfo = execSync(`npm list ${packageName}`).toString();
+    const versionInfo = execSync(`npm list ${packageName}`, {
+      cwd: packageJsonPath
+    }).toString();
     const match = versionInfo.match(new RegExp(`(${packageName})@([0-9.]+)`));
     const currentVersion = match ? match[2] : '';
     // 获取最新版本
-    const latestVersion: string = execSync(`npm view ${packageName} version`)
+
+    const latestVersion: string = execSync(`npm view ${packageName} version`, {
+      cwd: packageJsonPath
+    })
       .toString()
       .trim();
 

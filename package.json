@@ -67,7 +67,7 @@
     "vitest": "^2.0.4"
   },
   "dependencies": {
-    "@alicloud/esa20240910": "2.8.1",
+    "@alicloud/esa20240910": "2.24.0",
     "@alicloud/openapi-client": "^0.4.7",
     "@babel/generator": "^7.26.3",
     "@babel/parser": "^7.24.4",

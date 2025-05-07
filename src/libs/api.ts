@@ -274,12 +274,6 @@ class Client {
     );
   }
 
-  listRoutineOptionalSpecs(): Promise<$ESA.ListRoutineOptionalSpecsResponse> {
-    return this.callApi(
-      this.client.listRoutineOptionalSpecsWithOptions.bind(this.client)
-    );
-  }
-
   createRoutineRelatedRecord(
     params: OptionalProps<$ESA.CreateRoutineRelatedRecordRequest>
   ): Promise<$ESA.CreateRoutineRelatedRecordResponse> {
@@ -305,6 +299,80 @@ class Client {
       ) as ApiMethod<
         $ESA.DeleteRoutineRelatedRecordRequest,
         $ESA.DeleteRoutineRelatedRecordResponse
+      >,
+      request
+    );
+  }
+
+  createRoutineRoute(
+    params: OptionalProps<$ESA.CreateRoutineRouteRequest>
+  ): Promise<$ESA.CreateRoutineRouteResponse> {
+    const request = new $ESA.CreateRoutineRouteRequest(params);
+    const newRequest = Object.assign(request, { mode: 'simple' });
+    console.log(newRequest);
+    return this.callApi(
+      this.client.createRoutineRouteWithOptions.bind(this.client) as ApiMethod<
+        $ESA.CreateRoutineRouteRequest,
+        $ESA.CreateRoutineRouteResponse
+      >,
+      newRequest
+    );
+  }
+
+  deleteRoutineRoute(
+    params: OptionalProps<$ESA.DeleteRoutineRouteRequest>
+  ): Promise<$ESA.DeleteRoutineRouteResponse> {
+    const request = new $ESA.DeleteRoutineRouteRequest(params);
+    return this.callApi(
+      this.client.deleteRoutineRouteWithOptions.bind(this.client) as ApiMethod<
+        $ESA.DeleteRoutineRouteRequest,
+        $ESA.DeleteRoutineRouteResponse
+      >,
+      request
+    );
+  }
+
+  getRoutineRoute(
+    params: OptionalProps<$ESA.GetRoutineRouteRequest>
+  ): Promise<$ESA.GetRoutineRouteResponse> {
+    const request = new $ESA.GetRoutineRouteRequest(params);
+    return this.callApi(
+      this.client.getRoutineRouteWithOptions.bind(this.client) as ApiMethod<
+        $ESA.GetRoutineRouteRequest,
+        $ESA.GetRoutineRouteResponse
+      >,
+      request
+    );
+  }
+
+  listSiteRoutes(params: $ESA.ListSiteRoutesRequest) {
+    const request = new $ESA.ListSiteRoutesRequest(params);
+    return this.callApi(
+      this.client.listSiteRoutes.bind(this.client) as ApiMethod<
+        $ESA.ListSiteRoutesRequest,
+        $ESA.ListSiteRoutesResponse
+      >,
+      request
+    );
+  }
+
+  listRoutineRoutes(params: $ESA.ListRoutineRoutesRequest) {
+    const request = new $ESA.ListRoutineRoutesRequest(params);
+    return this.callApi(
+      this.client.listRoutineRoutes.bind(this.client) as ApiMethod<
+        $ESA.ListRoutineRoutesRequest,
+        $ESA.ListRoutineRoutesResponse
+      >,
+      request
+    );
+  }
+
+  updateRoutineRoute(params: $ESA.UpdateRoutineRouteRequest) {
+    const request = new $ESA.UpdateRoutineRouteRequest(params);
+    return this.callApi(
+      this.client.updateRoutineRoute.bind(this.client) as ApiMethod<
+        $ESA.UpdateRoutineRouteRequest,
+        $ESA.UpdateRoutineRouteResponse
       >,
       request
     );

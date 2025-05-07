@@ -2,7 +2,7 @@ import { CommandModule, ArgumentsCamelCase, Argv } from 'yargs';
 import { getProjectConfig } from '../../utils/fileUtils/index.js';
 import {
   DeleteRoutineRelatedRecordReq,
-  GetRoutineReq,
+  ListRoutineRelatedRecordsReq,
   RelatedRecordProps
 } from '../../libs/interface.js';
 import { checkDirectory, checkIsLoginSuccess } from '../utils.js';
@@ -45,12 +45,13 @@ export async function handleDeleteDomain(argv: ArgumentsCamelCase) {
 
   const server = await ApiService.getInstance();
 
-  const req: GetRoutineReq = { Name: projectConfig.name || '' };
-  const routineDetail = await server.getRoutine(req);
-  if (!routineDetail) return;
+  const req: ListRoutineRelatedRecordsReq = { Name: projectConfig.name || '' };
+  const listRoutineRelatedRecordRes =
+    await server.listRoutineRelatedRecords(req);
+  if (!listRoutineRelatedRecordRes) return;
 
   const relatedRecords: RelatedRecordProps[] =
-    routineDetail.data?.RelatedRecords ?? [];
+    listRoutineRelatedRecordRes.data?.RelatedRecords || [];
   const relatedDomain: string = argv.domain as string;
 
   const matchedSite = relatedRecords.find((item) => {

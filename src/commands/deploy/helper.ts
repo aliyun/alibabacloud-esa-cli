@@ -9,7 +9,6 @@ import {
 import { ApiService } from '../../libs/apiService.js';
 import { descriptionInput } from '../../components/descriptionInput.js';
 import { readEdgeRoutineFile } from '../../utils/fileUtils/index.js';
-import { displaySelectSpec } from './index.js';
 import {
   createEdgeRoutine,
   releaseOfficialVersion,
@@ -89,29 +88,10 @@ export async function createAndDeployVersion(
     await prodBuild(false, customEntry);
     const code = readEdgeRoutineFile();
 
-    const specList = (
-      (await server.ListRoutineOptionalSpecs())?.data.Specs ?? []
-    ).reduce((acc, item) => {
-      if (item.IsAvailable) {
-        acc.push(item.SpecName);
-      }
-      return acc;
-    }, [] as string[]);
-
-    let specName;
-    if (createUnstable) {
-      specName = await displaySelectSpec(specList);
-    } else {
-      const req: GetRoutineReq = { Name: projectConfig.name ?? '' };
-      const response = await server.getRoutine(req);
-      specName = response?.data.Envs[0].SpecName ?? '50ms';
-    }
-
     const edgeRoutine: CreateRoutineReq = {
       name: projectConfig.name,
       code: code || '',
-      description: description,
-      specName: specName
+      description: description
     };
 
     if (createUnstable) {

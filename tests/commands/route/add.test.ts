@@ -97,9 +97,13 @@ describe('handle add routes', () => {
       },
       { inputRoute: 'kl.test.site/*' }
     ]);
-    vi.mocked(api.createRoutineRoute).mockResolvedValue({
+
+    vi.mocked(
+      (await ApiService.getInstance()).createRoutineRoute
+    ).mockResolvedValue({
       statusCode: 500
     } as any);
+
     await handlerAddRoute({
       _: [],
       $0: ''

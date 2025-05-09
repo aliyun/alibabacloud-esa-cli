@@ -316,6 +316,6 @@ export interface CreateRoutineRouteReq {
   RegionId?: string;
 }
 export interface CreateRoutineRouteRes {
-  code: string;
+  code: number;
   data: { RequestId: string; ConfigId: number };
 }

@@ -37,6 +37,7 @@ import { exit } from 'process';
 import path from 'path';
 import { checkRoutineExist } from '../../utils/checkIsRoutineCreated.js';
 import moment from 'moment';
+import { ListRoutineCodeVersionsResponseBodyCodeVersions } from '@alicloud/esa20240910';
 
 const deploy: CommandModule = {
   command: 'deploy [entry]',
@@ -102,9 +103,7 @@ export async function handleDeploy(argv: ArgumentsCamelCase) {
   const req: GetRoutineReq = { Name: projectConfig.name };
   const routineDetail = await server.getRoutine(req, false);
 
-  const versionList: CodeVersionProps[] =
-    routineDetail?.data?.CodeVersions || [];
-
+  const versionList = await getRoutineVersionList(projectConfig.name);
   const customEntry = argv.entry as string;
 
   const stagingVersion = routineDetail?.data?.Envs[1]?.CodeVersion;
@@ -128,6 +127,7 @@ export async function handleDeploy(argv: ArgumentsCamelCase) {
         `${t('deploy_version_select').d('Select the version you want to publish')}:`
       )
     );
+
     const selectedVersion = await promptSelectVersion(versionList);
     const selectedType = await displaySelectDeployType();
 
@@ -249,7 +249,7 @@ export async function deploySelectedCodeVersion(
 }
 
 export async function displayVersionList(
-  versionList: CodeVersionProps[],
+  versionList: ListRoutineCodeVersionsResponseBodyCodeVersions[],
   stagingVersion = 'unstable',
   productionVersion = 'unstable'
 ) {
@@ -265,14 +265,14 @@ export async function displayVersionList(
     const version = versionList[i];
     const createTime = moment(version.CreateTime).format('YYYY/MM/DD HH:mm:ss');
     const tags = [
-      version.CodeVersion === stagingVersion ? chalk.bgYellow('Active') : '',
-      version.CodeVersion === productionVersion ? chalk.bgGreen('Active') : ''
+      version.codeVersion === stagingVersion ? chalk.bgYellow('Active') : '',
+      version.codeVersion === productionVersion ? chalk.bgGreen('Active') : ''
     ];
 
     data.push([
-      `${version.CodeVersion} ${tags.join(' ')}`,
+      `${version.codeVersion} ${tags.join(' ')}`,
       createTime,
-      Base64.decode(version.CodeDescription)
+      version.codeDescription ?? ''
     ]);
   }
 

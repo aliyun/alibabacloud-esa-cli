@@ -971,7 +971,7 @@ export class ApiService {
         action: 'CreateRoutineRoute',
         version: '2024-09-10',
         protocol: 'https',
-        method: 'GET',
+        method: 'POST',
         authType: 'AK',
         bodyType: 'json',
         reqBodyType: 'json',

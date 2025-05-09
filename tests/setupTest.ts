@@ -14,6 +14,13 @@ const mockGlobal = () => {
       checkLogin: vi.fn().mockResolvedValue({ success: true }),
       updateConfig: vi.fn(),
       deleteRoutine: vi.fn().mockResolvedValue({ Status: 'OK' }),
+      createRoutineRoute: vi.fn().mockResolvedValue({
+        code: 200,
+        data: {
+          RequestId: '7BDAD7C3-DFDA-5E81-80FD-DAC8F85BAD4C',
+          ConfigId: 429653246613504
+        }
+      }),
       getRoutineUserInfo: vi.fn().mockResolvedValue({}),
       listRoutineRelatedRecords: vi.fn().mockResolvedValue({
         data: {
@@ -183,6 +190,23 @@ const mockGlobal = () => {
       getRoutineStagingEnvIp: vi.fn().mockResolvedValue({
         data: { IPV4: ['0.0.0.0'] }
       }),
+      listRoutineCodeVersions: vi.fn().mockResolvedValue({
+        data: {
+          codeVersions: [
+            {
+              codeVersion: 'unstable',
+              createTime: '2021-01-01',
+              codeDescription: ''
+            },
+            {
+              codeVersion: 'v1',
+              createTime: '2021-01-01',
+              codeDescription: ''
+            },
+            { codeVersion: 'v2', createTime: '2021-01-01', codeDescription: '' }
+          ]
+        }
+      }),
       getRoutine: vi.fn().mockResolvedValue({
         data: {
           CodeVersions: [
@@ -231,25 +255,6 @@ const mockGlobal = () => {
       }),
       deleteRoutineRelatedRecord: vi.fn().mockResolvedValue({
         data: { Status: 'OK' }
-      }),
-      createRoutineRoute: vi.fn().mockResolvedValue({
-        headers: {
-          date: 'Wed, 07 May 2025 02:08:13 GMT',
-          'content-type': 'application/json;charset=utf-8',
-          'content-length': '79',
-          connection: 'keep-alive',
-          'keep-alive': 'timeout=25',
-          'access-control-allow-origin': '*',
-          'access-control-expose-headers': '*',
-          'x-acs-request-id': 'FA9867DB-F1DB-53D8-8372-4xxxxxxx',
-          'x-acs-trace-id': '5b3202655314cdd12ca3xxxxx5',
-          etag: '76n/yPvtHxxxxxx'
-        },
-        statusCode: 200,
-        body: {
-          configId: 429240501884928,
-          requestId: 'FA9867DB-F1DB-53D8-8372-4xxxxxxx'
-        }
       }),
       deleteRoutineRoute: vi.fn().mockResolvedValue({
         headers: {

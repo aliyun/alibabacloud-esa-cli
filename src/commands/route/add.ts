@@ -92,17 +92,17 @@ export async function handlerAddRoute(argv: ArgumentsCamelCase) {
   const rule = transferRouteToRuleString(inputRoute as string);
 
   const req = {
-    routineName: projectConfig.name,
-    routeName: routeName,
-    siteId: routeSite,
-    routeEnable: 'on',
-    bypass: 'off',
-    rule: rule
+    RoutineName: projectConfig.name,
+    RouteName: routeName,
+    SiteId: routeSite,
+    RouteEnable: 'on',
+    Bypass: 'off',
+    Rule: rule
   };
 
-  const res = await api.createRoutineRoute(req as any);
+  const res = await server.createRoutineRoute(req as any);
 
-  const addSuccess = res?.statusCode === 200;
+  const addSuccess = res?.code === 200;
   if (addSuccess) {
     logger.success(t('route_add_success').d('Add route success!'));
   } else {

@@ -18,6 +18,7 @@ import logger from '../../libs/logger.js';
 import t from '../../i18n/index.js';
 import { ProjectConfig } from './../../utils/fileUtils/interface.js';
 import prodBuild from '../commit/prodBuild.js';
+import { ListRoutineCodeVersionsResponseBodyCodeVersions } from '@alicloud/esa20240910/dist/models/ListRoutineCodeVersionsResponseBodyCodeVersions.js';
 
 export function yesNoPromptAndExecute(
   message: string,
@@ -35,11 +36,13 @@ export function yesNoPromptAndExecute(
   });
 }
 
-export function promptSelectVersion(versionList: CodeVersionProps[]) {
+export function promptSelectVersion(
+  versionList: ListRoutineCodeVersionsResponseBodyCodeVersions[]
+) {
   const items = versionList
-    .filter((version) => version.CodeVersion !== 'unstable')
+    .filter((version) => version.codeVersion !== 'unstable')
     .map((version, index) => ({
-      label: version.CodeVersion,
+      label: version.codeVersion ?? '',
       value: String(index)
     }));
   return new Promise<string>((resolve) => {

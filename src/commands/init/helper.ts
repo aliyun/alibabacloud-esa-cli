@@ -10,6 +10,7 @@ import t from '../../i18n/index.js';
 import chalk from 'chalk';
 import { SelectItem } from '../../components/mutiLevelSelect.js';
 import inquirer from 'inquirer';
+import { getDirName } from '../../utils/fileUtils/base.js';
 
 export const getTemplateInstances = (templateHubPath: string) => {
   return fs
@@ -88,7 +89,8 @@ export async function checkAndUpdatePackage(
 ): Promise<void> {
   try {
     // 获取当前安装的版本
-    const __dirname = __filename;
+    const __dirname = getDirName(import.meta.url);
+    console.log(__dirname);
     const packageJsonPath = path.join(__dirname, '../../../');
     const versionInfo = execSync(`npm list ${packageName}`, {
       cwd: packageJsonPath

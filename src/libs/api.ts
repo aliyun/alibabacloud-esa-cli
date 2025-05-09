@@ -309,7 +309,6 @@ class Client {
   ): Promise<$ESA.CreateRoutineRouteResponse> {
     const request = new $ESA.CreateRoutineRouteRequest(params);
     const newRequest = Object.assign(request, { mode: 'simple' });
-    console.log(newRequest);
     return this.callApi(
       this.client.createRoutineRouteWithOptions.bind(this.client) as ApiMethod<
         $ESA.CreateRoutineRouteRequest,
@@ -373,6 +372,16 @@ class Client {
       this.client.updateRoutineRoute.bind(this.client) as ApiMethod<
         $ESA.UpdateRoutineRouteRequest,
         $ESA.UpdateRoutineRouteResponse
+      >,
+      request
+    );
+  }
+  listRoutineCodeVersions(params: $ESA.ListRoutineCodeVersionsRequest) {
+    const request = new $ESA.ListRoutineCodeVersionsRequest(params);
+    return this.callApi(
+      this.client.listRoutineCodeVersions.bind(this.client) as ApiMethod<
+        $ESA.ListRoutineCodeVersionsRequest,
+        $ESA.ListRoutineCodeVersionsResponse
       >,
       request
     );

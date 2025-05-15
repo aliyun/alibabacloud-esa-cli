@@ -133,6 +133,7 @@ class Ew2Server {
       try {
         const host = req.headers.host;
         const url = req.url;
+        const method = req.method;
         // @ts-ignore
         const ew2Port = global.ew2Port;
         // @ts-ignore
@@ -140,7 +141,7 @@ class Ew2Server {
         const workerRes = await fetch(
           `http://${localUpstream ? localUpstream : host}${url}`,
           {
-            method: 'GET',
+            method,
             headers: {
               'x-er-context':
                 'eyJzaXRlX2lkIjogIjYyMjcxODQ0NjgwNjA4IiwgInNpdGVfbmFtZSI6ICJjb21wdXRlbHguYWxpY2RuLXRlc3QuY29tIiwgInNpdGVfcmVjb3JkIjogIm1vY2hlbi1uY2RuLmNvbXB1dGVseC5hbGljZG4tdGVzdC5jb20iLCAiYWxpdWlkIjogIjEzMjI0OTI2ODY2NjU2MDgiLCAic2NoZW1lIjoiaHR0cCIsICAiaW1hZ2VfZW5hYmxlIjogdHJ1ZX0=',

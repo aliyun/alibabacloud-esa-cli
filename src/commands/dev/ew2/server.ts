@@ -134,6 +134,17 @@ class Ew2Server {
         const host = req.headers.host;
         const url = req.url;
         const method = req.method;
+        const headers = Object.entries(req.headers).reduce(
+          (acc: Record<string, string | undefined>, [key, value]) => {
+            if (Array.isArray(value)) {
+              acc[key] = value.join(', ');
+            } else {
+              acc[key] = value;
+            }
+            return acc;
+          },
+          {}
+        );
         // @ts-ignore
         const ew2Port = global.ew2Port;
         // @ts-ignore
@@ -143,10 +154,12 @@ class Ew2Server {
           {
             method,
             headers: {
+              ...headers,
               'x-er-context':
                 'eyJzaXRlX2lkIjogIjYyMjcxODQ0NjgwNjA4IiwgInNpdGVfbmFtZSI6ICJjb21wdXRlbHguYWxpY2RuLXRlc3QuY29tIiwgInNpdGVfcmVjb3JkIjogIm1vY2hlbi1uY2RuLmNvbXB1dGVseC5hbGljZG4tdGVzdC5jb20iLCAiYWxpdWlkIjogIjEzMjI0OTI2ODY2NjU2MDgiLCAic2NoZW1lIjoiaHR0cCIsICAiaW1hZ2VfZW5hYmxlIjogdHJ1ZX0=',
               'x-er-id': 'a.bA'
             },
+            body: req.method === 'GET' ? undefined : req,
             agent: new HttpProxyAgent(`http://127.0.0.1:${ew2Port}`)
           }
         );

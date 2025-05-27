@@ -144,7 +144,7 @@ _注意：已经被部署的版本无法删除。_
 
 ## 命令
 
-查看[命令](./docs/Commands.md)
+查看[命令](./docs/Commands_zh_CN.md)
 
 ## 配置文件
 

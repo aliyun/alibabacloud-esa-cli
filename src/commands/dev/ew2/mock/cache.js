@@ -1,3 +1,32 @@
+function deepClone(target) {
+  if (typeof target !== 'object' || target === null) return target;
+  const constructor = target.constructor;
+  if (/^(Date|RegExp)$/i.test(constructor.name)) {
+    return new constructor(target);
+  }
+  const cloneTarget = Array.isArray(target)
+    ? []
+    : target instanceof Map
+      ? new Map()
+      : target instanceof Set
+        ? new Set()
+        : {};
+  if (target instanceof Map) {
+    target.forEach((value, key) => {
+      cloneTarget.set(key, deepClone(value));
+    });
+  } else if (target instanceof Set) {
+    target.forEach((value) => {
+      cloneTarget.add(deepClone(value));
+    });
+  } else {
+    Object.keys(target).forEach((key) => {
+      cloneTarget[key] = deepClone(target[key]);
+    });
+  }
+  return cloneTarget;
+}
+
 class MockCache {
   constructor() {
     this.cache = new Map();
@@ -13,7 +42,8 @@ class MockCache {
   }
 
   async match(reqOrUrl) {
-    return this.cache.get(reqOrUrl) || null;
+    const result = this.cache.get(reqOrUrl) || null;
+    return deepClone(result);
   }
 
   async delete(reqOrUrl) {

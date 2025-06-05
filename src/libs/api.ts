@@ -27,7 +27,7 @@ class Client {
       accessKeySecret: config.auth?.accessKeySecret,
       endpoint: config.endpoint
     });
-    return new ESA.default(apiConfig);
+    return new ESA.default(apiConfig as any);
   }
 
   updateConfig(config: CliConfig) {

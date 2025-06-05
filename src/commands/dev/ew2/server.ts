@@ -7,6 +7,7 @@ import { getRoot } from '../../../utils/fileUtils/base.js';
 import { EW2BinPath } from '../../../utils/installEw2.js';
 import { HttpProxyAgent } from 'http-proxy-agent';
 import chalk from 'chalk';
+import CacheService, { SerializedResponse } from './cacheService.js';
 import t from '../../../i18n/index.js';
 import sleep from '../../../utils/sleep.js';
 
@@ -33,6 +34,7 @@ const getColorForStatusCode = (statusCode: number, message: string) => {
 
 class Ew2Server {
   private worker: ChildProcess | null = null;
+  private cache: CacheService | null = null;
   private startingWorker = false;
   private workerStartTimeout: NodeJS.Timeout | undefined = undefined;
   private server: http.Server | null = null;
@@ -49,6 +51,7 @@ class Ew2Server {
   async start(): Promise<void> {
     this.startingWorker = true;
     const result = await this.openEdgeWorker();
+    this.cache = new CacheService();
     if (!result) {
       throw new Error('Worker start failed');
     }
@@ -130,6 +133,10 @@ class Ew2Server {
 
   createServer() {
     this.server = http.createServer(async (req, res) => {
+      if (req.url?.includes('/mock_cache')) {
+        const cacheResult = await this.handleCache(req);
+        return res.end(JSON.stringify(cacheResult));
+      }
       try {
         const host = req.headers.host;
         const url = req.url;
@@ -167,18 +174,6 @@ class Ew2Server {
         // 解决 gzip 兼容性问题，防止net::ERR_CONTENT_DECODING_FAILED
         workerHeaders['content-encoding'] = 'identity';
         if (workerRes.body) {
-          // if (workerRes.headers.get('content-type')?.includes('text/')) {
-          //   const text = await workerRes.text();
-          //   // 出现换行符之类会导致 content-length 不一致
-          //   workerHeaders['content-length'] =
-          //     Buffer.byteLength(text).toString();
-          //     console.log(workerHeaders['content-length']);
-          //   res.writeHead(workerRes.status, workerHeaders);
-          //   res.end(text);
-          // } else {
-          //   res.writeHead(workerRes.status, workerHeaders);
-          //   workerRes.body.pipe(res);
-          // }
           res.writeHead(workerRes.status, workerHeaders);
           workerRes.body.pipe(res);
           logger.log(
@@ -197,6 +192,25 @@ class Ew2Server {
     });
   }
 
+  private async handleCache(req: http.IncomingMessage) {
+    const body = await this.parseBody(req);
+    if (req.url?.includes('/put')) {
+      this.cache?.put(body.key, body);
+      return { success: true };
+    }
+    if (req.url?.includes('/get')) {
+      const res = this.cache?.get(body.key);
+      if (!res) {
+        return { success: false, key: body.key };
+      }
+      return { success: true, key: body.key, data: res?.serializedResponse };
+    }
+    if (req.url?.includes('/delete')) {
+      const res = this.cache?.delete(body.key);
+      return { success: !!res };
+    }
+    return { success: false };
+  }
   private stdoutHandler(chunk: any) {
     logger.log(`${chalk.bgGreen('[Worker]')} ${chunk.toString().trim()}`);
   }
@@ -226,6 +240,30 @@ class Ew2Server {
       // @ts-ignore
       global.port = undefined;
       this.onClose && this.onClose();
+    });
+  }
+
+  private parseBody(req: http.IncomingMessage): Promise<SerializedResponse> {
+    return new Promise((resolve, reject) => {
+      const chunks: any[] = [];
+      let totalLength = 0;
+
+      req.on('data', (chunk) => {
+        chunks.push(chunk);
+        totalLength += chunk.length;
+      });
+
+      req.on('end', () => {
+        try {
+          const buffer = Buffer.concat(chunks, totalLength);
+          const rawBody = buffer.toString('utf8');
+          resolve(rawBody ? JSON.parse(rawBody) : {});
+        } catch (err: any) {
+          reject(new Error(`Invalid JSON: ${err.message}`));
+        }
+      });
+
+      req.on('error', reject);
     });
   }
 

@@ -58,7 +58,8 @@ conf_path = "${erConfPath}"
 const generateEntry = async (
   id: string,
   projectEntry: string,
-  userRoot: string
+  userRoot: string,
+  port: number
 ) => {
   const __dirname = getDirName(import.meta.url);
   const devDir = path.resolve(userRoot, '.dev');
@@ -86,10 +87,9 @@ const generateEntry = async (
 
   return fs.promises.writeFile(
     devEntry,
-    devEntryTempFile.replace(
-      /'\$userPath'/g,
-      `'${projectEntry.replace(/\\/g, '/')}'`
-    )
+    devEntryTempFile
+      .replace(/'\$userPath'/g, `'${projectEntry.replace(/\\/g, '/')}'`)
+      .replace(/\$userPort/g, `${port}`)
   );
 };
 
@@ -108,7 +108,7 @@ const prepare = async (
   // @ts-ignore
   global.id = id;
   // 生成入口文件
-  await generateEntry(id, entry, userRoot);
+  await generateEntry(id, entry, userRoot, port);
   // 生成 Ew2 配置
   const ew2port = await generateEw2Port();
   await writeEw2config(id, ew2port, userRoot);

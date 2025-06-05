@@ -5,7 +5,7 @@ import {
 } from '../../src/commands/routine/list.js';
 import {
   EdgeFunctionItem,
-  GetRoutineUserInfoRes
+  ListUserRoutinesRes
 } from '../../src/libs/interface.js';
 import { mockConsoleMethods } from '../helper/mockConsole.js';
 import { ApiService } from '../../src/libs/apiService.js';
@@ -18,12 +18,12 @@ describe('displayRoutineList', () => {
       {
         RoutineName: 'routine1',
         CreateTime: '2022-01-01',
-        Description: 'SGVsbG8gd29ybGQ='
+        Description: 'hello world'
       },
       {
         RoutineName: 'routine2',
         CreateTime: '2022-01-02',
-        Description: 'VGhpcyBpcyBhIHN0cmluZw=='
+        Description: 'test'
       }
     ];
 
@@ -36,9 +36,9 @@ describe('displayRoutineList', () => {
             "[90m┌────────────────────[39m[90m┬─────────────────────────[39m[90m┬──────────────────────────────┐[39m
       [90m│[39m[31m Name               [39m[90m│[39m[31m Created                 [39m[90m│[39m[31m Description                  [39m[90m│[39m
       [90m├────────────────────[39m[90m┼─────────────────────────[39m[90m┼──────────────────────────────┤[39m
-      [90m│[39m routine1           [90m│[39m 2022/01/01 00:00:00     [90m│[39m Hello world                  [90m│[39m
+      [90m│[39m routine1           [90m│[39m 2022/01/01 00:00:00     [90m│[39m hello world                  [90m│[39m
       [90m├────────────────────[39m[90m┼─────────────────────────[39m[90m┼──────────────────────────────┤[39m
-      [90m│[39m routine2           [90m│[39m 2022/01/02 00:00:00     [90m│[39m This is a string             [90m│[39m
+      [90m│[39m routine2           [90m│[39m 2022/01/02 00:00:00     [90m│[39m test                         [90m│[39m
       [90m└────────────────────[39m[90m┴─────────────────────────[39m[90m┴──────────────────────────────┘[39m",
           ],
         ],
@@ -77,23 +77,32 @@ describe('displayRoutineList', () => {
   });
 
   it('should display a routine list by calling getRoutineUserInfo', async () => {
-    const mockRes: GetRoutineUserInfoRes = {
-      Routines: [
-        {
-          RoutineName: 'routine1',
-          Description: 'SGVsbG8gd29ybGQ=',
-          CreateTime: '2022-01-01'
-        },
-        {
-          RoutineName: 'routine2',
-          Description: 'VGhpcyBpcyBhIHN0cmluZw==',
-          CreateTime: '2022-01-02'
-        }
-      ],
-      Subdomains: ['subdomain1', 'subdomain2']
+    const mockRes: ListUserRoutinesRes = {
+      code: '200',
+      body: {
+        RequestId: '123',
+        PageNumber: 1,
+        PageSize: 10,
+        TotalCount: 2,
+        UsedRoutineNumber: 1,
+        QuotaRoutineNumber: 10,
+        Routines: [
+          {
+            RoutineName: 'routine1',
+            Description: 'hello world',
+            CreateTime: '2022-01-01'
+          },
+          {
+            RoutineName: 'routine2',
+            Description: 'hello',
+            CreateTime: '2022-01-02'
+          }
+        ]
+      }
     };
+
     vi.mocked(
-      (await ApiService.getInstance()).getRoutineUserInfo
+      (await ApiService.getInstance()).listUserRoutines
     ).mockResolvedValue(mockRes);
     await handleList({
       _: [],
@@ -109,9 +118,9 @@ describe('displayRoutineList', () => {
             "[90m┌────────────────────[39m[90m┬─────────────────────────[39m[90m┬──────────────────────────────┐[39m
       [90m│[39m[31m Name               [39m[90m│[39m[31m Created                 [39m[90m│[39m[31m Description                  [39m[90m│[39m
       [90m├────────────────────[39m[90m┼─────────────────────────[39m[90m┼──────────────────────────────┤[39m
-      [90m│[39m routine1           [90m│[39m 2022/01/01 00:00:00     [90m│[39m Hello world                  [90m│[39m
+      [90m│[39m routine1           [90m│[39m 2022/01/01 00:00:00     [90m│[39m hello world                  [90m│[39m
       [90m├────────────────────[39m[90m┼─────────────────────────[39m[90m┼──────────────────────────────┤[39m
-      [90m│[39m routine2           [90m│[39m 2022/01/02 00:00:00     [90m│[39m This is a string             [90m│[39m
+      [90m│[39m routine2           [90m│[39m 2022/01/02 00:00:00     [90m│[39m hello                        [90m│[39m
       [90m└────────────────────[39m[90m┴─────────────────────────[39m[90m┴──────────────────────────────┘[39m",
           ],
         ],

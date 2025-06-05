@@ -4,8 +4,6 @@ import FormData from 'form-data';
 import fetch from 'node-fetch';
 
 import {
-  GetRoutineUserInfoRes,
-  ListRoutineCanaryAreasRes,
   PublishRoutineCodeVersionReq,
   GetMatchSiteReq,
   GetMatchSiteRes,
@@ -36,7 +34,8 @@ import {
   ListRoutineRelatedRecordsReq,
   ListRoutineRelatedRecordsRes,
   CreateRoutineRouteReq,
-  CreateRoutineRouteRes
+  CreateRoutineRouteRes,
+  ListUserRoutinesRes
 } from './interface.js';
 import { getApiConfig } from '../utils/fileUtils/index.js';
 import { IOssConfig } from './interface.js';
@@ -183,15 +182,11 @@ export class ApiService {
           return this;
         }
       };
-      const CanaryAreaList = requestParams.CanaryAreaList ?? [];
-      const CanaryAreaListString = JSON.stringify(CanaryAreaList);
       let request = new $OpenApi.OpenApiRequest({
         query: {
           Env: requestParams.Env,
           Name: requestParams.Name,
-          CodeVersion: requestParams.CodeVersion,
-          CanaryCodeVersion: requestParams.CanaryCodeVersion,
-          CanaryAreaList: CanaryAreaListString
+          CodeVersion: requestParams.CodeVersion
         }
       });
 
@@ -263,10 +258,10 @@ export class ApiService {
     return null;
   }
 
-  async listRoutineCanaryAreas(): Promise<ListRoutineCanaryAreasRes | null> {
+  async listUserRoutines(): Promise<ListUserRoutinesRes | null> {
     try {
       let params = {
-        action: 'ListRoutineCanaryAreas',
+        action: 'ListUserRoutines',
         version: '2024-09-10',
         protocol: 'https',
         method: 'GET',
@@ -287,46 +282,7 @@ export class ApiService {
       };
       const res = await this.client.callApi(params, request, runtime);
       if (res.statusCode === 200 && res.body) {
-        const ret: ListRoutineCanaryAreasRes = {
-          CanaryAreas: res.body.CanaryAreas
-        };
-        return ret;
-      }
-    } catch (error) {
-      console.log(error);
-    }
-    return null;
-  }
-
-  async getRoutineUserInfo(): Promise<GetRoutineUserInfoRes | null> {
-    try {
-      let params = {
-        action: 'GetRoutineUserInfo',
-        version: '2024-09-10',
-        protocol: 'https',
-        method: 'GET',
-        authType: 'AK',
-        bodyType: 'json',
-        reqBodyType: 'json',
-        style: 'RPC',
-        pathname: '/',
-        toMap: function () {
-          return this;
-        }
-      };
-      let request = new $OpenApi.OpenApiRequest();
-      let runtime = {
-        toMap: function () {
-          return this;
-        }
-      };
-      const res = await this.client.callApi(params, request, runtime);
-      if (res.statusCode === 200 && res.body) {
-        const ret: GetRoutineUserInfoRes = {
-          Subdomains: res.body.RoutineName,
-          Routines: res.body.Routines
-        };
-        return ret;
+        return res as ListUserRoutinesRes;
       }
     } catch (error) {
       console.log(error);

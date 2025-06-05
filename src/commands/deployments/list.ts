@@ -57,10 +57,8 @@ export async function handleListDeployments(argv: ArgumentsCamelCase) {
 }
 
 async function displayListPrompt(routineDetail: GetRoutineRes) {
-  const isCanary =
-    (routineDetail.data.Envs[0].CanaryAreaList ?? []).length !== 0;
-  const canaryEnv = routineDetail.data.Envs[0];
   const stagingEnv = routineDetail.data.Envs[1];
+  const prodEnv = routineDetail.data.Envs[0];
 
   const server = await ApiService.getInstance();
   const res: GetRoutineStagingEnvIpRes | null =
@@ -88,19 +86,10 @@ async function displayListPrompt(routineDetail: GetRoutineRes) {
   showEnvTable(stagingEnv.CodeVersion);
   logger.block();
   logger.log(
-    `${chalk.bold(`${t('deploy_env_production').d('Production')} ${!isCanary ? chalk.green('●') : ''}`)}`
+    `${chalk.bold(`${t('deploy_env_production').d('Production')} ${chalk.green('●')}`)}`
   );
-  showEnvTable(canaryEnv.CodeVersion);
-  logger.block();
+  showEnvTable(prodEnv.CodeVersion);
 
-  logger.log(
-    `${chalk.bold(`${t('deploy_env_canary').d('Canary')} ${isCanary ? chalk.green('●') : ''}`)}`
-  );
-
-  showEnvTable(
-    canaryEnv.CanaryCodeVersion ?? '',
-    canaryEnv.CanaryAreaList?.join(', ')
-  );
   logger.log(
     `${t('show_default_url').d(`You can visit:`)} ${chalk.yellowBright(routineDetail.data.DefaultRelatedRecord)}`
   );

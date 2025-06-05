@@ -63,8 +63,7 @@ export function displaySelectDeployType(): Promise<PublishType> {
     {
       label: t('deploy_env_production').d('Production'),
       value: PublishType.Production
-    },
-    { label: t('deploy_env_canary').d('Canary'), value: PublishType.Canary }
+    }
   ];
   return new Promise<PublishType>((resolve) => {
     const handleSelection = async (item: SelectItem) => {

@@ -4,9 +4,8 @@ import {
   getProjectConfig,
   readEdgeRoutineFile
 } from '../../utils/fileUtils/index.js';
-import SelectItems, { SelectItem } from '../../components/selectInput.js';
+
 import {
-  CodeVersionProps,
   Environment,
   GetRoutineReq,
   PublishRoutineCodeVersionReq,
@@ -19,11 +18,6 @@ import {
   getRoutineVersionList
 } from '../utils.js';
 import { ProjectConfig } from '../../utils/fileUtils/interface.js';
-import {
-  TableItem,
-  displayMultiSelectTable
-} from '../../components/mutiSelectTable.js';
-import { Base64 } from 'js-base64';
 import { ApiService } from '../../libs/apiService.js';
 import {
   createAndDeployVersion,
@@ -55,7 +49,8 @@ const deploy: CommandModule = {
   },
   describe: `🚀 ${t('deploy_describe').d('Deploy your project')}`,
   handler: async (argv: ArgumentsCamelCase) => {
-    handleDeploy(argv);
+    await handleDeploy(argv);
+    exit();
   }
 };
 
@@ -171,21 +166,6 @@ async function promptAndDeployVersion(projectConfig: ProjectConfig) {
   );
 }
 
-const specialAreaTransfer = (canaryAreaSelectList: TableItem[]) => {
-  return canaryAreaSelectList.map((item) => {
-    if (item.label === 'HongKong') {
-      return { label: 'HongKong(China)' };
-    }
-    if (item.label === 'Macau') {
-      return { label: 'Macau(China)' };
-    }
-    if (item.label === 'Taiwan') {
-      return { label: 'Taiwan(China)' };
-    }
-    return { label: item.label };
-  });
-};
-
 export async function handleOnlyUnstableVersionFound(
   projectConfig: ProjectConfig,
   customEntry?: string
@@ -214,24 +194,8 @@ export async function deploySelectedCodeVersion(
         : Environment.Production
   };
 
-  if (selectedType === PublishType.Canary) {
-    const res = await server.listRoutineCanaryAreas();
-    const canaryList = res?.CanaryAreas ?? [];
-    logger.log(
-      `📃 ${t('deploy_select_canary').d('Please select the canary area(s) you want to deploy to')}`
-    );
-    const canaryAreaSelectList: TableItem[] = canaryList.map((area) => {
-      return { label: area };
-    });
-    const selectedCanaryList = await displayMultiSelectTable(
-      specialAreaTransfer(canaryAreaSelectList)
-    );
+  param.CodeVersion = version;
 
-    param.CanaryAreaList = selectedCanaryList;
-    param.CanaryCodeVersion = version;
-  } else {
-    param.CodeVersion = version;
-  }
   try {
     const res = await server.publishRoutineCodeVersion(param);
 
@@ -263,7 +227,7 @@ export async function displayVersionList(
   const data: string[][] = [];
   for (let i = 0; i < versionList.length; i++) {
     const version = versionList[i];
-    const createTime = moment(version.CreateTime).format('YYYY/MM/DD HH:mm:ss');
+    const createTime = moment(version.createTime).format('YYYY/MM/DD HH:mm:ss');
     const tags = [
       version.codeVersion === stagingVersion ? chalk.bgYellow('Active') : '',
       version.codeVersion === productionVersion ? chalk.bgGreen('Active') : ''

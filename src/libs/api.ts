@@ -159,18 +159,6 @@ class Client {
     return this.callOpenApi('getMatchSite', params);
   }
 
-  listRoutineCanaryAreas(): Promise<$ESA.ListRoutineCanaryAreasResponse> {
-    return this.callApi(
-      this.client.listRoutineCanaryAreasWithOptions.bind(this.client)
-    );
-  }
-
-  getRoutineUserInfo(): Promise<$ESA.GetRoutineUserInfoResponse> {
-    return this.callApi(
-      this.client.getRoutineUserInfoWithOptions.bind(this.client)
-    );
-  }
-
   deleteRoutine(
     params: OptionalProps<$ESA.DeleteRoutineRequest>
   ): Promise<$ESA.DeleteRoutineResponse> {
@@ -181,6 +169,16 @@ class Client {
         $ESA.DeleteRoutineResponse
       >,
       request
+    );
+  }
+
+  listUserRoutines(params: OptionalProps<$ESA.ListUserRoutinesRequest>) {
+    return this.callApi(
+      this.client.listUserRoutinesWithOptions.bind(this.client) as ApiMethod<
+        $ESA.ListUserRoutinesRequest,
+        $ESA.ListUserRoutinesResponse
+      >,
+      new $ESA.ListUserRoutinesRequest(params)
     );
   }
 

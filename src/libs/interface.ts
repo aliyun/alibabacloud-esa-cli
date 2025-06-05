@@ -34,10 +34,6 @@ export interface CreateRoutineRes {
   data: { RequestId: string; Status: string };
 }
 
-export interface ListRoutineCanaryAreasRes {
-  CanaryAreas: string[];
-}
-
 export interface CreateRoutineRelatedRecordReq {
   Name?: string;
   SiteId: number;
@@ -85,15 +81,12 @@ export enum Environment {
 }
 export enum PublishType {
   Staging = 'staging',
-  Production = 'production',
-  Canary = 'canary'
+  Production = 'production'
 }
 export interface PublishRoutineCodeVersionReq {
   Name: string;
   Env: Environment;
   CodeVersion?: string;
-  CanaryCodeVersion?: string;
-  CanaryAreaList?: string[];
   RegionId?: string;
 }
 
@@ -121,8 +114,6 @@ export interface RelatedRouteProps {
 }
 
 export interface EnvProps {
-  CanaryCodeVersion?: string;
-  CanaryAreaList?: string[];
   Env: string;
   CodeVersion: string;
 }
@@ -140,10 +131,6 @@ export interface GetRoutineRes {
     Description: string;
     DefaultRelatedRecord: string;
   };
-}
-export interface GetRoutineUserInfoRes {
-  Routines: EdgeFunctionItem[];
-  Subdomains: string[];
 }
 
 export interface EdgeFunctionItem {
@@ -278,6 +265,29 @@ export interface ApiError {
   code: string;
   message: string;
   data: string;
+}
+
+export interface ListUserRoutinesReq {
+  RegionId?: string;
+  PageNumber?: number;
+  PageSize?: number;
+  SearchKeyWord?: string;
+}
+export interface ListUserRoutinesRes {
+  code: string;
+  body: {
+    RequestId: string;
+    PageNumber: number;
+    PageSize: number;
+    TotalCount: number;
+    UsedRoutineNumber: number;
+    QuotaRoutineNumber: number;
+    Routines: {
+      CreateTime: string;
+      Description: string;
+      RoutineName: string;
+    }[];
+  };
 }
 
 export type Map = Record<string, any>;

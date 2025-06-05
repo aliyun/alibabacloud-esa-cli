@@ -34,7 +34,8 @@ const commit: CommandModule = {
       });
   },
   handler: async (argv: ArgumentsCamelCase) => {
-    handleCommit(argv);
+    await handleCommit(argv);
+    exit();
   }
 };
 

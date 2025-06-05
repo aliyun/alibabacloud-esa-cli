@@ -9,6 +9,7 @@ import * as DeployHelper from '../../src/commands/deploy/helper.js';
 import { PublishType } from '../../src/libs/interface.js';
 import * as descriptionInput from '../../src/components/descriptionInput.js';
 import { mockConsoleMethods } from '../helper/mockConsole.js';
+import api from '../../src/libs/api.js';
 
 describe('handleDeploy', () => {
   let std = mockConsoleMethods();
@@ -67,40 +68,6 @@ describe('handleDeploy', () => {
     expect(std.out).not.toBeCalled();
   });
 
-  it('should handle no versions found, do not create unstable version', async () => {
-    vi.spyOn(Utils, 'checkIsLoginSuccess').mockResolvedValue(true);
-
-    vi.mocked((await ApiService.getInstance()).getRoutine).mockResolvedValue({
-      data: {
-        CodeVersions: [],
-        Envs: [
-          {
-            CodeVersion: 'staging',
-            Env: ''
-          },
-          {
-            CodeVersion: 'production',
-            Env: ''
-          }
-        ]
-      }
-    } as any);
-    vi.spyOn(DeployHelper, 'yesNoPromptAndExecute').mockResolvedValue(false);
-    await handleDeploy({
-      _: [],
-      $0: ''
-    });
-
-    expect(std.out).toBeCalledWith(
-      expect.stringContaining(
-        `No formal version found, you need to create a version first.`
-      )
-    );
-    expect(std.out).not.toBeCalledWith(
-      `📃 Do you want to create a formal version to deploy on production environment?`
-    );
-  });
-
   it('should handle no versions found, create version and deploy it', async () => {
     vi.spyOn(Utils, 'checkIsLoginSuccess').mockResolvedValue(true);
 
@@ -108,14 +75,29 @@ describe('handleDeploy', () => {
       data: {
         CodeVersions: [],
         Envs: [
+          { CodeVersion: 'stagingVersion' },
           {
-            CodeVersion: 'staging',
-            Env: ''
+            CodeVersion: 'productionVersion'
+          }
+        ],
+
+        RelatedRecords: [
+          {
+            RecordName: 'test.com',
+            SiteId: 1,
+            SiteName: 'test',
+            RecordId: 1
           },
           {
-            CodeVersion: 'production',
-            Env: ''
+            RecordName: 'test2.com',
+            SiteId: 2,
+            SiteName: 'test2',
+            RecordId: 2
           }
+        ],
+        RelatedRoutes: [
+          { Route: 'test.com/1', SiteName: 'test.com', RouteId: 1 },
+          { Route: 'test.com/2', SiteName: 'test.com', RouteId: 1 }
         ]
       }
     } as any);
@@ -131,11 +113,73 @@ describe('handleDeploy', () => {
       $0: ''
     });
 
-    expect(std.out).toBeCalledWith(
-      expect.stringContaining(
-        `No formal version found, you need to create a version first.`
-      )
-    );
+    expect(std.out).toMatchInlineSnapshot(`
+      [MockFunction log] {
+        "calls": [
+          [
+            "Active Staging",
+          ],
+          [
+            "Active Production",
+          ],
+          [
+            "[90m┌──────────────────────────────[39m[90m┬─────────────────────────[39m[90m┬───────────────┐[39m
+      [90m│[39m[31m Version                      [39m[90m│[39m[31m Created                 [39m[90m│[39m[31m Description   [39m[90m│[39m
+      [90m├──────────────────────────────[39m[90m┼─────────────────────────[39m[90m┼───────────────┤[39m
+      [90m│[39m unstable                     [90m│[39m 2025/06/05 17:46:55     [90m│[39m               [90m│[39m
+      [90m├──────────────────────────────[39m[90m┼─────────────────────────[39m[90m┼───────────────┤[39m
+      [90m│[39m v1                           [90m│[39m 2025/06/05 17:46:55     [90m│[39m test          [90m│[39m
+      [90m├──────────────────────────────[39m[90m┼─────────────────────────[39m[90m┼───────────────┤[39m
+      [90m│[39m v2                           [90m│[39m 2025/06/05 17:46:55     [90m│[39m test2         [90m│[39m
+      [90m└──────────────────────────────[39m[90m┴─────────────────────────[39m[90m┴───────────────┘[39m",
+          ],
+          [
+            "
+      ",
+          ],
+          [
+            "Select the version you want to publish:",
+          ],
+          [
+            "
+      🎉  SUCCESS  Your code has been successfully deployed",
+          ],
+          [
+            "👉 Run this command to add domains: esa domain add <DOMAIN>",
+          ],
+        ],
+        "results": [
+          {
+            "type": "return",
+            "value": undefined,
+          },
+          {
+            "type": "return",
+            "value": undefined,
+          },
+          {
+            "type": "return",
+            "value": undefined,
+          },
+          {
+            "type": "return",
+            "value": undefined,
+          },
+          {
+            "type": "return",
+            "value": undefined,
+          },
+          {
+            "type": "return",
+            "value": undefined,
+          },
+          {
+            "type": "return",
+            "value": undefined,
+          },
+        ],
+      }
+    `);
   });
 
   it('should handle select a version and deploy it in staging environment', async () => {
@@ -176,25 +220,6 @@ describe('handleDeploy', () => {
     );
   });
 
-  it('should handle select a version and deploy it in canary environment', async () => {
-    vi.spyOn(Utils, 'checkIsLoginSuccess').mockResolvedValue(true);
-
-    vi.spyOn(DeployHelper, 'yesNoPromptAndExecute').mockResolvedValue(true);
-    vi.spyOn(DeployHelper, 'promptSelectVersion').mockResolvedValue('v1');
-    vi.spyOn(DeployHelper, 'displaySelectDeployType').mockResolvedValue(
-      PublishType.Canary
-    );
-
-    await handleDeploy({
-      _: [],
-      $0: ''
-    });
-
-    expect(std.out).toBeCalledWith(
-      expect.stringContaining(`Your code has been successfully deployed`)
-    );
-  });
-
   it('create and deploy version', async () => {
     DeployHelper.createAndDeployVersion({ name: 'test' });
     vi.spyOn(descriptionInput, 'descriptionInput').mockResolvedValue(
@@ -202,5 +227,98 @@ describe('handleDeploy', () => {
     );
     vi.spyOn(fileUtils, 'readEdgeRoutineFile').mockResolvedValue('test code');
     vi.spyOn(HandleCommit, 'releaseOfficialVersion').mockResolvedValue(true);
+  });
+
+  it('should handle no versions found, do not create unstable version', async () => {
+    vi.spyOn(Utils, 'checkIsLoginSuccess').mockResolvedValue(true);
+
+    vi.mocked((await ApiService.getInstance()).getRoutine).mockResolvedValue({
+      data: {
+        CodeVersions: [],
+        Envs: [
+          {
+            CodeVersion: 'staging',
+            Env: ''
+          },
+          {
+            CodeVersion: 'production',
+            Env: ''
+          }
+        ]
+      }
+    } as any);
+
+    vi.mocked(api.listRoutineCodeVersions).mockResolvedValue({
+      data: {
+        RelatedRecords: []
+      }
+    } as any);
+
+    vi.spyOn(DeployHelper, 'yesNoPromptAndExecute').mockResolvedValue(false);
+    await handleDeploy({
+      _: [],
+      $0: ''
+    });
+    expect(std.out).toMatchInlineSnapshot(`
+      [MockFunction log] {
+        "calls": [
+          [
+            "No formal version found, you need to create a version first.",
+          ],
+        ],
+        "results": [
+          {
+            "type": "return",
+            "value": undefined,
+          },
+        ],
+      }
+    `);
+  });
+
+  it('should handle no versions found, do not create unstable version', async () => {
+    vi.spyOn(Utils, 'checkIsLoginSuccess').mockResolvedValue(true);
+
+    vi.mocked((await ApiService.getInstance()).getRoutine).mockResolvedValue({
+      data: {
+        CodeVersions: [],
+        Envs: [
+          {
+            CodeVersion: 'staging',
+            Env: ''
+          },
+          {
+            CodeVersion: 'production',
+            Env: ''
+          }
+        ]
+      }
+    } as any);
+
+    vi.mocked(api.listRoutineCodeVersions).mockResolvedValue({
+      data: {
+        RelatedRecords: []
+      }
+    } as any);
+    vi.spyOn(DeployHelper, 'yesNoPromptAndExecute').mockResolvedValue(false);
+    await handleDeploy({
+      _: [],
+      $0: ''
+    });
+    expect(std.out).toMatchInlineSnapshot(`
+      [MockFunction log] {
+        "calls": [
+          [
+            "No formal version found, you need to create a version first.",
+          ],
+        ],
+        "results": [
+          {
+            "type": "return",
+            "value": undefined,
+          },
+        ],
+      }
+    `);
   });
 });

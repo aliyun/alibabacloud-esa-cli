@@ -55,7 +55,7 @@ export async function promptProjectName(): Promise<string> {
     {
       type: 'input',
       name: 'name',
-      message: `🖊️ ${t('init_input_name').d('Enter the name of edgeRoutine:')}`,
+      message: `${t('init_input_name').d('Enter the name of edgeRoutine:')}`,
       validate: (input) => {
         const regex = /^[a-z0-9-]{2,}$/;
         if (!regex.test(input)) {

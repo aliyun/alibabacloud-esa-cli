@@ -70,21 +70,24 @@ const mockGlobal = () => {
           CodeVersions: [
             {
               CodeVersion: 'unstable',
-              CreateTime: '2021-01-01',
+              CreateTime: '2025-06-05T09:46:55Z',
               CodeDescription: ''
             },
             {
               CodeVersion: 'v1',
-              CreateTime: '2021-01-01',
+              CreateTime: '2025-06-05T09:46:55Z',
               CodeDescription: ''
             },
-            { CodeVersion: 'v2', CreateTime: '2021-01-01', CodeDescription: '' }
+            {
+              CodeVersion: 'v2',
+              CreateTime: '2025-06-05T09:46:55Z',
+              CodeDescription: ''
+            }
           ],
           Envs: [
             { CodeVersion: 'stagingVersion' },
             {
-              CodeVersion: 'productionVersion',
-              CanaryAreaList: ['Beijing', 'Shanghai']
+              CodeVersion: 'productionVersion'
             }
           ],
 
@@ -113,6 +116,21 @@ const mockGlobal = () => {
           Status: 'OK'
         }
       }),
+
+      listUserRoutines: vi.fn().mockResolvedValue({
+        data: {
+          Routines: [
+            {
+              RoutineName: 'test',
+              Description: 'test',
+              CreateTime: '2023-07-07T07:07:07Z'
+            }
+          ],
+          TotalCount: 1,
+          UsedRoutineNumber: 1,
+          QuotaRoutineNumber: 1
+        }
+      }),
       deleteRoutineCodeVersion: vi.fn().mockResolvedValue({
         Status: 'OK'
       } as DeleteRoutineCodeVersionRes),
@@ -132,10 +150,7 @@ const mockGlobal = () => {
       updateProjectConfigFile: vi.fn(),
       deleteRoutineRelatedRecord: vi
         .fn()
-        .mockResolvedValue({ data: { Status: 'OK' } }),
-      listRoutineCanaryAreas: vi.fn().mockResolvedValue({
-        CanaryAreas: ['Beijing', 'Shanghai']
-      })
+        .mockResolvedValue({ data: { Status: 'OK' } })
     };
     return {
       ...mod,
@@ -165,9 +180,7 @@ const mockGlobal = () => {
           SiteName: 'test'
         }
       }),
-      listRoutineCanaryAreas: vi.fn().mockResolvedValue({
-        CanaryAreas: ['Beijing', 'Shanghai']
-      }),
+
       getRoutineUserInfo: vi.fn().mockResolvedValue({}),
       deleteRoutine: vi.fn().mockResolvedValue({ Status: 'OK' }),
       deleteRoutineCodeVersion: vi.fn().mockResolvedValue({
@@ -191,19 +204,23 @@ const mockGlobal = () => {
         data: { IPV4: ['0.0.0.0'] }
       }),
       listRoutineCodeVersions: vi.fn().mockResolvedValue({
-        data: {
+        body: {
           codeVersions: [
             {
               codeVersion: 'unstable',
-              createTime: '2021-01-01',
+              createTime: '2025-06-05T09:46:55Z',
               codeDescription: ''
             },
             {
               codeVersion: 'v1',
-              createTime: '2021-01-01',
-              codeDescription: ''
+              createTime: '2025-06-05T09:46:55Z',
+              codeDescription: 'test'
             },
-            { codeVersion: 'v2', createTime: '2021-01-01', codeDescription: '' }
+            {
+              codeVersion: 'v2',
+              createTime: '2025-06-05T09:46:55Z',
+              codeDescription: 'test2'
+            }
           ]
         }
       }),
@@ -212,21 +229,24 @@ const mockGlobal = () => {
           CodeVersions: [
             {
               CodeVersion: 'unstable',
-              CreateTime: '2021-01-01',
+              CreateTime: '2025-06-05T09:46:55Z',
               CodeDescription: ''
             },
             {
               CodeVersion: 'v1',
-              CreateTime: '2021-01-01',
+              CreateTime: '2025-06-05T09:46:55Z',
               CodeDescription: ''
             },
-            { CodeVersion: 'v2', CreateTime: '2021-01-01', CodeDescription: '' }
+            {
+              CodeVersion: 'v2',
+              CreateTime: '2025-06-05T09:46:55Z',
+              CodeDescription: ''
+            }
           ],
           Envs: [
             { CodeVersion: 'stagingVersion' },
             {
-              CodeVersion: 'productionVersion',
-              CanaryAreaList: ['Beijing', 'Shanghai']
+              CodeVersion: 'productionVersion'
             }
           ],
           RelatedRecords: [
@@ -382,7 +402,7 @@ const mockGlobal = () => {
       >();
     return {
       ...actual,
-      displayMultiSelectTable: vi.fn().mockResolvedValue(['Beijing'])
+      displayMultiSelectTable: vi.fn().mockResolvedValue(['test'])
     };
   });
 

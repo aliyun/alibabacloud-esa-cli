@@ -57,20 +57,6 @@ export async function handleDeleteDeployments(argv: ArgumentsCamelCase) {
   const server = await ApiService.getInstance();
 
   let versions: string[] = argv.deploymentId as string[];
-  // const req: DeleteRoutineCodeVersionReq = {
-  //   Name: projectConfig.name,
-  //   CodeVersion: version
-  // };
-  // const res = await server.deleteRoutineCodeVersion(req);
-  // if (res?.Status === 'OK') {
-  //   logger.success(
-  //     `${t('deployments_delete_success').d('Delete success')}: ${version}`
-  //   );
-  // } else {
-  //   logger.error(
-  //     `🙅 ${t('deployments_delete_failed').d('Delete failed')}: ${version}`
-  //   );
-  // }
   const isInteractive = argv.i;
   if (isInteractive) {
     const versionList = await getRoutineVersionList(projectConfig.name);
@@ -81,7 +67,7 @@ export async function handleDeleteDeployments(argv: ArgumentsCamelCase) {
     );
     const selectList: TableItem[] = versionList.map((item) => {
       return {
-        label: item.CodeVersion + '   ' + Base64.decode(item.CodeDescription)
+        label: item.codeVersion + '   ' + item.codeDescription
       };
     });
     versions = (await displayMultiSelectTable(selectList, 1, 100)).map((item) =>

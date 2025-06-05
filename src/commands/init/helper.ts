@@ -90,7 +90,6 @@ export async function checkAndUpdatePackage(
   try {
     // 获取当前安装的版本
     const __dirname = getDirName(import.meta.url);
-    console.log(__dirname);
     const packageJsonPath = path.join(__dirname, '../../../');
     const versionInfo = execSync(`npm list ${packageName}`, {
       cwd: packageJsonPath

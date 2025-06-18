@@ -8,6 +8,7 @@ import { EW2BinPath } from '../../../utils/installEw2.js';
 import { HttpProxyAgent } from 'http-proxy-agent';
 import chalk from 'chalk';
 import CacheService, { SerializedResponse } from './cacheService.js';
+import EdgeKV from './kvService.js';
 import t from '../../../i18n/index.js';
 import sleep from '../../../utils/sleep.js';
 
@@ -35,6 +36,7 @@ const getColorForStatusCode = (statusCode: number, message: string) => {
 class Ew2Server {
   private worker: ChildProcess | null = null;
   private cache: CacheService | null = null;
+  private kv: EdgeKV | null = null;
   private startingWorker = false;
   private workerStartTimeout: NodeJS.Timeout | undefined = undefined;
   private server: http.Server | null = null;
@@ -52,6 +54,7 @@ class Ew2Server {
     this.startingWorker = true;
     const result = await this.openEdgeWorker();
     this.cache = new CacheService();
+    this.kv = new EdgeKV();
     if (!result) {
       throw new Error('Worker start failed');
     }
@@ -133,9 +136,29 @@ class Ew2Server {
 
   createServer() {
     this.server = http.createServer(async (req, res) => {
+      if (req.url === '/favicon.ico') {
+        res.writeHead(204, {
+          'Content-Type': 'image/x-icon',
+          'Content-Length': 0
+        });
+        return res.end();
+      }
       if (req.url?.includes('/mock_cache')) {
         const cacheResult = await this.handleCache(req);
         return res.end(JSON.stringify(cacheResult));
+      }
+      if (req.url?.includes('/mock_kv')) {
+        const kvResult = await this.handleKV(req);
+        if (req.url?.includes('/get')) {
+          if (kvResult.success) {
+            return res.end(kvResult.value);
+          } else {
+            res.setHeader('Kv-Get-Empty', 'true');
+            return res.end();
+          }
+        } else {
+          return res.end(JSON.stringify(kvResult));
+        }
       }
       try {
         const host = req.headers.host;
@@ -193,7 +216,7 @@ class Ew2Server {
   }
 
   private async handleCache(req: http.IncomingMessage) {
-    const body = await this.parseBody(req);
+    const body = await this.parseCacheBody(req);
     if (req.url?.includes('/put')) {
       this.cache?.put(body.key, body);
       return { success: true };
@@ -211,6 +234,45 @@ class Ew2Server {
     }
     return { success: false };
   }
+
+  private async handleKV(req: http.IncomingMessage): Promise<{
+    success: boolean;
+    value?: any;
+  }> {
+    const url = new URL(req.url!, 'http://localhost');
+    const key = url.searchParams.get('key');
+    const namespace = url.searchParams.get('namespace');
+    const body = await this.parseKVBody(req);
+    if (!key || !namespace) {
+      return {
+        success: false
+      };
+    }
+    if (req.url?.includes('/put')) {
+      this.kv?.put(key, body, namespace);
+      return {
+        success: true
+      };
+    }
+    if (req.url?.includes('/get')) {
+      const res = this.kv?.get(key, namespace);
+      const params = { success: true, value: res };
+      if (!res) {
+        params.success = false;
+      }
+      return params;
+    }
+    if (req.url?.includes('/delete')) {
+      const res = this.kv?.delete(key, namespace);
+      return {
+        success: res
+      };
+    }
+    return {
+      success: false
+    };
+  }
+
   private stdoutHandler(chunk: any) {
     logger.log(`${chalk.bgGreen('[Worker]')} ${chunk.toString().trim()}`);
   }
@@ -243,7 +305,9 @@ class Ew2Server {
     });
   }
 
-  private parseBody(req: http.IncomingMessage): Promise<SerializedResponse> {
+  private parseCacheBody(
+    req: http.IncomingMessage
+  ): Promise<SerializedResponse> {
     return new Promise((resolve, reject) => {
       const chunks: any[] = [];
       let totalLength = 0;
@@ -258,6 +322,30 @@ class Ew2Server {
           const buffer = Buffer.concat(chunks, totalLength);
           const rawBody = buffer.toString('utf8');
           resolve(rawBody ? JSON.parse(rawBody) : {});
+        } catch (err: any) {
+          reject(new Error(`Invalid JSON: ${err.message}`));
+        }
+      });
+
+      req.on('error', reject);
+    });
+  }
+
+  private parseKVBody(req: http.IncomingMessage): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const chunks: any[] = [];
+      let totalLength = 0;
+
+      req.on('data', (chunk) => {
+        chunks.push(chunk);
+        totalLength += chunk.length;
+      });
+
+      req.on('end', () => {
+        try {
+          const buffer = Buffer.concat(chunks, totalLength);
+          const rawBody = buffer.toString();
+          resolve(rawBody);
         } catch (err: any) {
           reject(new Error(`Invalid JSON: ${err.message}`));
         }
@@ -289,9 +377,11 @@ class Ew2Server {
     });
   }
 
-  async restart() {
+  async restart(devPack: () => Promise<void>) {
     this.restarting = true;
+    console.clear();
     await this.stop();
+    await devPack();
     this.start();
     logger.log(t('dev_server_restart').d('Worker server restarted'));
     logger.info('Worker server restarted');

@@ -235,7 +235,7 @@ const dev: CommandModule = {
             userFileRepacking = false;
             return;
           }
-          worker.restart();
+          worker.restart(devPack);
           return;
         }
         logger.info('Dev repack');
@@ -248,8 +248,7 @@ const dev: CommandModule = {
           } catch (err) {}
         }
         userFileRepacking = true;
-        await devPack();
-        await worker.restart();
+        await worker.restart(devPack);
       }, 500)
     );
 

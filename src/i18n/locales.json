@@ -99,7 +99,6 @@
     "en": "Do you want to create a formal version to deploy on production environment?",
     "zh_CN": "是否创建正式版本以部署到生产环境？"
   },
-
   "deploy_success": {
     "en": "Your code has been successfully deployed",
     "zh_CN": "您的代码已成功部署"

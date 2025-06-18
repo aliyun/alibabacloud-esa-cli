@@ -5,18 +5,18 @@ class MockCache {
 
   async put(reqOrUrl, response) {
     if (arguments.length < 2) {
-      throw new Error(
-        `TypeError: Failed to execute 'put' on 'cache': 2 arguments required, but only ${arguments.length} present.`
+      throw new TypeError(
+        `Failed to execute 'put' on 'cache': 2 arguments required, but only ${arguments.length} present.`
       );
     }
     if (!reqOrUrl) {
-      throw new Error(
-        "TypeError: Failed to execute 'put' on 'cache': 2 arguments required, but only 0 present."
+      throw new TypeError(
+        "Failed to execute 'put' on 'cache': 2 arguments required, but only 0 present."
       );
     }
     if (!(response instanceof Response)) {
-      throw new Error(
-        "TypeError: Failed to execute 'put' on 'cache': Argument 2 is not of type Response."
+      throw new TypeError(
+        "Failed to execute 'put' on 'cache': Argument 2 is not of type Response."
       );
     }
 
@@ -72,7 +72,6 @@ class MockCache {
       throw new Error(error.error);
     }
     const res = await fetchRes.json();
-
     if (res && res.success) {
       return new Response(res.data.response.body, {
         status: res.data.response.status,

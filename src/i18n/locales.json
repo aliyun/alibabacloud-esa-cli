@@ -970,5 +970,9 @@
   "no_route_found": {
     "en": "No route found! Please check the route name.",
     "zh_CN": ""
+  },
+  "init_template_not_ready": {
+    "en": "Template is not ready. We will install it for you now.",
+    "zh_CN": "模版未准备好，我们为您安装模版。"
   }
 }

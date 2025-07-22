@@ -21,7 +21,6 @@ const mockGlobal = () => {
           ConfigId: 429653246613504
         }
       }),
-      getRoutineUserInfo: vi.fn().mockResolvedValue({}),
       listRoutineRelatedRecords: vi.fn().mockResolvedValue({
         data: {
           RelatedRecords: [

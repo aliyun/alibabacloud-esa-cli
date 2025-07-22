@@ -88,7 +88,7 @@ export const getRoutineVersionList = async (
   name: string
 ): Promise<ListRoutineCodeVersionsResponseBodyCodeVersions[]> => {
   const req = { name };
-  const res = await api.listRoutineCodeVersions(req as any);
+  const res = await api.listRoutineCodeVersions(req);
   return res.body?.codeVersions ?? [];
 };
 

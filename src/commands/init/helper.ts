@@ -91,9 +91,22 @@ export async function checkAndUpdatePackage(
     // 获取当前安装的版本
     const __dirname = getDirName(import.meta.url);
     const packageJsonPath = path.join(__dirname, '../../../');
-    const versionInfo = execSync(`npm list ${packageName}`, {
-      cwd: packageJsonPath
-    }).toString();
+    let versionInfo;
+    try {
+      versionInfo = execSync(`npm list ${packageName}`, {
+        cwd: packageJsonPath
+      }).toString();
+    } catch (e) {
+      execSync(`rm -rf node_modules/${packageName}`, {
+        cwd: packageJsonPath
+      });
+      execSync(`npm install ${packageName}@latest`, {
+        cwd: packageJsonPath,
+        stdio: 'inherit'
+      });
+      return;
+    }
+
     const match = versionInfo.match(new RegExp(`(${packageName})@([0-9.]+)`));
     const currentVersion = match ? match[2] : '';
     // 获取最新版本
@@ -125,12 +138,16 @@ export async function checkAndUpdatePackage(
         )
       });
       if (isUpdate) {
-        execSync(
-          `rm -rf node_modules/${packageName} &&rm -rf package-lock.json &&npm install ${packageName}@latest`,
-          {
-            cwd: packageJsonPath
-          }
-        );
+        execSync(`rm -rf node_modules/${packageName}`, {
+          cwd: packageJsonPath
+        });
+        execSync(`rm -rf package-lock.json`, {
+          cwd: packageJsonPath
+        });
+        execSync(`npm install ${packageName}@latest`, {
+          cwd: packageJsonPath,
+          stdio: 'inherit'
+        });
         logger.log(
           t('updated_esa_template_to_latest_version', { packageName }).d(
             `${packageName} updated successfully`

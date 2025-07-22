@@ -8,7 +8,6 @@ import chalk from 'chalk';
 import { ApiService } from '../../libs/apiService.js';
 import t from '../../i18n/index.js';
 import moment from 'moment';
-import api from '../../libs/api.js';
 
 const list: CommandModule = {
   command: 'list',

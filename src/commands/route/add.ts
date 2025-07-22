@@ -8,7 +8,6 @@ import { CommandModule, ArgumentsCamelCase, Argv } from 'yargs';
 import { validRoutine } from '../../utils/checkIsRoutineCreated.js';
 import inquirer from 'inquirer';
 import { transferRouteToRuleString } from './helper.js';
-import api from '../../libs/api.js';
 
 const addRoute: CommandModule = {
   command: 'add [route] [site]',

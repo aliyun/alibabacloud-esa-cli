@@ -74,7 +74,7 @@ export async function handleDeleteRoute(argv: ArgumentsCamelCase) {
     configId: configId
   };
 
-  const deleteRouteRes = await api.deleteRoutineRoute(deleteRouteReq as any);
+  const deleteRouteRes = await api.deleteRoutineRoute(deleteRouteReq);
   const isDeleteSuccess = deleteRouteRes.statusCode === 200;
 
   if (isDeleteSuccess) {

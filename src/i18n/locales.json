@@ -99,7 +99,6 @@
     "en": "Do you want to create a formal version to deploy on production environment?",
     "zh_CN": "是否创建正式版本以部署到生产环境？"
   },
-
   "deploy_success": {
     "en": "Your code has been successfully deployed",
     "zh_CN": "您的代码已成功部署"
@@ -971,5 +970,9 @@
   "no_route_found": {
     "en": "No route found! Please check the route name.",
     "zh_CN": ""
+  },
+  "init_template_not_ready": {
+    "en": "Template is not ready. We will install it for you now.",
+    "zh_CN": "模版未准备好，我们为您安装模版。"
   }
 }

@@ -374,7 +374,9 @@ class Client {
       request
     );
   }
-  listRoutineCodeVersions(params: $ESA.ListRoutineCodeVersionsRequest) {
+  listRoutineCodeVersions(
+    params: OptionalProps<$ESA.ListRoutineCodeVersionsRequest>
+  ) {
     const request = new $ESA.ListRoutineCodeVersionsRequest(params);
     return this.callApi(
       this.client.listRoutineCodeVersions.bind(this.client) as ApiMethod<

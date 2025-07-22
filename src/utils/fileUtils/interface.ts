@@ -12,6 +12,9 @@ export interface ProjectConfig {
   routes?: string[];
   domains?: string[];
   codeVersions?: CodeVersionProps[];
+  assets?: {
+    directory: string;
+  };
   dev?: DevToolProps;
   [key: string]: any;
 }

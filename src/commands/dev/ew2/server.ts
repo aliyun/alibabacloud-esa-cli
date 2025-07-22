@@ -167,7 +167,7 @@ class Ew2Server {
               'x-er-id': 'a.bA'
             },
             body: req.method === 'GET' ? undefined : req,
-            agent: new HttpProxyAgent(`http://127.0.0.1:${ew2Port}`)
+            agent: new HttpProxyAgent(`http://127.0.0.1:${ew2Port}`) as any
           }
         );
         const workerHeaders = Object.fromEntries(workerRes.headers.entries());

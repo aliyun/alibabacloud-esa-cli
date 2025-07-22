@@ -27,6 +27,13 @@ const commit: CommandModule = {
         type: 'boolean',
         default: false
       })
+      .option('description', {
+        alias: 'd',
+        describe: t('commit_option_description').d(
+          'Description for the routine/version (skip interactive input)'
+        ),
+        type: 'string'
+      })
       .positional('entry', {
         describe: t('dev_entry_describe').d('Entry file of the Routine'),
         type: 'string',
@@ -62,33 +69,48 @@ export async function handleCommit(argv: ArgumentsCamelCase) {
       logger.log(
         `🙅 ${t('commit_er_not_exist').d('No routine found, creating a new one')}`
       );
-      description = await descriptionInput(
-        `🖊️ ${t('commit_er_description').d('Enter a description for the routine')}:`,
-        false
-      );
+      if (argv.description) {
+        description = argv.description as string;
+      } else {
+        description = await descriptionInput(
+          `🖊️ ${t('commit_er_description').d('Enter a description for the routine')}:`,
+          false
+        );
+      }
     } else {
       logger.log(
         `🔄 ${t('commit_er_exist').d('Routine exists, updating the code')}`
       );
-      description = await descriptionInput(
-        `🖊️ ${t('commit_version_description').d('Enter a description for the version')}:`,
-        false
-      );
+      if (argv.description) {
+        description = argv.description as string;
+      } else {
+        description = await descriptionInput(
+          `🖊️ ${t('commit_version_description').d('Enter a description for the version')}:`,
+          false
+        );
+      }
       action = 'Updating';
     }
 
     const code = readEdgeRoutineFile() || '';
-    const edgeRoutine: CreateRoutineReq = {
-      name: projectConfig.name,
-      code,
-      description
-    };
 
     if (action === 'Creating') {
-      await createEdgeRoutine(edgeRoutine);
-    } else {
-      if (!(await uploadEdgeRoutineCode(edgeRoutine))) return;
-      await releaseOfficialVersion(edgeRoutine);
+      const edgeRoutineProps: EdgeRoutineProps = {
+        name: projectConfig.name,
+        code,
+        description: ''
+      };
+      await createEdgeRoutine(edgeRoutineProps);
+    }
+    const versionProps: EdgeRoutineProps = {
+      name: projectConfig.name,
+      code,
+      description: description
+    };
+
+    const uploadResult = await uploadEdgeRoutineCode(versionProps);
+    if (uploadResult) {
+      await releaseOfficialVersion(versionProps);
     }
   } catch (error) {
     logger.error(

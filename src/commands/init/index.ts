@@ -31,16 +31,34 @@ import {
 } from './helper.js';
 
 const init: CommandModule = {
-  command: 'init',
+  command: 'init [name]',
   describe: `📥 ${t('init_describe').d('Initialize a routine with a template')}`,
   builder: (yargs: Argv) => {
-    return yargs.option('config', {
-      alias: 'c',
-      describe: t('init_config_file').d(
-        'Generate a config file for your project'
-      ),
-      type: 'boolean'
-    });
+    return yargs
+      .positional('name', {
+        describe: t('init_project_name').d('Project name'),
+        type: 'string'
+      })
+      .option('template', {
+        alias: 't',
+        describe: t('init_template_name').d('Template name to use'),
+        type: 'string'
+      })
+      .option('config', {
+        alias: 'c',
+        describe: t('init_config_file').d(
+          'Generate a config file for your project'
+        ),
+        type: 'boolean'
+      })
+      .option('skip', {
+        alias: 's',
+        describe: t('init_skip').d(
+          'Skip the project git and deployment initialization'
+        ),
+        type: 'boolean',
+        default: false
+      });
   },
   handler: async (argv: ArgumentsCamelCase) => {
     await handleInit(argv);
@@ -49,6 +67,32 @@ const init: CommandModule = {
 };
 
 export default init;
+
+export function findTemplatePathByName(templateName: string): string | null {
+  const templateInstanceList = getTemplateInstances(templateHubPath);
+  const templateConfig = getTemplatesConfig();
+
+  // find template recursively
+  function findTemplateRecursive(configs: any[]): string | null {
+    for (const config of configs) {
+      const title = config.Title_EN;
+      if (title === templateName) {
+        const template = templateInstanceList.find((template) => {
+          return config.Title_EN === template.title;
+        });
+        return template?.path || null;
+      }
+    }
+    return null;
+  }
+
+  return findTemplateRecursive(templateConfig);
+}
+
+export function validateProjectName(name: string): boolean {
+  const regex = /^[a-z0-9-]{2,}$/;
+  return regex.test(name);
+}
 
 export async function promptProjectName(): Promise<string> {
   const { name } = await inquirer.prompt([
@@ -200,14 +244,41 @@ export async function handleInit(argv: ArgumentsCamelCase) {
     await generateConfigFile(String(config));
   }
 
-  const name = await promptProjectName();
+  // Handle project name parameter
+  let name = argv.name as string;
+  if (!name) {
+    name = await promptProjectName();
+  } else {
+    if (!validateProjectName(name)) {
+      logger.error(
+        t('init_name_error').d(
+          'Error: The project name must be at least 2 characters long and can only contain lowercase letters, numbers, and hyphens.'
+        )
+      );
+      return;
+    }
+  }
 
-  const templateItems = prepareTemplateItems();
-
-  // Select a template
-  const selectedTemplatePath = await selectTemplate(templateItems);
-  if (!selectedTemplatePath) {
-    return;
+  // Handle template name parameter
+  let selectedTemplatePath: string | null = null;
+  if (argv.template) {
+    const templateName = argv.template as string;
+    selectedTemplatePath = findTemplatePathByName(templateName);
+    if (!selectedTemplatePath) {
+      logger.error(
+        t('init_template_not_found').d(
+          `Template "${templateName}" not found. Please check the template name and try again.`
+        )
+      );
+      return;
+    }
+  } else {
+    const templateItems = prepareTemplateItems();
+    // Select a template
+    selectedTemplatePath = await selectTemplate(templateItems);
+    if (!selectedTemplatePath) {
+      return;
+    }
   }
 
   // Initialize project files and configuration
@@ -216,13 +287,16 @@ export async function handleInit(argv: ArgumentsCamelCase) {
     return;
   }
   const { template, targetPath } = project;
+  if (!argv.skip) {
+    // Handle Git initialization
+    await handleGitInitialization(targetPath);
+  }
 
-  // Handle Git initialization
-  await handleGitInitialization(targetPath);
-
-  // Handle deployment
-  const projectConfig = getProjectConfig(targetPath);
-  await handleDeployment(targetPath, projectConfig);
+  if (!argv.skip) {
+    // Handle deployment
+    const projectConfig = getProjectConfig(targetPath);
+    await handleDeployment(targetPath, projectConfig);
+  }
 
   template.printSummary();
   return;

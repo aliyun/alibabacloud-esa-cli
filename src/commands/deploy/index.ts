@@ -44,7 +44,25 @@ const deploy: CommandModule = {
       })
       .option('quick', {
         alias: 'q',
+        describe: t('deploy_quick_describe').d(
+          'Quick deploy the routine to production environment'
+        ),
         type: 'boolean'
+      })
+      .option('version', {
+        alias: 'v',
+        describe: t('deploy_option_version').d(
+          'Version to deploy (skip interactive selection)'
+        ),
+        type: 'string'
+      })
+      .option('environment', {
+        alias: 'e',
+        describe: t('deploy_option_environment').d(
+          'Environment to deploy to: staging or production (skip interactive selection)'
+        ),
+        type: 'string',
+        choices: ['staging', 'production']
       });
   },
   describe: `🚀 ${t('deploy_describe').d('Deploy your project')}`,
@@ -117,14 +135,49 @@ export async function handleDeploy(argv: ArgumentsCamelCase) {
     await handleOnlyUnstableVersionFound(projectConfig, customEntry);
   } else {
     await displayVersionList(versionList, stagingVersion, productionVersion);
-    logger.log(
-      chalk.bold(
-        `${t('deploy_version_select').d('Select the version you want to publish')}:`
-      )
-    );
 
-    const selectedVersion = await promptSelectVersion(versionList);
-    const selectedType = await displaySelectDeployType();
+    let selectedVersion: string;
+    let selectedType: PublishType;
+
+    // Check if version and environment are provided via command line arguments
+    if (argv.version && argv.environment) {
+      // Validate version exists
+      const versionExists = versionList.some(
+        (v) => v.codeVersion === argv.version
+      );
+      if (!versionExists) {
+        logger.error(
+          t('deploy_version_not_found').d(`Version '${argv.version}' not found`)
+        );
+        return;
+      }
+
+      selectedVersion = argv.version as string;
+      selectedType =
+        (argv.environment as string) === 'staging'
+          ? PublishType.Staging
+          : PublishType.Production;
+
+      logger.log(
+        chalk.bold(
+          `${t('deploy_using_version').d('Using version')}: ${selectedVersion}`
+        )
+      );
+      logger.log(
+        chalk.bold(
+          `${t('deploy_using_environment').d('Using environment')}: ${argv.environment}`
+        )
+      );
+    } else {
+      logger.log(
+        chalk.bold(
+          `${t('deploy_version_select').d('Select the version you want to publish')}:`
+        )
+      );
+
+      selectedVersion = await promptSelectVersion(versionList);
+      selectedType = await displaySelectDeployType();
+    }
 
     await deploySelectedCodeVersion(
       projectConfig.name,

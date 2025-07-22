@@ -32,7 +32,7 @@ const main = async () => {
     .locale(cliConfig?.lang || 'en')
     .version(false)
     .wrap(null)
-    .help(false)
+    .help()
     .epilogue(
       `${t('main_epilogue').d('For more information, visit ESA')}: ${chalk.underline.blue('https://www.aliyun.com/product/esa')}`
     )
@@ -51,9 +51,15 @@ const main = async () => {
     () => {},
     (args) => {
       if (args._.length > 0) {
+        // Unknown command
+        console.error(
+          t('common_sub_command_fail').d('Use esa <command> -h to see help')
+        );
       } else {
         if (args.v) {
           handleCheckVersion();
+        } else if (args.h || args.help) {
+          esa.showHelp('log');
         } else {
           esa.showHelp('log');
         }

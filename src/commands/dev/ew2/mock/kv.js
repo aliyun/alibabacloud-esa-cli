@@ -134,10 +134,10 @@ class EdgeKV {
           );
         }
       case 'stream':
-        const stream = fetchRes.body;
+        const value = await fetchRes.text();
         return new ReadableStream({
           start(controller) {
-            controller.enqueue(new TextEncoder().encode('hello world'));
+            controller.enqueue(new TextEncoder().encode(value));
             controller.close();
           }
         });

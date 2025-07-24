@@ -7,11 +7,11 @@ import { validRoutine } from '../../utils/checkIsRoutineCreated.js';
 import api from '../../libs/api.js';
 
 const deleteRoute: CommandModule = {
-  command: 'delete <route>',
+  command: 'delete <routeName>',
   describe: `🗑  ${t('route_delete_describe').d('Delete a related route')}`,
   builder: (yargs: Argv) => {
     return yargs
-      .positional('route', {
+      .positional('routeName', {
         describe: t('route_delete_positional_describe').d(
           'The name of the routes to delete'
         ),

@@ -139,35 +139,50 @@ export async function handleDeploy(argv: ArgumentsCamelCase) {
     let selectedVersion: string;
     let selectedType: PublishType;
 
-    // Check if version and environment are provided via command line arguments
-    if (argv.version && argv.environment) {
-      // Validate version exists
-      const versionExists = versionList.some(
-        (v) => v.codeVersion === argv.version
-      );
-      if (!versionExists) {
-        logger.error(
-          t('deploy_version_not_found').d(`Version '${argv.version}' not found`)
+    // Check if version and/or environment are provided via command line arguments
+    if (argv.version || argv.environment) {
+      // Validate version if provided
+      if (argv.version) {
+        const versionExists = versionList.some(
+          (v) => v.codeVersion === argv.version
         );
-        return;
+        if (!versionExists) {
+          logger.error(
+            t('deploy_version_not_found').d(`Version '${argv.version}' not found`)
+          );
+          return;
+        }
+        selectedVersion = argv.version as string;
+        logger.log(
+          chalk.bold(
+            `${t('deploy_using_version').d('Using version')}: ${selectedVersion}`
+          )
+        );
+      } else {
+        // If version not provided, prompt for it
+        logger.log(
+          chalk.bold(
+            `${t('deploy_version_select').d('Select the version you want to publish')}:`
+          )
+        );
+        selectedVersion = await promptSelectVersion(versionList);
       }
 
-      selectedVersion = argv.version as string;
-      selectedType =
-        (argv.environment as string) === 'staging'
-          ? PublishType.Staging
-          : PublishType.Production;
-
-      logger.log(
-        chalk.bold(
-          `${t('deploy_using_version').d('Using version')}: ${selectedVersion}`
-        )
-      );
-      logger.log(
-        chalk.bold(
-          `${t('deploy_using_environment').d('Using environment')}: ${argv.environment}`
-        )
-      );
+      // Validate environment if provided
+      if (argv.environment) {
+        selectedType =
+          (argv.environment as string) === 'staging'
+            ? PublishType.Staging
+            : PublishType.Production;
+        logger.log(
+          chalk.bold(
+            `${t('deploy_using_environment').d('Using environment')}: ${argv.environment}`
+          )
+        );
+      } else {
+        // If environment not provided, prompt for it
+        selectedType = await displaySelectDeployType();
+      }
     } else {
       logger.log(
         chalk.bold(

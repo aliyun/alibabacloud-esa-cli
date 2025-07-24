@@ -359,6 +359,18 @@
     "en": "The name of route to add",
     "zh_CN": "要添加的路由名称"
   },
+  "route_add_site_describe": {
+    "en": "The site to bind the route to. For example: example.com",
+    "zh_CN": "要绑定路由的站点"
+  },
+  "route_add_route_name_option": {
+    "en": "Route name (aliases)",
+    "zh_CN": "路由名称（别名）"
+  },
+  "route_add_route_value_option": {
+    "en": "The route value. For example: example.com/*",
+    "zh_CN": "路由值"
+  },
   "route_add_invalid": {
     "en": "The route does not correspond to the domain.",
     "zh_CN": "该路由与域名不对应。"
@@ -720,8 +732,8 @@
     "zh_CN": "无权限：Access Key 或 Secret 错误，或没有必要的权限。"
   },
   "init_skip": {
-    "en": "Skip the project git and deployment initialization",
-    "zh_CN": "初始化已被跳过。"
+    "en": "Answer \"No\" to any prompts for new projects.",
+    "zh_CN": "回答 \"否\" 到所有提示。"
   },
   "quick_deploy_success": {
     "en": "Your code has been successfully deployed",
@@ -968,7 +980,7 @@
     "zh_CN": "边缘函数创建失败"
   },
   "create_route_route": {
-    "en": "Enter a Route:",
+    "en": "Enter a Route (e.g., example.com/*):",
     "zh_CN": "输入路由:"
   },
   "route_name_input_required": {
@@ -1026,5 +1038,33 @@
   "login_option_skip_login": {
     "en": "Skip login",
     "zh_CN": "跳过登录"
+  },
+  "check_and_update_package_error": {
+    "en": "Error: An error occurred while checking and updating the package, skipping template update",
+    "zh_CN": "检测和更新包时发生错误，跳过更新模版"
+  },
+  "init_yes": {
+    "en": "Answer \"Yes\" to all prompts.",
+    "zh_CN": "回答 \"是\" 到所有提示。"
+  },
+  "init_no_templates": {
+    "en": "No templates available.",
+    "zh_CN": "没有可用的模版。"
+  },
+  "no_active_sites": {
+    "en": "No active sites found in your account",
+    "zh_CN": "没有找到已激活的站点"
+  },
+  "route_format_invalid": {
+    "en": "Invalid route format",
+    "zh_CN": "无效的路由格式"
+  },
+  "creating_route": {
+    "en": "Creating route...",
+    "zh_CN": "创建路由..."
+  },
+  "site_not_found": {
+    "en": "Site \"${siteName}\" not found in your account",
+    "zh_CN": "站点 \"${siteName}\" 未找到"
   }
 }

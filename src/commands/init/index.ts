@@ -51,10 +51,16 @@ const init: CommandModule = {
         ),
         type: 'boolean'
       })
+      .option('yes', {
+        alias: 'y',
+        describe: t('init_yes').d('Answer "Yes" to all prompts.'),
+        type: 'boolean',
+        default: false
+      })
       .option('skip', {
         alias: 's',
         describe: t('init_skip').d(
-          'Skip the project git and deployment initialization'
+          'Answer "No" to any prompts for new projects.'
         ),
         type: 'boolean',
         default: false
@@ -94,7 +100,16 @@ export function validateProjectName(name: string): boolean {
   return regex.test(name);
 }
 
-export async function promptProjectName(): Promise<string> {
+export async function promptProjectName(yes: boolean = false): Promise<string> {
+  if (yes) {
+    // Generate a default name when --yes is used
+    const defaultName = `edge-routine-${Date.now()}`;
+    logger.log(
+      `${t('init_input_name').d('Enter the name of edgeRoutine:')} ${defaultName}`
+    );
+    return defaultName;
+  }
+
   const { name } = await inquirer.prompt([
     {
       type: 'input',
@@ -131,8 +146,21 @@ export function prepareTemplateItems(): {
 }
 
 export async function selectTemplate(
-  items: { label: string; value: string; children?: any }[]
+  items: { label: string; value: string; children?: any }[],
+  yes: boolean = false
 ): Promise<string | null> {
+  if (yes) {
+    // Select the first available template when --yes is used
+    const firstTemplate = items[0];
+    if (firstTemplate) {
+      logger.log(`Select a template: ${firstTemplate.label}`);
+      return firstTemplate.value;
+    } else {
+      logger.error(t('init_no_templates').d('No templates available.'));
+      return null;
+    }
+  }
+
   const selectedTemplatePath = await multiLevelSelect(
     items,
     'Select a template:'
@@ -174,8 +202,17 @@ export async function initializeProject(
 }
 
 export async function handleGitInitialization(
-  targetPath: string
+  targetPath: string,
+  yes: boolean = false
 ): Promise<void> {
+  if (yes) {
+    logger.log(
+      `${t('init_git').d('Do you want to init git in your project?')} Yes`
+    );
+    installGit(targetPath);
+    return;
+  }
+
   const { initGit } = await inquirer.prompt([
     {
       type: 'list',
@@ -194,7 +231,8 @@ export async function handleGitInitialization(
 
 export async function handleDeployment(
   targetPath: string,
-  projectConfig: any
+  projectConfig: any,
+  yes: boolean = false
 ): Promise<void> {
   const isLoginSuccess = await checkIsLoginSuccess();
   if (!isLoginSuccess) {
@@ -203,6 +241,27 @@ export async function handleDeployment(
         t('not_login_auto_deploy').d(
           'You are not logged in, automatic deployment cannot be performed. Please log in later and manually deploy.'
         )
+      )
+    );
+    return;
+  }
+
+  if (yes) {
+    logger.log(
+      `${t('auto_deploy').d('Do you want to deploy your project?')} Yes`
+    );
+    await checkRoutineExist(projectConfig?.name ?? '', targetPath);
+    await quickDeploy(targetPath, projectConfig);
+    const service = await ApiService.getInstance();
+    const res = await service.getRoutine({ Name: projectConfig?.name ?? '' });
+    const defaultUrl = res?.data?.DefaultRelatedRecord;
+    const visitUrl = defaultUrl ? 'http://' + defaultUrl : '';
+    logger.success(
+      `${t('init_deploy_success').d('Project deployment completed. Visit: ')}${chalk.yellowBright(visitUrl)}`
+    );
+    logger.warn(
+      t('deploy_url_warn').d(
+        'The domain may take some time to take effect, please try again later.'
       )
     );
     return;
@@ -247,7 +306,7 @@ export async function handleInit(argv: ArgumentsCamelCase) {
   // Handle project name parameter
   let name = argv.name as string;
   if (!name) {
-    name = await promptProjectName();
+    name = await promptProjectName(argv.yes as boolean);
   } else {
     if (!validateProjectName(name)) {
       logger.error(
@@ -274,28 +333,29 @@ export async function handleInit(argv: ArgumentsCamelCase) {
     }
   } else {
     const templateItems = prepareTemplateItems();
-    // Select a template
-    selectedTemplatePath = await selectTemplate(templateItems);
+
+    selectedTemplatePath = await selectTemplate(
+      templateItems,
+      argv.yes as boolean
+    );
     if (!selectedTemplatePath) {
       return;
     }
   }
 
-  // Initialize project files and configuration
+  // Initialize project files a
   const project = await initializeProject(selectedTemplatePath, name);
   if (!project) {
     return;
   }
   const { template, targetPath } = project;
   if (!argv.skip) {
-    // Handle Git initialization
-    await handleGitInitialization(targetPath);
+    await handleGitInitialization(targetPath, argv.yes as boolean);
   }
 
   if (!argv.skip) {
-    // Handle deployment
     const projectConfig = getProjectConfig(targetPath);
-    await handleDeployment(targetPath, projectConfig);
+    await handleDeployment(targetPath, projectConfig, argv.yes as boolean);
   }
 
   template.printSummary();

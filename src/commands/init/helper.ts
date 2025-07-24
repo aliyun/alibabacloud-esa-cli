@@ -164,7 +164,11 @@ export async function checkAndUpdatePackage(
   } catch (error) {
     console.log(error);
     if (error instanceof Error) {
-      logger.error('检测和更新包时发生错误，跳过更新模版');
+      logger.error(
+        t('check_and_update_package_error').d(
+          'Error: An error occurred while checking and updating the package, skipping template update'
+        )
+      );
     }
   }
 }

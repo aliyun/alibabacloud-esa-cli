@@ -1,15 +1,10 @@
 // init.test.js
 import { it, describe, expect, vi } from 'vitest';
 import { handleInit } from '../../src/commands/init/index.js';
-import * as selectInput from '../../src/components/selectInput.js';
-import * as descriptionInput from '../../src/components/descriptionInput.js';
 import { mockConsoleMethods } from '../helper/mockConsole.js';
 import fs from 'fs';
 import fsExtra from 'fs-extra';
-import * as Process from 'process';
 import * as Util from '../../src/utils/fileUtils/index.js';
-import inquirer from 'inquirer';
-import { checkAndUpdatePackage } from '../../src/commands/init/helper.js';
 import { mockInquirerPrompt } from './helper.js';
 
 vi.mock('child_process');
@@ -358,6 +353,180 @@ describe('handleInit', () => {
             "type": "return",
             "value": undefined,
           },
+          {
+            "type": "return",
+            "value": undefined,
+          },
+          {
+            "type": "return",
+            "value": undefined,
+          },
+          {
+            "type": "return",
+            "value": undefined,
+          },
+          {
+            "type": "return",
+            "value": undefined,
+          },
+        ],
+      }
+    `);
+  });
+
+  it('should skip the project git and deployment initialization', async () => {
+    vi.mock('../../src/components/mutiLevelSelect.js', () => ({
+      default: vi.fn().mockResolvedValue('/test/path/test-template-1')
+    }));
+    mockInquirerPrompt([
+      { name: 'test-template-1' },
+      { initGit: 'Yes' },
+      { deploy: 'No' }
+    ]);
+
+    vi.spyOn(fsExtra, 'copy').mockImplementation(vi.mocked);
+    vi.spyOn(fs, 'readdirSync').mockReturnValue(['test' as any]);
+
+    await handleInit({
+      _: [],
+      $0: '',
+      skip: true
+    });
+    expect(std.out).toMatchInlineSnapshot(`
+      [MockFunction log] {
+        "calls": [
+          [
+            {
+              "name": "test-template-1",
+            },
+          ],
+          [
+            "Enter your routine project folder: 💡 cd test-template-1",
+          ],
+          [
+            "Start a local development server for your project: 💡 esa dev",
+          ],
+          [
+            "Save a new version of code: 💡 esa commit",
+          ],
+          [
+            "Deploy your project to different environments: 💡 esa deploy",
+          ],
+        ],
+        "results": [
+          {
+            "type": "return",
+            "value": undefined,
+          },
+          {
+            "type": "return",
+            "value": undefined,
+          },
+          {
+            "type": "return",
+            "value": undefined,
+          },
+          {
+            "type": "return",
+            "value": undefined,
+          },
+          {
+            "type": "return",
+            "value": undefined,
+          },
+        ],
+      }
+    `);
+  });
+
+  it('should handle template name parameter', async () => {
+    vi.mock('../../src/components/mutiLevelSelect.js', () => ({
+      default: vi.fn().mockResolvedValue('/test/path/test-template-1')
+    }));
+    mockInquirerPrompt([{ name: 'test-template-2' }]);
+
+    await handleInit({
+      _: [],
+      $0: '',
+      template: 'test-template-1',
+      skip: true
+    });
+    expect(std.out).toMatchInlineSnapshot(`
+      [MockFunction log] {
+        "calls": [
+          [
+            {
+              "name": "test-template-2",
+            },
+          ],
+          [
+            "Enter your routine project folder: 💡 cd test-template-2",
+          ],
+          [
+            "Start a local development server for your project: 💡 esa dev",
+          ],
+          [
+            "Save a new version of code: 💡 esa commit",
+          ],
+          [
+            "Deploy your project to different environments: 💡 esa deploy",
+          ],
+        ],
+        "results": [
+          {
+            "type": "return",
+            "value": undefined,
+          },
+          {
+            "type": "return",
+            "value": undefined,
+          },
+          {
+            "type": "return",
+            "value": undefined,
+          },
+          {
+            "type": "return",
+            "value": undefined,
+          },
+          {
+            "type": "return",
+            "value": undefined,
+          },
+        ],
+      }
+    `);
+  });
+
+  it('should handle project name parameter', async () => {
+    vi.mock('../../src/components/mutiLevelSelect.js', () => ({
+      default: vi.fn().mockResolvedValue('/test/path/test-template-1')
+    }));
+    mockInquirerPrompt([{ name: 'test-template-1' }]);
+
+    await handleInit({
+      _: [],
+      $0: '',
+      name: 'test-project',
+      skip: true
+    });
+    expect(std.out).toMatchInlineSnapshot(`
+      [MockFunction log] {
+        "calls": [
+          [
+            "Enter your routine project folder: 💡 cd test-project",
+          ],
+          [
+            "Start a local development server for your project: 💡 esa dev",
+          ],
+          [
+            "Save a new version of code: 💡 esa commit",
+          ],
+          [
+            "Deploy your project to different environments: 💡 esa deploy",
+          ],
+        ],
+        "results": [
           {
             "type": "return",
             "value": undefined,

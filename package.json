@@ -18,7 +18,7 @@
     "watch": "tsc --watch",
     "eslint": "eslint src/ --ext .js,.jsx,.ts,.tsx",
     "lint-staged": "lint-staged",
-    "test": "FORCE_COLOR=0 npx vitest ",
+    "test": "vitest --coverage",
     "coverage": "vitest --coverage"
   },
   "keywords": [

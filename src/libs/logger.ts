@@ -1,18 +1,12 @@
 import chalk from 'chalk';
-import {
-  format,
-  createLogger,
-  transports,
-  Logger as WinstonLogger
-} from 'winston';
+import { format, createLogger, Logger as WinstonLogger } from 'winston';
+import DailyRotateFile from 'winston-daily-rotate-file';
 import Table from 'cli-table3';
 import path from 'path';
 import os from 'os';
 import ora, { Ora } from 'ora';
-import { fileURLToPath } from 'url';
 import t from '../i18n/index.js';
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+import { getProjectConfig } from '../utils/fileUtils/index.js';
 
 type HorizontalTableRow = string[];
 type VerticalTableRow = Record<string, string>;
@@ -28,6 +22,15 @@ export type LogLevel =
   | 'debug'
   | 'silly';
 
+const transport: DailyRotateFile = new DailyRotateFile({
+  filename: path.join(os.homedir(), '.esa-logs/esa-debug-%DATE%.log'),
+  level: 'info',
+  datePattern: 'YYYY-MM-DD-HH',
+  zippedArchive: true,
+  maxSize: '10m',
+  maxFiles: '7d'
+});
+
 class Logger {
   private static instance: Logger;
   private logger: WinstonLogger;
@@ -38,10 +41,16 @@ class Logger {
     const customFormat = printf(
       ({ level, message, label: printLabel, timestamp: printTimestamp }) => {
         let colorizedLevel: string;
+        const projName = getProjectConfig()?.name || 'Outside';
         switch (level) {
+          case 'warn':
+            colorizedLevel = chalk.yellow(level);
+            break;
+          case 'info':
+            colorizedLevel = chalk.green(level);
+            break;
           case 'error':
-            colorizedLevel = chalk.bgRed(' ERROR ');
-            return `❌ ${colorizedLevel} ${chalk.red(message)}`;
+            colorizedLevel = chalk.red(level);
           case 'verbose':
             colorizedLevel = chalk.magenta(level);
             break;
@@ -56,20 +65,14 @@ class Logger {
         }
         return `${printTimestamp} [${chalk.green(
           printLabel
-        )}] ${colorizedLevel}: ${message}`;
+        )}] ${colorizedLevel} in ${chalk.italic(projName)}: ${message}`;
       }
     );
 
     this.logger = createLogger({
       level: 'info',
-      format: combine(label({ label: 'Esa' }), timestamp(), customFormat),
-      transports: [
-        new transports.Console(),
-        new transports.File({
-          filename: path.join(os.homedir(), '.asea-logs/esa-debug.log'),
-          level: 'error'
-        })
-      ]
+      format: combine(label({ label: 'ESA' }), timestamp(), customFormat),
+      transports: [transport]
     });
 
     this.spinner = ora('Loading...');
@@ -100,15 +103,18 @@ class Logger {
   }
 
   success(message: string) {
-    console.log(`🎉 ${chalk.bgGreen(' SUCCESS ')} ${chalk.green(message)}`);
+    console.log(`\n🎉 ${chalk.bgGreen(' SUCCESS ')} ${chalk.green(message)}`);
   }
 
   debug(message: string) {
     this.logger.debug(message);
+    if (this.logger.level === 'debug') {
+      console.log(`${chalk.grey('[DEBUG]')} ${message}`);
+    }
   }
 
   info(message: string) {
-    console.log(`💬 ${message}`);
+    this.logger.info(message);
   }
 
   ask(message: string) {
@@ -120,19 +126,21 @@ class Logger {
   }
 
   block() {
-    console.log(' ');
+    console.log('\n');
   }
 
   warn(message: string) {
-    console.log(`${chalk.bgYellow(' WARNING ')} ${chalk.yellow(message)}`);
+    this.logger.warn(message);
+    console.log(`\n${chalk.bgYellow(' WARNING ')} ${chalk.yellow(message)}`);
   }
 
   error(message: string) {
     this.logger.error(message);
+    console.log(`\n❌ ${chalk.bgRed(' ERROR ')} ${chalk.red(message)}`);
   }
 
   subError(message: string) {
-    console.log(` ${chalk.red(message)}`);
+    console.log(`\n${chalk.red(message)}`);
   }
 
   http(message: string) {
@@ -158,7 +166,7 @@ class Logger {
 
   notInProject() {
     const initCommand = chalk.green('esa init');
-    this.logger.error(
+    this.error(
       t('common_not_edge_project', { initCommand }).d(
         `You are not in an esa project, Please run ${initCommand} to initialize a project, or enter an esa project.`
       )
@@ -195,21 +203,15 @@ class Logger {
 
   tree(messages: string[]): void {
     if (messages.length === 0) return;
-    if (messages.length === 1) {
-      console.log(`─ ${messages[0]}`);
-      return;
-    }
-    console.log(`╭─ ${messages[0]}`);
-
+    const lines = [];
+    lines.push(`╭─ ${messages[0]}`);
     for (let i = 1; i < messages.length - 1; i++) {
-      console.log(`│`);
-      console.log(`├─ ${messages[i]}`);
+      lines.push(`│ ${messages[i]}`);
     }
-
     if (messages.length > 1) {
-      console.log(`│`);
-      console.log(`╰─ ${messages[messages.length - 1]}`);
+      lines.push(`╰─ ${messages[messages.length - 1]}`);
     }
+    console.log(lines.join('\n'));
   }
 }
 

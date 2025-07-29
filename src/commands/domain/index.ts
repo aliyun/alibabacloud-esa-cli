@@ -7,7 +7,7 @@ import t from '../../i18n/index.js';
 let yargsIns: Argv;
 const domainCommand: CommandModule<{}> = {
   command: 'domain [script]',
-  describe: `🚀 ${t('domain_describe').d('Manage the domain names bound to your routine')}`,
+  describe: `🔗 ${t('domain_describe').d('Manage the domain names bound to your routine')}`,
   builder: (yargs) => {
     yargsIns = yargs;
     return yargs

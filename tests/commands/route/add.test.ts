@@ -8,68 +8,151 @@ import { validDomain, validName } from '../../../src/commands/utils.js';
 import { mockConsoleMethods } from '../../helper/mockConsole.js';
 import { ApiService } from '../../../src/libs/apiService.js';
 import * as Component from '../../../src/components/filterSelector.js';
+import { mockInquirerPrompt } from '../helper.js';
+import api from '../../../src/libs/api.js';
 
 describe('handle add routes', () => {
   let std = mockConsoleMethods();
-  vi.spyOn(logger, 'error').mockImplementation(() => {});
-  vi.spyOn(descriptionInput, 'descriptionInput').mockResolvedValue(
-    'test.com/*'
-  );
-  vi.spyOn(Component, 'promptFilterSelector').mockResolvedValue({
-    label: 'test.com/*',
-    value: 'test.com/*'
-  });
+
   afterEach(() => {
     vi.clearAllMocks();
   });
-  it('should handle adding two routes success', async () => {
+
+  it('should handle adding route success', async () => {
     vi.mocked(validDomain).mockReturnValue(true);
     vi.mocked(validName).mockResolvedValue(true);
-    vi.spyOn(descriptionInput, 'descriptionInput').mockResolvedValue(
-      'test.com/*'
-    );
-    vi.spyOn(Component, 'promptFilterSelector').mockResolvedValue({
-      label: 'test.com/*',
-      value: 'test.com/*'
-    });
+    mockInquirerPrompt([
+      { routeName: 'test-template-1' },
+      {
+        routeSite: {
+          name: 'test.site',
+          value: 4589034801
+        }
+      },
+      { inputRoute: 'kl.test.site/*' }
+    ]);
     await handlerAddRoute({
-      site: 'test.com',
-      route: 'test.com/1',
       _: [],
       $0: ''
     });
-    expect(std.out).toBeCalledWith(
-      expect.stringContaining('Add route success!')
-    );
-  });
-  it('should handle adding two routes fail', async () => {
-    vi.mocked(validDomain).mockReturnValue(true);
-    vi.mocked(validName).mockResolvedValue(true);
-    vi.mocked(
-      (await ApiService.getInstance()).createRoutineRelatedRoute
-    ).mockResolvedValue({
-      data: {
-        Status: 'error'
+
+    expect(std.out).toMatchInlineSnapshot(`
+      [MockFunction log] {
+        "calls": [
+          [
+            {
+              "routeName": "test-template-1",
+            },
+          ],
+          [
+            {
+              "routeSite": {
+                "name": "test.site",
+                "value": 4589034801,
+              },
+            },
+          ],
+          [
+            {
+              "inputRoute": "kl.test.site/*",
+            },
+          ],
+          [
+            "
+      🎉  SUCCESS  Add route success!",
+          ],
+        ],
+        "results": [
+          {
+            "type": "return",
+            "value": undefined,
+          },
+          {
+            "type": "return",
+            "value": undefined,
+          },
+          {
+            "type": "return",
+            "value": undefined,
+          },
+          {
+            "type": "return",
+            "value": undefined,
+          },
+        ],
       }
-    } as any);
-    await handlerAddRoute({
-      site: 'test.com',
-      route: 'test.com/1',
-      _: [],
-      $0: ''
-    });
-    expect(logger.error).toBeCalledWith(`Add route fail!`);
+    `);
   });
-  it('should handle inputting routes not corresponding to the domain', async () => {
-    vi.spyOn(descriptionInput, 'descriptionInput').mockResolvedValue(
-      'test2.com/*'
-    );
+
+  it('should handle adding route fail', async () => {
+    vi.mocked(validDomain).mockReturnValue(true);
+    vi.mocked(validName).mockResolvedValue(true);
+    mockInquirerPrompt([
+      { routeName: 'test-template-1' },
+      {
+        routeSite: {
+          name: 'test.site',
+          value: 4589034801
+        }
+      },
+      { inputRoute: 'kl.test.site/*' }
+    ]);
+
+    vi.mocked(
+      (await ApiService.getInstance()).createRoutineRoute
+    ).mockResolvedValue({
+      statusCode: 500
+    } as any);
+
     await handlerAddRoute({
-      route: 'test.com/1',
-      site: 'test1.com',
       _: [],
       $0: ''
     });
-    expect(logger.error).toBeCalledWith('Add route fail!');
+    expect(std.out).toMatchInlineSnapshot(`
+      [MockFunction log] {
+        "calls": [
+          [
+            {
+              "routeName": "test-template-1",
+            },
+          ],
+          [
+            {
+              "routeSite": {
+                "name": "test.site",
+                "value": 4589034801,
+              },
+            },
+          ],
+          [
+            {
+              "inputRoute": "kl.test.site/*",
+            },
+          ],
+          [
+            "
+      ❌  ERROR  Add route fail!",
+          ],
+        ],
+        "results": [
+          {
+            "type": "return",
+            "value": undefined,
+          },
+          {
+            "type": "return",
+            "value": undefined,
+          },
+          {
+            "type": "return",
+            "value": undefined,
+          },
+          {
+            "type": "return",
+            "value": undefined,
+          },
+        ],
+      }
+    `);
   });
 });

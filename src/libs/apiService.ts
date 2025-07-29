@@ -4,8 +4,6 @@ import FormData from 'form-data';
 import fetch from 'node-fetch';
 
 import {
-  GetRoutineUserInfoRes,
-  ListRoutineCanaryAreasRes,
   PublishRoutineCodeVersionReq,
   GetMatchSiteReq,
   GetMatchSiteRes,
@@ -33,10 +31,13 @@ import {
   DeleteRoutineRelatedRecordRes,
   PublishRoutineCodeVersionRes,
   Environment,
-  ListRoutineOptionalSpecsRes
+  ListRoutineRelatedRecordsReq,
+  ListRoutineRelatedRecordsRes,
+  CreateRoutineRouteReq,
+  CreateRoutineRouteRes,
+  ListUserRoutinesRes
 } from './interface.js';
 import { getApiConfig } from '../utils/fileUtils/index.js';
-import chain from 'lodash';
 import { IOssConfig } from './interface.js';
 import t from '../i18n/index.js';
 
@@ -181,15 +182,11 @@ export class ApiService {
           return this;
         }
       };
-      const CanaryAreaList = requestParams.CanaryAreaList ?? [];
-      const CanaryAreaListString = JSON.stringify(CanaryAreaList);
       let request = new $OpenApi.OpenApiRequest({
         query: {
           Env: requestParams.Env,
           Name: requestParams.Name,
-          CodeVersion: requestParams.CodeVersion,
-          CanaryCodeVersion: requestParams.CanaryCodeVersion,
-          CanaryAreaList: CanaryAreaListString
+          CodeVersion: requestParams.CodeVersion
         }
       });
 
@@ -261,10 +258,10 @@ export class ApiService {
     return null;
   }
 
-  async listRoutineCanaryAreas(): Promise<ListRoutineCanaryAreasRes | null> {
+  async listUserRoutines(): Promise<ListUserRoutinesRes | null> {
     try {
       let params = {
-        action: 'ListRoutineCanaryAreas',
+        action: 'ListUserRoutines',
         version: '2024-09-10',
         protocol: 'https',
         method: 'GET',
@@ -285,46 +282,7 @@ export class ApiService {
       };
       const res = await this.client.callApi(params, request, runtime);
       if (res.statusCode === 200 && res.body) {
-        const ret: ListRoutineCanaryAreasRes = {
-          CanaryAreas: res.body.CanaryAreas
-        };
-        return ret;
-      }
-    } catch (error) {
-      console.log(error);
-    }
-    return null;
-  }
-
-  async getRoutineUserInfo(): Promise<GetRoutineUserInfoRes | null> {
-    try {
-      let params = {
-        action: 'GetRoutineUserInfo',
-        version: '2024-09-10',
-        protocol: 'https',
-        method: 'GET',
-        authType: 'AK',
-        bodyType: 'json',
-        reqBodyType: 'json',
-        style: 'RPC',
-        pathname: '/',
-        toMap: function () {
-          return this;
-        }
-      };
-      let request = new $OpenApi.OpenApiRequest();
-      let runtime = {
-        toMap: function () {
-          return this;
-        }
-      };
-      const res = await this.client.callApi(params, request, runtime);
-      if (res.statusCode === 200 && res.body) {
-        const ret: GetRoutineUserInfoRes = {
-          Subdomains: res.body.RoutineName,
-          Routines: res.body.Routines
-        };
-        return ret;
+        return res as ListUserRoutinesRes;
       }
     } catch (error) {
       console.log(error);
@@ -634,11 +592,9 @@ export class ApiService {
           data: {
             RequestId: res.body?.RequestId,
             CodeVersions: res.body?.CodeVersions || [],
-            RelatedRecords: res.body?.RelatedRecords || [],
             Envs: res.body?.Envs || [],
             CreateTime: res.body?.CreateTime,
             Description: res.body?.Description,
-            RelatedRoutes: res.body?.RelatedRoutes || [],
             DefaultRelatedRecord: res.body?.DefaultRelatedRecord
           }
         };
@@ -672,8 +628,7 @@ export class ApiService {
     let request = new $OpenApi.OpenApiRequest({
       query: {
         Name: edgeRoutine.name,
-        Description: edgeRoutine.description,
-        SpecName: edgeRoutine.specName
+        Description: edgeRoutine.description
       }
     });
     let runtime = {
@@ -728,7 +683,7 @@ export class ApiService {
         }
       };
       const uploadResult = await this.client.callApi(params, request, runtime);
-      const ossConfig = chain(uploadResult).get('body.OssPostConfig');
+      const ossConfig = uploadResult.body.OssPostConfig;
 
       if (uploadResult.statusCode !== 200 || !ossConfig) {
         return false;
@@ -751,12 +706,13 @@ export class ApiService {
       formData.append('policy', policy);
       formData.append('key', key);
       formData.append('file', edgeRoutine.code);
-      // TODO: 检查oss结果;
+
       const ossRes = await fetch(Url, {
         method: 'POST',
         body: formData,
         headers: formData.getHeaders()
       });
+      // console.log('oss result', oss);
       if (ossRes && ossRes.status === 200) {
         return true;
       }
@@ -803,44 +759,6 @@ export class ApiService {
           data: {
             RequestId: res.body.RequestId,
             CodeVersion: res.body.CodeVersion
-          }
-        };
-        return ret;
-      }
-    } catch (error) {
-      console.log(error);
-    }
-    return null;
-  }
-  async ListRoutineOptionalSpecs(): Promise<ListRoutineOptionalSpecsRes | null> {
-    try {
-      let params = {
-        action: 'ListRoutineOptionalSpecs',
-        version: '2024-09-10',
-        protocol: 'https',
-        method: 'GET',
-        authType: 'AK',
-        bodyType: 'json',
-        reqBodyType: 'json',
-        style: 'RPC',
-        pathname: '/',
-        toMap: function () {
-          return this;
-        }
-      };
-      let request = new $OpenApi.OpenApiRequest();
-      let runtime = {
-        toMap: function () {
-          return this;
-        }
-      };
-      const res = await this.client.callApi(params, request, runtime);
-      if (res.statusCode === 200 && res.body) {
-        const ret: ListRoutineOptionalSpecsRes = {
-          code: res.statusCode,
-          data: {
-            RequestId: res.body.RequestId,
-            Specs: res.body.Specs
           }
         };
         return ret;
@@ -940,6 +858,109 @@ export class ApiService {
           data: {
             Status: res.body.Status,
             RequestId: res.body.RequestId
+          }
+        };
+        return ret;
+      }
+    } catch (error) {
+      console.log(error);
+    }
+    return null;
+  }
+
+  async listRoutineRelatedRecords(
+    requestParams: ListRoutineRelatedRecordsReq
+  ): Promise<ListRoutineRelatedRecordsRes | null> {
+    try {
+      let params = {
+        action: 'ListRoutineRelatedRecords',
+        version: '2024-09-10',
+        protocol: 'https',
+        method: 'GET',
+        authType: 'AK',
+        bodyType: 'json',
+        reqBodyType: 'json',
+        style: 'RPC',
+        pathname: '/',
+        toMap: function () {
+          return this;
+        }
+      };
+
+      let request = new $OpenApi.OpenApiRequest({
+        query: {
+          Name: requestParams.Name,
+          PageNumber: requestParams.PageNumber,
+          PageSize: requestParams.PageSize,
+          SearchKeyWord: requestParams.SearchKeyWord
+        }
+      });
+      let runtime = {
+        toMap: function () {
+          return this;
+        }
+      };
+      const res = await this.client.callApi(params, request, runtime);
+      if (res.statusCode === 200 && res.body) {
+        const ret: ListRoutineRelatedRecordsRes = {
+          code: res.statusCode,
+          data: {
+            PageNumber: res.body.PageNumber,
+            PageSize: res.body.PageSize,
+            TotalCount: res.body.TotalCount,
+            RelatedRecords: res.body.RelatedRecords
+          }
+        };
+        return ret;
+      }
+    } catch (error) {
+      console.log(error);
+    }
+    return null;
+  }
+
+  async createRoutineRoute(
+    requestParams: CreateRoutineRouteReq
+  ): Promise<CreateRoutineRouteRes | null> {
+    try {
+      let params = {
+        action: 'CreateRoutineRoute',
+        version: '2024-09-10',
+        protocol: 'https',
+        method: 'POST',
+        authType: 'AK',
+        bodyType: 'json',
+        reqBodyType: 'json',
+        style: 'RPC',
+        pathname: '/',
+        toMap: function () {
+          return this;
+        }
+      };
+
+      let request = new $OpenApi.OpenApiRequest({
+        query: {
+          SiteId: requestParams.SiteId,
+          RoutineName: requestParams.RoutineName,
+          RouteName: requestParams.RouteName,
+          RouteEnable: 'on',
+          Rule: requestParams.Rule,
+          Bypass: requestParams.Bypass,
+          Mode: 'simple'
+        }
+      });
+      let runtime = {
+        toMap: function () {
+          return this;
+        }
+      };
+      const res = await this.client.callApi(params, request, runtime);
+      if (res.statusCode === 200 && res.body) {
+        const ret: CreateRoutineRouteRes = {
+          code: res.statusCode,
+          data: {
+            RequestId: res.body.RequestId,
+            ConfigId: res.body.ConfigId
           }
         };
         return ret;

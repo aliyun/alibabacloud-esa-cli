@@ -4,9 +4,8 @@ import {
   getProjectConfig,
   readEdgeRoutineFile
 } from '../../utils/fileUtils/index.js';
-import SelectItems, { SelectItem } from '../../components/selectInput.js';
+
 import {
-  CodeVersionProps,
   Environment,
   GetRoutineReq,
   PublishRoutineCodeVersionReq,
@@ -19,11 +18,6 @@ import {
   getRoutineVersionList
 } from '../utils.js';
 import { ProjectConfig } from '../../utils/fileUtils/interface.js';
-import {
-  TableItem,
-  displayMultiSelectTable
-} from '../../components/mutiSelectTable.js';
-import { Base64 } from 'js-base64';
 import { ApiService } from '../../libs/apiService.js';
 import {
   createAndDeployVersion,
@@ -35,9 +29,9 @@ import t from '../../i18n/index.js';
 import prodBuild from '../commit/prodBuild.js';
 import { exit } from 'process';
 import path from 'path';
-import { createEdgeRoutine } from '../commit/index.js';
 import { checkRoutineExist } from '../../utils/checkIsRoutineCreated.js';
 import moment from 'moment';
+import { ListRoutineCodeVersionsResponseBodyCodeVersions } from '@alicloud/esa20240910';
 
 const deploy: CommandModule = {
   command: 'deploy [entry]',
@@ -50,12 +44,31 @@ const deploy: CommandModule = {
       })
       .option('quick', {
         alias: 'q',
+        describe: t('deploy_quick_describe').d(
+          'Quick deploy the routine to production environment'
+        ),
         type: 'boolean'
+      })
+      .option('version', {
+        alias: 'v',
+        describe: t('deploy_option_version').d(
+          'Version to deploy (skip interactive selection)'
+        ),
+        type: 'string'
+      })
+      .option('environment', {
+        alias: 'e',
+        describe: t('deploy_option_environment').d(
+          'Environment to deploy to: staging or production (skip interactive selection)'
+        ),
+        type: 'string',
+        choices: ['staging', 'production']
       });
   },
   describe: `🚀 ${t('deploy_describe').d('Deploy your project')}`,
   handler: async (argv: ArgumentsCamelCase) => {
-    handleDeploy(argv);
+    await handleDeploy(argv);
+    exit();
   }
 };
 
@@ -81,6 +94,7 @@ export async function quickDeploy(entry: string, projectConfig: ProjectConfig) {
     );
   } else {
     logger.error(t('quick_deploy_failed').d('Quick deploy failed'));
+    throw Error(t('quick_deploy_failed').d('Quick deploy failed'));
   }
 }
 
@@ -102,9 +116,7 @@ export async function handleDeploy(argv: ArgumentsCamelCase) {
   const req: GetRoutineReq = { Name: projectConfig.name };
   const routineDetail = await server.getRoutine(req, false);
 
-  const versionList: CodeVersionProps[] =
-    routineDetail?.data?.CodeVersions || [];
-
+  const versionList = await getRoutineVersionList(projectConfig.name);
   const customEntry = argv.entry as string;
 
   const stagingVersion = routineDetail?.data?.Envs[1]?.CodeVersion;
@@ -123,13 +135,49 @@ export async function handleDeploy(argv: ArgumentsCamelCase) {
     await handleOnlyUnstableVersionFound(projectConfig, customEntry);
   } else {
     await displayVersionList(versionList, stagingVersion, productionVersion);
-    logger.log(
-      chalk.bold(
-        `${t('deploy_version_select').d('Select the version you want to publish')}:`
-      )
-    );
-    const selectedVersion = await promptSelectVersion(versionList);
-    const selectedType = await displaySelectDeployType();
+
+    let selectedVersion: string;
+    let selectedType: PublishType;
+
+    // Check if version and environment are provided via command line arguments
+    if (argv.version && argv.environment) {
+      // Validate version exists
+      const versionExists = versionList.some(
+        (v) => v.codeVersion === argv.version
+      );
+      if (!versionExists) {
+        logger.error(
+          t('deploy_version_not_found').d(`Version '${argv.version}' not found`)
+        );
+        return;
+      }
+
+      selectedVersion = argv.version as string;
+      selectedType =
+        (argv.environment as string) === 'staging'
+          ? PublishType.Staging
+          : PublishType.Production;
+
+      logger.log(
+        chalk.bold(
+          `${t('deploy_using_version').d('Using version')}: ${selectedVersion}`
+        )
+      );
+      logger.log(
+        chalk.bold(
+          `${t('deploy_using_environment').d('Using environment')}: ${argv.environment}`
+        )
+      );
+    } else {
+      logger.log(
+        chalk.bold(
+          `${t('deploy_version_select').d('Select the version you want to publish')}:`
+        )
+      );
+
+      selectedVersion = await promptSelectVersion(versionList);
+      selectedType = await displaySelectDeployType();
+    }
 
     await deploySelectedCodeVersion(
       projectConfig.name,
@@ -137,21 +185,6 @@ export async function handleDeploy(argv: ArgumentsCamelCase) {
       selectedVersion
     );
   }
-}
-
-export async function displaySelectSpec(specList: string[]): Promise<string> {
-  logger.log(
-    `📃 ${t('deploy_spec_select').d('Please select the spec of the routine you want to create')}`
-  );
-  const selectItems: SelectItem[] = specList.map((spec) => {
-    return { label: spec, value: spec };
-  });
-  return new Promise((resolve) => {
-    const handleSelection = async (item: SelectItem) => {
-      resolve(item.value);
-    };
-    SelectItems({ items: selectItems, handleSelect: handleSelection });
-  });
 }
 
 async function handleNoVersionsFound(
@@ -186,21 +219,6 @@ async function promptAndDeployVersion(projectConfig: ProjectConfig) {
   );
 }
 
-const specialAreaTransfer = (canaryAreaSelectList: TableItem[]) => {
-  return canaryAreaSelectList.map((item) => {
-    if (item.label === 'HongKong') {
-      return { label: 'HongKong(China)' };
-    }
-    if (item.label === 'Macau') {
-      return { label: 'Macau(China)' };
-    }
-    if (item.label === 'Taiwan') {
-      return { label: 'Taiwan(China)' };
-    }
-    return { label: item.label };
-  });
-};
-
 export async function handleOnlyUnstableVersionFound(
   projectConfig: ProjectConfig,
   customEntry?: string
@@ -229,24 +247,8 @@ export async function deploySelectedCodeVersion(
         : Environment.Production
   };
 
-  if (selectedType === PublishType.Canary) {
-    const res = await server.listRoutineCanaryAreas();
-    const canaryList = res?.CanaryAreas ?? [];
-    logger.log(
-      `📃 ${t('deploy_select_canary').d('Please select the canary area(s) you want to deploy to')}`
-    );
-    const canaryAreaSelectList: TableItem[] = canaryList.map((area) => {
-      return { label: area };
-    });
-    const selectedCanaryList = await displayMultiSelectTable(
-      specialAreaTransfer(canaryAreaSelectList)
-    );
+  param.CodeVersion = version;
 
-    param.CanaryAreaList = selectedCanaryList;
-    param.CanaryCodeVersion = version;
-  } else {
-    param.CodeVersion = version;
-  }
   try {
     const res = await server.publishRoutineCodeVersion(param);
 
@@ -264,7 +266,7 @@ export async function deploySelectedCodeVersion(
 }
 
 export async function displayVersionList(
-  versionList: CodeVersionProps[],
+  versionList: ListRoutineCodeVersionsResponseBodyCodeVersions[],
   stagingVersion = 'unstable',
   productionVersion = 'unstable'
 ) {
@@ -278,16 +280,16 @@ export async function displayVersionList(
   const data: string[][] = [];
   for (let i = 0; i < versionList.length; i++) {
     const version = versionList[i];
-    const createTime = moment(version.CreateTime).format('YYYY/MM/DD HH:mm:ss');
+    const createTime = moment(version.createTime).format('YYYY/MM/DD HH:mm:ss');
     const tags = [
-      version.CodeVersion === stagingVersion ? chalk.bgYellow('Active') : '',
-      version.CodeVersion === productionVersion ? chalk.bgGreen('Active') : ''
+      version.codeVersion === stagingVersion ? chalk.bgYellow('Active') : '',
+      version.codeVersion === productionVersion ? chalk.bgGreen('Active') : ''
     ];
 
     data.push([
-      `${version.CodeVersion} ${tags.join(' ')}`,
+      `${version.codeVersion} ${tags.join(' ')}`,
       createTime,
-      Base64.decode(version.CodeDescription)
+      version.codeDescription ?? ''
     ]);
   }
 
@@ -298,6 +300,6 @@ export async function displayVersionList(
       t('deploy_table_header_description').d('Description')
     ],
     data,
-    [25, 25, 15]
+    [30, 25, 15]
   );
 }

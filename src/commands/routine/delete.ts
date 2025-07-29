@@ -1,5 +1,5 @@
 import { CommandModule, ArgumentsCamelCase, Argv } from 'yargs';
-import { checkDirectory, checkIsLoginSuccess } from '../utils.js';
+import { checkIsLoginSuccess } from '../utils.js';
 import { DeleteRoutineReq } from '../../libs/interface.js';
 import { ApiService } from '../../libs/apiService.js';
 import t from '../../i18n/index.js';

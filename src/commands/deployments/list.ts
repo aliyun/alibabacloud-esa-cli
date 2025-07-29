@@ -57,10 +57,8 @@ export async function handleListDeployments(argv: ArgumentsCamelCase) {
 }
 
 async function displayListPrompt(routineDetail: GetRoutineRes) {
-  const isCanary =
-    (routineDetail.data.Envs[0].CanaryAreaList ?? []).length !== 0;
-  const canaryEnv = routineDetail.data.Envs[0];
   const stagingEnv = routineDetail.data.Envs[1];
+  const prodEnv = routineDetail.data.Envs[0];
 
   const server = await ApiService.getInstance();
   const res: GetRoutineStagingEnvIpRes | null =
@@ -71,11 +69,8 @@ async function displayListPrompt(routineDetail: GetRoutineRes) {
     return chalk.green(ip);
   });
 
-  const showEnvTable = (version: string, spec: string, region?: string) => {
-    const data: Record<string, string>[] = [
-      { Version: version },
-      { Specification: spec }
-    ];
+  const showEnvTable = (version: string, region?: string) => {
+    const data: Record<string, string>[] = [{ Version: version }];
 
     if (region) {
       data.push({ Region: region });
@@ -88,25 +83,16 @@ async function displayListPrompt(routineDetail: GetRoutineRes) {
   if (stagingIpList.length > 0) {
     logger.log(`Staging IP: ${coloredStagingIpList.join(', ')}`);
   }
-  showEnvTable(stagingEnv.CodeVersion, stagingEnv.SpecName);
+  showEnvTable(stagingEnv.CodeVersion);
   logger.block();
   logger.log(
-    `${chalk.bold(`${t('deploy_env_production').d('Production')} ${!isCanary ? chalk.green('●') : ''}`)}`
+    `${chalk.bold(`${t('deploy_env_production').d('Production')} ${chalk.green('●')}`)}`
   );
-  showEnvTable(canaryEnv.CodeVersion, canaryEnv.SpecName);
-  logger.block();
+  showEnvTable(prodEnv.CodeVersion);
 
   logger.log(
-    `${chalk.bold(`${t('deploy_env_canary').d('Canary')} ${isCanary ? chalk.green('●') : ''}`)}`
-  );
-
-  showEnvTable(
-    canaryEnv.CanaryCodeVersion ?? '',
-    canaryEnv.SpecName,
-    canaryEnv.CanaryAreaList?.join(', ')
-  );
-  logger.info(
     `${t('show_default_url').d(`You can visit:`)} ${chalk.yellowBright(routineDetail.data.DefaultRelatedRecord)}`
   );
+  logger.info(routineDetail.data.DefaultRelatedRecord);
   logger.block();
 }

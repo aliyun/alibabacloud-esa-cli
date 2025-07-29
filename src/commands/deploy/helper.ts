@@ -9,7 +9,6 @@ import {
 import { ApiService } from '../../libs/apiService.js';
 import { descriptionInput } from '../../components/descriptionInput.js';
 import { readEdgeRoutineFile } from '../../utils/fileUtils/index.js';
-import { displaySelectSpec } from './index.js';
 import {
   createEdgeRoutine,
   releaseOfficialVersion,
@@ -19,6 +18,7 @@ import logger from '../../libs/logger.js';
 import t from '../../i18n/index.js';
 import { ProjectConfig } from './../../utils/fileUtils/interface.js';
 import prodBuild from '../commit/prodBuild.js';
+import { ListRoutineCodeVersionsResponseBodyCodeVersions } from '@alicloud/esa20240910/dist/models/ListRoutineCodeVersionsResponseBodyCodeVersions.js';
 
 export function yesNoPromptAndExecute(
   message: string,
@@ -36,11 +36,13 @@ export function yesNoPromptAndExecute(
   });
 }
 
-export function promptSelectVersion(versionList: CodeVersionProps[]) {
+export function promptSelectVersion(
+  versionList: ListRoutineCodeVersionsResponseBodyCodeVersions[]
+) {
   const items = versionList
-    .filter((version) => version.CodeVersion !== 'unstable')
+    .filter((version) => version.codeVersion !== 'unstable')
     .map((version, index) => ({
-      label: version.CodeVersion,
+      label: version.codeVersion ?? '',
       value: String(index)
     }));
   return new Promise<string>((resolve) => {
@@ -61,8 +63,7 @@ export function displaySelectDeployType(): Promise<PublishType> {
     {
       label: t('deploy_env_production').d('Production'),
       value: PublishType.Production
-    },
-    { label: t('deploy_env_canary').d('Canary'), value: PublishType.Canary }
+    }
   ];
   return new Promise<PublishType>((resolve) => {
     const handleSelection = async (item: SelectItem) => {
@@ -89,29 +90,10 @@ export async function createAndDeployVersion(
     await prodBuild(false, customEntry);
     const code = readEdgeRoutineFile();
 
-    const specList = (
-      (await server.ListRoutineOptionalSpecs())?.data.Specs ?? []
-    ).reduce((acc, item) => {
-      if (item.IsAvailable) {
-        acc.push(item.SpecName);
-      }
-      return acc;
-    }, [] as string[]);
-
-    let specName;
-    if (createUnstable) {
-      specName = await displaySelectSpec(specList);
-    } else {
-      const req: GetRoutineReq = { Name: projectConfig.name ?? '' };
-      const response = await server.getRoutine(req);
-      specName = response?.data.Envs[0].SpecName ?? '50ms';
-    }
-
     const edgeRoutine: CreateRoutineReq = {
       name: projectConfig.name,
       code: code || '',
-      description: description,
-      specName: specName
+      description: description
     };
 
     if (createUnstable) {

@@ -6,18 +6,40 @@ import { ApiService } from '../../../src/libs/apiService.js';
 describe('handleDeleteDomain', () => {
   const std = mockConsoleMethods();
 
-  // it('should list domains successfully', async () => {
-  //   await handleListDomains({
-  //     _: [],
-  //     $0: ''
-  //   });
-  //   expect(std.out).matchSnapshot();
-  //   expect(std.out).toBeCalledWith(expect.stringContaining(`test.com`));
-  //   expect(std.out).toBeCalledWith(expect.stringContaining(`test2.com`));
-  // });
+  it('should list domains successfully', async () => {
+    await handleListDomains({
+      _: [],
+      $0: ''
+    });
+    expect(std.out).toMatchInlineSnapshot(`
+      [MockFunction log] {
+        "calls": [
+          [
+            "📃 Related domains:",
+          ],
+          [
+            "╭─ test.com
+      ╰─ test2.com",
+          ],
+        ],
+        "results": [
+          {
+            "type": "return",
+            "value": undefined,
+          },
+          {
+            "type": "return",
+            "value": undefined,
+          },
+        ],
+      }
+    `);
+  });
 
   it('should handle non-existent domains found', async () => {
-    vi.mocked((await ApiService.getInstance()).getRoutine).mockResolvedValue({
+    vi.mocked(
+      (await ApiService.getInstance()).listRoutineRelatedRecords
+    ).mockResolvedValue({
       data: {
         RelatedRecords: []
       }

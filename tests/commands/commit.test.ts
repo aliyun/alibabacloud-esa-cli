@@ -69,11 +69,36 @@ describe('handleCommit', () => {
     expect(checkDirectory).toBeCalled();
     expect(getProjectConfig).toBeCalled();
     expect(checkIsLoginSuccess).toBeCalled();
-    expect(std.out).toBeCalledWith(
-      expect.stringContaining('Code uploaded successfully')
-    );
-    expect(std.out).toBeCalledWith(
-      expect.stringContaining('Code version committed successfully.')
-    );
+    expect(std.out).toMatchInlineSnapshot(`
+      [MockFunction log] {
+        "calls": [
+          [
+            "🔄 Routine exists, updating the code",
+          ],
+          [
+            "
+      🎉  SUCCESS  Code uploaded successfully.",
+          ],
+          [
+            "
+      🎉  SUCCESS  Generate code version success!",
+          ],
+        ],
+        "results": [
+          {
+            "type": "return",
+            "value": undefined,
+          },
+          {
+            "type": "return",
+            "value": undefined,
+          },
+          {
+            "type": "return",
+            "value": undefined,
+          },
+        ],
+      }
+    `);
   });
 });

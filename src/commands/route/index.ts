@@ -7,7 +7,7 @@ import t from '../../i18n/index.js';
 let yargsIns: Argv;
 const routeCommand: CommandModule<{}> = {
   command: 'route [script]',
-  describe: `🚀 ${t('route_describe').d('Manage the routes bound to your routine')}`,
+  describe: `🚄 ${t('route_describe').d('Manage the routes bound to your routine')}`,
   builder: (yargs) => {
     yargsIns = yargs;
     return yargs

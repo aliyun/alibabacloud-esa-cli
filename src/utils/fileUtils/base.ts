@@ -14,7 +14,7 @@ export const getRoot = (root?: string): string => {
   if (typeof root === 'undefined') {
     root = process.cwd();
   }
-  if (root === '/') {
+  if (path.parse(root).root === root) {
     return process.cwd();
   }
   const file = path.join(root, cliConfigFile);

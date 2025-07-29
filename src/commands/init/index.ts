@@ -1,12 +1,15 @@
 import { CommandModule, ArgumentsCamelCase, Argv } from 'yargs';
 import fs from 'fs-extra';
 import path from 'path';
+import inquirer from 'inquirer';
+import { exit } from 'process';
 
 import Template from '../../libs/templates/index.js';
 import { installGit } from '../../libs/git/index.js';
-import { descriptionInput } from '../../components/descriptionInput.js';
+import multiLevelSelect from '../../components/mutiLevelSelect.js';
 import {
   generateConfigFile,
+  getCliConfig,
   getProjectConfig,
   getTemplatesConfig,
   templateHubPath,
@@ -14,197 +17,287 @@ import {
 } from '../../utils/fileUtils/index.js';
 import t from '../../i18n/index.js';
 import logger from '../../libs/logger.js';
-import SelectItems, { SelectItem } from '../../components/selectInput.js';
 import { quickDeploy } from '../deploy/index.js';
-import { ProjectConfig } from '../../utils/fileUtils/interface.js';
-import chalk from 'chalk';
 import { ApiService } from '../../libs/apiService.js';
-import { exit } from 'process';
 import { checkRoutineExist } from '../../utils/checkIsRoutineCreated.js';
+import { checkIsLoginSuccess } from '../utils.js';
+import chalk from 'chalk';
 
-import { execSync } from 'child_process';
-
-const secondSetOfItems = [
-  { label: 'Yes', value: 'yesInstall' },
-  { label: 'No', value: 'noInstall' }
-];
+import {
+  checkAndUpdatePackage,
+  getTemplateInstances,
+  preInstallDependencies,
+  transferTemplatesToSelectItem
+} from './helper.js';
 
 const init: CommandModule = {
-  command: 'init',
+  command: 'init [name]',
   describe: `📥 ${t('init_describe').d('Initialize a routine with a template')}`,
   builder: (yargs: Argv) => {
-    return yargs.option('config', {
-      alias: 'c',
-      describe: t('init_config_file').d(
-        'Generate a config file for your project'
-      ),
-      type: 'boolean'
-    });
+    return yargs
+      .positional('name', {
+        describe: t('init_project_name').d('Project name'),
+        type: 'string'
+      })
+      .option('template', {
+        alias: 't',
+        describe: t('init_template_name').d('Template name to use'),
+        type: 'string'
+      })
+      .option('config', {
+        alias: 'c',
+        describe: t('init_config_file').d(
+          'Generate a config file for your project'
+        ),
+        type: 'boolean'
+      })
+      .option('skip', {
+        alias: 's',
+        describe: t('init_skip').d(
+          'Skip the project git and deployment initialization'
+        ),
+        type: 'boolean',
+        default: false
+      });
   },
   handler: async (argv: ArgumentsCamelCase) => {
     await handleInit(argv);
+    exit(0);
   }
 };
 
 export default init;
 
-export async function handleInit(argv: ArgumentsCamelCase) {
-  const { config } = argv;
-  // // 更新npm包
-  // const __dirname = getDirName(import.meta.url);
-  // const projectPath = path.join(__dirname, '../../..');
-  // execSync('npm install', { stdio: 'ignore', cwd: projectPath });
+export function findTemplatePathByName(templateName: string): string | null {
+  const templateInstanceList = getTemplateInstances(templateHubPath);
+  const templateConfig = getTemplatesConfig();
 
-  if (config !== undefined) {
-    await generateConfigFile(String(config));
-    return;
+  // find template recursively
+  function findTemplateRecursive(configs: any[]): string | null {
+    for (const config of configs) {
+      const title = config.Title_EN;
+      if (title === templateName) {
+        const template = templateInstanceList.find((template) => {
+          return config.Title_EN === template.title;
+        });
+        return template?.path || null;
+      }
+    }
+    return null;
   }
 
-  const name = await descriptionInput(
-    `🖊️ ${t('init_input_name').d('Enter the name of edgeRoutine:')}`,
-    true
-  );
-  const regex = /^[a-z0-9-]{2,}$/;
+  return findTemplateRecursive(templateConfig);
+}
 
-  if (!regex.test(name)) {
+export function validateProjectName(name: string): boolean {
+  const regex = /^[a-z0-9-]{2,}$/;
+  return regex.test(name);
+}
+
+export async function promptProjectName(): Promise<string> {
+  const { name } = await inquirer.prompt([
+    {
+      type: 'input',
+      name: 'name',
+      message: `${t('init_input_name').d('Enter the name of edgeRoutine:')}`,
+      validate: (input) => {
+        const regex = /^[a-z0-9-]{2,}$/;
+        if (!regex.test(input)) {
+          return t('init_name_error').d(
+            'Error: The project name must be at least 2 characters long and can only contain lowercase letters, numbers, and hyphens.'
+          );
+        }
+        return true;
+      }
+    }
+  ]);
+  return name;
+}
+
+export function prepareTemplateItems(): {
+  label: string;
+  value: string;
+  children?: any;
+}[] {
+  const templateInstanceList = getTemplateInstances(templateHubPath);
+  const templateConfig = getTemplatesConfig();
+  const cliConfig = getCliConfig();
+  const lang = cliConfig?.lang ?? 'en';
+  return transferTemplatesToSelectItem(
+    templateConfig,
+    templateInstanceList,
+    lang
+  );
+}
+
+export async function selectTemplate(
+  items: { label: string; value: string; children?: any }[]
+): Promise<string | null> {
+  const selectedTemplatePath = await multiLevelSelect(
+    items,
+    'Select a template:'
+  );
+  if (!selectedTemplatePath) {
+    logger.log(t('init_cancel').d('User canceled the operation.'));
+    return null;
+  }
+  return selectedTemplatePath;
+}
+
+export async function initializeProject(
+  selectedTemplatePath: string,
+  name: string
+): Promise<{ template: Template; targetPath: string } | null> {
+  const selectTemplate = new Template(selectedTemplatePath, name);
+  const projectConfig = getProjectConfig(selectedTemplatePath);
+  if (!projectConfig) {
+    logger.notInProject();
+    return null;
+  }
+
+  const targetPath = path.join(process.cwd(), name);
+  if (fs.existsSync(targetPath)) {
     logger.error(
-      t('init_name_error').d(
-        'Error: The project name must be at least 2 characters long and can only contain lowercase letters, numbers, and hyphens.'
+      t('already_exist_file_error').d(
+        'Error: The project already exists. It looks like a folder named "<project-name>" is already present in the current directory. Please try the following options: 1. Choose a different project name. 2. Delete the existing folder if it\'s not needed: `rm -rf <project-name>` (use with caution!). 3. Move to a different directory before running the init command.'
+      )
+    );
+    return null;
+  }
+
+  await fs.copy(selectedTemplatePath, targetPath);
+  projectConfig.name = name;
+  await updateProjectConfigFile(projectConfig, targetPath);
+  await preInstallDependencies(targetPath);
+
+  return { template: selectTemplate, targetPath };
+}
+
+export async function handleGitInitialization(
+  targetPath: string
+): Promise<void> {
+  const { initGit } = await inquirer.prompt([
+    {
+      type: 'list',
+      name: 'initGit',
+      message: t('init_git').d('Do you want to init git in your project?'),
+      choices: ['Yes', 'No']
+    }
+  ]);
+
+  if (initGit === 'Yes') {
+    installGit(targetPath);
+  } else {
+    logger.log(t('init_skip_git').d('Git installation was skipped.'));
+  }
+}
+
+export async function handleDeployment(
+  targetPath: string,
+  projectConfig: any
+): Promise<void> {
+  const isLoginSuccess = await checkIsLoginSuccess();
+  if (!isLoginSuccess) {
+    logger.log(
+      chalk.yellow(
+        t('not_login_auto_deploy').d(
+          'You are not logged in, automatic deployment cannot be performed. Please log in later and manually deploy.'
+        )
       )
     );
     return;
   }
 
-  const templatePaths = fs.readdirSync(templateHubPath).filter((item) => {
-    const itemPath = path.join(templateHubPath, item);
-    const stats = fs.statSync(itemPath);
-    return (
-      stats.isDirectory() &&
-      item !== '.git' &&
-      item !== 'node_modules' &&
-      item !== 'lib'
+  const { deploy } = await inquirer.prompt([
+    {
+      type: 'list',
+      name: 'deploy',
+      message: t('auto_deploy').d('Do you want to deploy your project?'),
+      choices: ['Yes', 'No']
+    }
+  ]);
+  if (deploy === 'Yes') {
+    await checkRoutineExist(projectConfig?.name ?? '', targetPath);
+    await quickDeploy(targetPath, projectConfig);
+    const service = await ApiService.getInstance();
+    const res = await service.getRoutine({ Name: projectConfig?.name ?? '' });
+    const defaultUrl = res?.data?.DefaultRelatedRecord;
+    const visitUrl = defaultUrl ? 'http://' + defaultUrl : '';
+    logger.success(
+      `${t('init_deploy_success').d('Project deployment completed. Visit: ')}${chalk.yellowBright(visitUrl)}`
     );
-  });
-
-  const templateList = templatePaths.map((item) => {
-    const projectPath = templateHubPath + '/' + item;
-    const projectConfig = getProjectConfig(projectPath);
-    const templateName = projectConfig?.name ?? '';
-    return new Template(projectPath, templateName);
-  });
-
-  const templateConfig = getTemplatesConfig();
-  const firstSetOfItems = templateConfig
-    .map((template) => {
-      const name = template.Title_EN;
-      const templatePath = templateList.find((item) => {
-        return name === item.title;
-      });
-      return templatePath
-        ? {
-            label: name,
-            value: templatePath.path
-          }
-        : null;
-    })
-    .filter((item) => item !== null) as SelectItem[];
-
-  let selectTemplate: Template;
-  let targetPath: string;
-  let projectConfig: ProjectConfig | null;
-
-  const preInstallDependencies = async () => {
-    const packageJsonPath = path.join(targetPath, 'package.json');
-    if (fs.existsSync(packageJsonPath)) {
-      logger.info(
-        t('init_install_dependence').d('⌛️ Installing dependencies...')
-      );
-      execSync('npm install', { stdio: 'inherit', cwd: targetPath });
-      logger.success(
-        t('init_install_dependencies_success').d(
-          'Dependencies installed successfully.'
-        )
-      );
-      logger.log(t('init_build_project').d('⌛️ Building project...'));
-      execSync('npm run build', { stdio: 'inherit', cwd: targetPath });
-      logger.success(
-        t('init_build_project_success').d('Project built successfully.')
-      );
-    }
-  };
-
-  const handleFirstSelection = async (item: SelectItem) => {
-    const configPath = item.value;
-    selectTemplate = new Template(configPath, name);
-
-    projectConfig = getProjectConfig(configPath);
-    if (!projectConfig) return logger.notInProject();
-
-    const newPath = process.cwd() + '/' + name;
-    targetPath = newPath;
-    if (fs.existsSync(newPath)) {
-      logger.error(
-        t('already_exist_file_error').d(
-          'Error: The project already exists. It looks like a folder named "<project-name>" is already present in the current directory. Please try the following options: 1. Choose a different project name. 2. Delete the existing folder if it\'s not needed: `rm -rf <project-name>` (use with caution!). 3. Move to a different directory before running the init command.'
-        )
-      );
-      exit(0);
-    }
-    await fs.copy(configPath, newPath);
-
-    projectConfig.name = name;
-    updateProjectConfigFile(projectConfig, newPath);
-    preInstallDependencies();
-
-    logger.info(t('init_git').d('Do you want to init git in your project?'));
-    SelectItems({
-      items: secondSetOfItems,
-      handleSelect: handleSecondSelection
-    });
-  };
-
-  const handleSecondSelection = (item: SelectItem) => {
-    if (item.value === 'yesInstall') {
-      installGit(targetPath);
-    } else {
-      logger.info(t('init_skip_git').d('Git installation was skipped.'));
-    }
-    logger.info(t('auto_deploy').d('Do you want to deploy your project?'));
-    SelectItems({
-      items: secondSetOfItems,
-      handleSelect: handleThirdSelection
-    });
-  };
-
-  const handleThirdSelection = async (item: SelectItem) => {
-    // 选择自动生成版本并发布
-    if (item.value === 'yesInstall') {
-      await checkRoutineExist(projectConfig?.name ?? '', targetPath);
-      projectConfig && (await quickDeploy(targetPath, projectConfig));
-      const service = await ApiService.getInstance();
-      const res = await service.getRoutine({ Name: projectConfig?.name ?? '' });
-      const defaultUrl = res?.data?.DefaultRelatedRecord;
-      const visitUrl = defaultUrl ? 'http://' + defaultUrl : '';
-      logger.success(
-        `${t('init_deploy_success').d('Project deployment completed. Visit: ')}${chalk.yellowBright(visitUrl)}`
-      );
-      logger.warn(
-        t('deploy_url_warn').d(
-          'The domain may take some time to take effect, please try again later.'
-        )
-      );
-    }
-    selectTemplate.printSummary();
-    exit(0);
-  };
-
-  try {
-    SelectItems({
-      items: firstSetOfItems,
-      handleSelect: handleFirstSelection
-    });
-  } catch (error) {
-    logger.error(t('init_error').d('An error occurred while initializing.'));
-    console.log(error);
+    logger.warn(
+      t('deploy_url_warn').d(
+        'The domain may take some time to take effect, please try again later.'
+      )
+    );
   }
+}
+
+export async function handleInit(argv: ArgumentsCamelCase) {
+  // Update the template package (currently commented out)
+  await checkAndUpdatePackage('esa-template');
+
+  // If config option is provided, generate config file and exit
+  const config = getCliConfig();
+  if (config === undefined) {
+    await generateConfigFile(String(config));
+  }
+
+  // Handle project name parameter
+  let name = argv.name as string;
+  if (!name) {
+    name = await promptProjectName();
+  } else {
+    if (!validateProjectName(name)) {
+      logger.error(
+        t('init_name_error').d(
+          'Error: The project name must be at least 2 characters long and can only contain lowercase letters, numbers, and hyphens.'
+        )
+      );
+      return;
+    }
+  }
+
+  // Handle template name parameter
+  let selectedTemplatePath: string | null = null;
+  if (argv.template) {
+    const templateName = argv.template as string;
+    selectedTemplatePath = findTemplatePathByName(templateName);
+    if (!selectedTemplatePath) {
+      logger.error(
+        t('init_template_not_found').d(
+          `Template "${templateName}" not found. Please check the template name and try again.`
+        )
+      );
+      return;
+    }
+  } else {
+    const templateItems = prepareTemplateItems();
+    // Select a template
+    selectedTemplatePath = await selectTemplate(templateItems);
+    if (!selectedTemplatePath) {
+      return;
+    }
+  }
+
+  // Initialize project files and configuration
+  const project = await initializeProject(selectedTemplatePath, name);
+  if (!project) {
+    return;
+  }
+  const { template, targetPath } = project;
+  if (!argv.skip) {
+    // Handle Git initialization
+    await handleGitInitialization(targetPath);
+  }
+
+  if (!argv.skip) {
+    // Handle deployment
+    const projectConfig = getProjectConfig(targetPath);
+    await handleDeployment(targetPath, projectConfig);
+  }
+
+  template.printSummary();
+  return;
 }

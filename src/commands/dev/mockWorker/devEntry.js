@@ -41,6 +41,7 @@ const dev = async () => {
       handler: async (request) => {
         const url = new URL(request.url);
         let nextRequest = request;
+        // Replace the request url with the local upstream url
         if (config.localUpstream) {
           const nextUrl = `${config.localUpstream}${url.pathname}${url.search}${url.hash}`;
           nextRequest = new Request(nextUrl, request);
@@ -49,13 +50,13 @@ const dev = async () => {
           const res = await worker.fetch(nextRequest);
           const status = res.status;
           console.log(
-            `[Esa Dev] ${request.method} ${url.pathname} ${getColorForStatusCode(status, res.statusText)}`
+            `[ESA Dev] ${request.method} ${url.pathname} ${getColorForStatusCode(status, res.statusText)}`
           );
           return res;
         } catch (err) {
           console.error(err);
           console.log(
-            `[Esa Dev] ${request.method} ${url.pathname} ${getColorForStatusCode(500, 'Internal Server Error')}`
+            `[ESA Dev] ${request.method} ${url.pathname} ${getColorForStatusCode(500, 'Internal Server Error')}`
           );
           return new Response('Internal Server Error', {
             status: 500

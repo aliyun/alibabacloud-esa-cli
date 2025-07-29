@@ -16,6 +16,8 @@ import t from '../i18n/index.js';
 import { ApiService } from '../libs/apiService.js';
 import logger from '../libs/logger.js';
 import { Option } from '../components/filterSelector.js';
+import api from '../libs/api.js';
+import { ListRoutineCodeVersionsResponseBodyCodeVersions } from '@alicloud/esa20240910/dist/models/ListRoutineCodeVersionsResponseBodyCodeVersions.js';
 
 export const checkDirectory = (isCheckGit = false): boolean => {
   const root = getRoot();
@@ -84,11 +86,10 @@ export const bindRoutineWithDomain = async (name: string, domain: string) => {
 
 export const getRoutineVersionList = async (
   name: string
-): Promise<CodeVersionProps[]> => {
-  const server = await ApiService.getInstance();
-  const req: GetRoutineReq = { Name: name };
-  const res: GetRoutineRes | null = await server.getRoutine(req);
-  return res?.data?.CodeVersions || [];
+): Promise<ListRoutineCodeVersionsResponseBodyCodeVersions[]> => {
+  const req = { name };
+  const res = await api.listRoutineCodeVersions(req);
+  return res.body?.codeVersions ?? [];
 };
 
 export function validName(name: any): boolean {

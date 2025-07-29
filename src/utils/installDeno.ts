@@ -1,38 +1,38 @@
 import { exec, execSync } from 'child_process';
 import os from 'os';
-import { getDirName } from './fileUtils/base.js';
-import logger from '../libs/logger.js';
 import path from 'path';
+import logger from '../libs/logger.js';
+import { getDirName } from './fileUtils/base.js';
+import { downloadRuntimeAndUnzipForWindows } from './download.js';
 import t from '../i18n/index.js';
 
-export async function preCheckRuntime(): Promise<string | false> {
-  const command = await checkRuntimeInstalled();
+export async function preCheckDeno(): Promise<string | false> {
+  const command = await checkDenoInstalled();
   if (!command) {
     logger.error(
       t('install_runtime_explain').d(
-        'Under the beta phase, we are temporarily using Deno as the local development runtime. It needs to be installed first.'
+        'Our runtime does not yet support this OS. We are temporarily using Deno as the local development runtime, which needs to be installed first.'
       )
     );
-    installDeno();
+    await installDeno();
     return false;
   }
   return command;
 }
 
-function checkDeno(command: string) {
-  return new Promise((resolve, reject) => {
-    exec(`${command} --version`, (err) => {
-      if (err) {
-        reject();
-      } else {
-        resolve(command);
-      }
-    });
-  });
-}
-
-export function checkRuntimeInstalled(): Promise<string | false> {
+export function checkDenoInstalled(): Promise<string | false> {
   const homeDeno = path.resolve(os.homedir(), '.deno/bin/deno');
+  function checkDeno(command: string) {
+    return new Promise((resolve, reject) => {
+      exec(`${command} --version`, (err) => {
+        if (err) {
+          reject();
+        } else {
+          resolve(command);
+        }
+      });
+    });
+  }
   return new Promise((resolve) => {
     // @ts-ignore
     Promise.any([checkDeno('deno'), checkDeno(homeDeno)])
@@ -40,7 +40,6 @@ export function checkRuntimeInstalled(): Promise<string | false> {
         resolve(res);
       })
       .catch((err: any) => {
-        console.log(err);
         resolve(false);
       });
   });
@@ -53,8 +52,8 @@ export async function installDeno(): Promise<boolean> {
 
   switch (os.platform()) {
     case 'win32':
-      installCommand = `powershell.exe -Command "Get-Content '${p}/install.ps1' | iex"`;
-      break;
+      await downloadRuntimeAndUnzipForWindows();
+      return true;
     case 'darwin':
     case 'linux':
       installCommand = `sh ${p}/install.sh`;

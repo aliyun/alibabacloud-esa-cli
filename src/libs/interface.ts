@@ -1,3 +1,9 @@
+import * as $Util from '@alicloud/tea-util';
+
+export type OptionalProps<T> = {
+  [K in keyof T as undefined extends T[K] ? K : never]: T[K];
+};
+
 export interface CodeVersionProps {
   codeVersion: string;
   codeDescription: string;
@@ -8,31 +14,24 @@ export interface CodeVersionProps {
  * Represents the properties of an routine.
  * @param name - 函数名称
  * @param description - 函数描述
- * @param specName - 规格 单个请求可用CPU时间片
  * @param code - 边缘函数代码
  */
 
 export interface EdgeRoutineProps {
   name: string;
   description?: string;
-  specName?: string;
   code: string;
 }
 
 export interface CreateRoutineReq {
   name: string;
   description?: string;
-  specName: string;
   code: string;
 }
 
 export interface CreateRoutineRes {
   code: string;
   data: { RequestId: string; Status: string };
-}
-
-export interface ListRoutineCanaryAreasRes {
-  CanaryAreas: string[];
 }
 
 export interface CreateRoutineRelatedRecordReq {
@@ -66,13 +65,6 @@ export interface Summary {
   projectName?: string; //暂时用不到
 }
 
-export interface ListRoutineOptionalSpecsRes {
-  code: string;
-  data: {
-    RequestId: string;
-    Specs: { SpecName: string; IsAvailable: boolean }[];
-  };
-}
 export interface CommitRoutineStagingCodeReq {
   Name: string;
   CodeDescription?: string;
@@ -89,15 +81,12 @@ export enum Environment {
 }
 export enum PublishType {
   Staging = 'staging',
-  Production = 'production',
-  Canary = 'canary'
+  Production = 'production'
 }
 export interface PublishRoutineCodeVersionReq {
   Name: string;
   Env: Environment;
   CodeVersion?: string;
-  CanaryCodeVersion?: string;
-  CanaryAreaList?: string[];
   RegionId?: string;
 }
 
@@ -119,16 +108,12 @@ export interface RelatedRecordProps {
 }
 
 export interface RelatedRouteProps {
-  SiteId: string;
+  RouteName: string;
   SiteName: string;
   Route: string;
-  RouteId: string;
 }
 
 export interface EnvProps {
-  CanaryCodeVersion?: string; // 灰度版本
-  CanaryAreaList?: string[]; // 灰度区域
-  SpecName: string;
   Env: string;
   CodeVersion: string;
 }
@@ -141,24 +126,17 @@ export interface GetRoutineRes {
   data: {
     RequestId: string;
     CodeVersions: CodeVersionProps[];
-    RelatedRecords: RelatedRecordProps[];
     Envs: EnvProps[];
     CreateTime: string;
     Description: string;
-    RelatedRoutes: RelatedRouteProps[];
     DefaultRelatedRecord: string;
   };
-}
-export interface GetRoutineUserInfoRes {
-  Routines: EdgeFunctionItem[];
-  Subdomains: string[];
 }
 
 export interface EdgeFunctionItem {
   RoutineName: string;
   Description: string;
   CreateTime: string;
-  SpecName?: string;
 }
 
 export interface DeleteRoutineRes {
@@ -272,4 +250,82 @@ export interface IOssConfig {
   key: string;
   policy: string;
   'x:codeDescription': string;
+}
+
+export interface ApiMethod<RequestType = any, ResponseType = any> {
+  (runtime: $Util.RuntimeOptions): Promise<ResponseType>;
+  (request: RequestType, runtime: $Util.RuntimeOptions): Promise<ResponseType>;
+}
+
+export interface IApiClient {
+  [method: string]: ApiMethod; // 使用索引签名来表示所有的方法
+}
+
+export interface ApiError {
+  code: string;
+  message: string;
+  data: string;
+}
+
+export interface ListUserRoutinesReq {
+  RegionId?: string;
+  PageNumber?: number;
+  PageSize?: number;
+  SearchKeyWord?: string;
+}
+export interface ListUserRoutinesRes {
+  code: string;
+  body: {
+    RequestId: string;
+    PageNumber: number;
+    PageSize: number;
+    TotalCount: number;
+    UsedRoutineNumber: number;
+    QuotaRoutineNumber: number;
+    Routines: {
+      CreateTime: string;
+      Description: string;
+      RoutineName: string;
+    }[];
+  };
+}
+
+export type Map = Record<string, any>;
+
+export interface ListRoutineRelatedRecordsReq {
+  Name: string;
+  PageNumber?: number;
+  PageSize?: number;
+  SearchKeyWord?: string;
+  RegionId?: string;
+}
+export interface ListRoutineRelatedRecordsRes {
+  code: string;
+  data: {
+    PageNumber: number;
+    PageSize: number;
+    TotalCount: number;
+    RelatedRecords: {
+      RecordName: string;
+      SiteId: number;
+      SiteName: string;
+      RecordId: number;
+    }[];
+  };
+}
+
+export interface CreateRoutineRouteReq {
+  SiteId: number;
+  RouteName?: string;
+  RouteEnable?: string;
+  Rule?: string;
+  RoutineName: string;
+  Bypass?: 'on' | 'off';
+  Mode?: 'simple' | 'custom';
+  Sequence?: number;
+  RegionId?: string;
+}
+export interface CreateRoutineRouteRes {
+  code: number;
+  data: { RequestId: string; ConfigId: number };
 }

@@ -47,8 +47,8 @@ export async function handleList(argv: ArgumentsCamelCase) {
     return;
   }
 
-  const res = await server.getRoutineUserInfo();
-  const routineList = res?.Routines;
+  const res = await server.listUserRoutines();
+  const routineList = res?.body?.Routines;
   if (routineList) {
     logger.log(
       chalk.bold.bgGray(
@@ -68,7 +68,7 @@ export async function displayRoutineList(versionList: EdgeFunctionItem[]) {
     table.push([
       version.RoutineName,
       moment(version.CreateTime).format('YYYY/MM/DD HH:mm:ss'),
-      Base64.decode(version.Description)
+      version.Description
     ]);
   });
   console.table(table.toString());

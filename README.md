@@ -9,9 +9,9 @@ English | [简体中文](./zh_CN.md)
 - [Edge Security Acceleration (ESA)](https://www.aliyun.com/product/esa)
 - [What is EdgeRoutine?](https://help.aliyun.com/document_detail/2710021.html)
 
-> **Note**: ESA CLI is in public beta. If you encounter any issues or have any suggestions while using it, please feel free to submit an issue or a pull request.
->
-> We are actively working to improve this tool and welcome any feedback. Thank you for your understanding and support!
+> **Note**: **In version 0.0.2 and above, the local development mode of the ESA CLI has been replaced with the same runtime as the ESA edge functions, ensuring that its actual behavior now matches the live environment. We invite you to experience it.**
+
+ESA CLI is in public beta. If you encounter any issues or have any suggestions while using it, please feel free to submit an issue or a pull request.We are actively working to improve this tool and welcome any feedback. Thank you for your understanding and support!
 
 ## Installation
 
@@ -75,8 +75,6 @@ After executing `esa dev`, the entry file will be automatically packaged and a l
 ![dev png](https://github.com/aliyun/alibabacloud-esa-cli/blob/master/docs/dev.png)
 
 - Press `b` to open the debugging page in the browser.
-- Press `d` to view debugging instructions. **Chrome does not allow the command line to open the debugging page**.
-- Open `chrome://inspect#devices` in the Chrome browser to see a running Remote Target. Click inspect below it to view console information. **Note that the EdgeRoutine code is server-side, so the console on the preview page will not output console in the entry file. Use inspect for debugging.**
 - Press `c` to clear the panel.
 - Press `x` to exit debugging.
 - You can use `esa dev --port <port>` to temporarily specify the port or use `esa config -l` to set the port by project configuration.

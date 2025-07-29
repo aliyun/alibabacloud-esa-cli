@@ -3,17 +3,22 @@ import { Box, Text, useApp, useInput, useStdin, render } from 'ink';
 import chalk from 'chalk';
 import logger from '../../libs/logger.js';
 import openInBrowser from '../../utils/openInBrowser.js';
-import WorkerServer from './server.js';
+import WorkerServer from './mockWorker/server.js';
+import Ew2Server from './ew2/server.js';
 import { getDevOpenBrowserUrl } from '../../utils/fileUtils/index.js';
+import { checkOS, Platforms } from '../../utils/checkOS.js';
 import t from '../../i18n/index.js';
 
 const InteractionBox: FC<{
-  worker?: WorkerServer;
+  worker?: WorkerServer | Ew2Server;
 }> = ({ worker }) => {
   const { exit } = useApp();
   const inspectLink = chalk.underline.blue('chrome://inspect/#devices');
   const remoteTarget = chalk.blue('Remote Target');
   const inspect = chalk.blue('inspect');
+  const OS = checkOS();
+  const useEw2 =
+    OS === Platforms.AppleArm || Platforms.AppleIntel || Platforms.LinuxX86;
   /* eslint-disable no-unused-vars */
   useInput(async (input: any) => {
     switch (input.toLowerCase()) {
@@ -26,6 +31,7 @@ const InteractionBox: FC<{
         break;
       }
       case 'd': {
+        if (useEw2) return;
         logger.log(
           t('dev_input_inspect_tip1', { inspectLink }).d(
             `👉 Please visit ${inspectLink} in the Chrome browser`
@@ -59,10 +65,12 @@ const InteractionBox: FC<{
       <Box borderStyle="classic" paddingLeft={1} paddingRight={1}>
         <Text bold={true}>[b]</Text>
         <Text> open a browser, </Text>
-        <>
-          <Text bold={true}>[d]</Text>
-          <Text> open Devtools, </Text>
-        </>
+        {!useEw2 ? (
+          <>
+            <Text bold={true}>[d]</Text>
+            <Text> open Devtools, </Text>
+          </>
+        ) : null}
         <Text bold={true}>[c]</Text>
         <Text> clear console, </Text>
         <Text bold={true}>[x]</Text>
@@ -72,12 +80,15 @@ const InteractionBox: FC<{
   );
 };
 
-const doProcess = (worker?: WorkerServer) => {
+const doProcess = (worker?: WorkerServer | Ew2Server) => {
   const devElement = render(<InteractionBox worker={worker} />);
   return {
     devElement,
     exit: () => {
       devElement.unmount();
+      setTimeout(() => {
+        process.exit(0);
+      }, 500);
     }
   };
 };

@@ -6,7 +6,7 @@ import t from '../../i18n/index.js';
 let yargsIns: Argv;
 const routineCommand: CommandModule<{}> = {
   command: 'routine [script]',
-  describe: `🚀 ${t('routine_describe').d('Manage your routine')}`,
+  describe: `🧭 ${t('routine_describe').d('Manage your routine')}`,
   builder: (yargs) => {
     yargsIns = yargs;
     return yargs

@@ -1,7 +1,6 @@
-import path from 'path';
-import { execSync } from 'child_process';
-import { getSummary, SUMMARIES_LIST } from '../../commands/common/constant.js';
+import { getSummary } from '../../commands/common/constant.js';
 import chalk from 'chalk';
+import logger from '../logger.js';
 
 interface TemplateInterface {
   path: string;
@@ -22,7 +21,7 @@ export default class Template implements TemplateInterface {
     list.forEach((summary) => {
       const title = chalk.bold(summary.title);
       const command = chalk.green(summary.command);
-      console.log(`${title}: ${command}`);
+      logger.log(`${title}: ${command}`);
     });
   }
 }

@@ -6,7 +6,7 @@ import t from '../i18n/index.js';
 
 const logout: CommandModule = {
   command: 'logout',
-  describe: `📥 ${t('logout_describe').d('Logout')}`,
+  describe: `🚪 ${t('logout_describe').d('Logout')}`,
   builder: (yargs: Argv) => {
     return yargs;
   },
@@ -22,8 +22,6 @@ export async function handleLogout(argv: ArgumentsCamelCase) {
   if (!cliConfig) {
     return;
   }
-  const isSuccess = await checkIsLoginSuccess();
-  if (!isSuccess) return;
 
   if (!cliConfig.auth) {
     cliConfig.auth = { accessKeyId: '', accessKeySecret: '' };

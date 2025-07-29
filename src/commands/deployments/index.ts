@@ -6,7 +6,7 @@ import t from '../../i18n/index.js';
 let yargsIns: Argv;
 const deploymentsCommand: CommandModule<{}> = {
   command: 'deployments [script]',
-  describe: `🚀 ${t('deployments_describe').d('Manage your deployments')}`,
+  describe: `📜 ${t('deployments_describe').d('Manage your deployments')}`,
   builder: (yargs) => {
     yargsIns = yargs;
     return yargs

@@ -18,7 +18,7 @@ import { exit } from 'process';
 
 const commit: CommandModule = {
   command: 'commit [entry]',
-  describe: `📥 ${t('commit_describe').d('Commit your code, save as a new version')}`,
+  describe: `📦 ${t('commit_describe').d('Commit your code, save as a new version')}`,
   builder: (yargs: Argv) => {
     return yargs
       .option('minify', {

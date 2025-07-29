@@ -11,7 +11,7 @@ import { transferRouteToRuleString } from './helper.js';
 
 const addRoute: CommandModule = {
   command: 'add [route] [site]',
-  describe: `📥 ${t('route_add_describe').d('Bind a Route to a routine')}`,
+  describe: `🚄 ${t('route_add_describe').d('Bind a Route to a routine')}`,
   builder: (yargs: Argv) => {
     return yargs.fail((msg, err, yargsIns) => {
       if (err) throw err;

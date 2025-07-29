@@ -9,14 +9,11 @@ import { validRoutine } from '../../utils/checkIsRoutineCreated.js';
 import { getProjectConfig } from '../../utils/fileUtils/index.js';
 import { checkDirectory, checkIsLoginSuccess } from '../utils.js';
 
-
-
-
 import { transferRouteToRuleString } from './helper.js';
 
 const addRoute: CommandModule = {
-  command: 'add',
-  describe: `📥 ${t('route_add_describe').d('Bind a Route to a routine')}`,
+  command: 'add [route] [site]',
+  describe: `🚄 ${t('route_add_describe').d('Bind a Route to a routine')}`,
   builder: (yargs: Argv) => {
     return yargs
       .option('route', {

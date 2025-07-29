@@ -14,7 +14,7 @@ import {
 
 const addDomain: CommandModule = {
   command: 'add <domain>',
-  describe: `📥 ${t('domain_add_describe').d('Bind a domain to a routine')}`,
+  describe: `🔗 ${t('domain_add_describe').d('Bind a domain to a routine')}`,
   builder: (yargs: Argv) => {
     return yargs
       .positional('domain', {

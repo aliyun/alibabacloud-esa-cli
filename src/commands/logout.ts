@@ -6,7 +6,7 @@ import { getCliConfig, updateCliConfigFile } from '../utils/fileUtils/index.js';
 
 const logout: CommandModule = {
   command: 'logout',
-  describe: `📥 ${t('logout_describe').d('Logout')}`,
+  describe: `🚪 ${t('logout_describe').d('Logout')}`,
   builder: (yargs: Argv) => {
     return yargs;
   },

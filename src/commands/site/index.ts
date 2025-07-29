@@ -7,7 +7,7 @@ import siteList from './list.js';
 let yargsIns: Argv;
 const siteCommand: CommandModule<{}> = {
   command: 'site [script]',
-  describe: `🚀 ${t('site_describe').d('Manage your sites')}`,
+  describe: `📈 ${t('site_describe').d('Manage your sites')}`,
   builder: (yargs) => {
     yargsIns = yargs;
     return yargs

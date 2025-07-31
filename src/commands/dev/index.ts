@@ -1,26 +1,29 @@
-import { CommandModule, ArgumentsCamelCase, Argv } from 'yargs';
 import { exec } from 'child_process';
 import { isIP } from 'net';
+
 import chokidar from 'chokidar';
-import doProcess from './doProcess.js';
+import { CommandModule, ArgumentsCamelCase, Argv } from 'yargs';
+
+import SelectItems, { SelectItem } from '../../components/selectInput.js';
+import t from '../../i18n/index.js';
+import logger from '../../libs/logger.js';
+import checkAndInputPort from '../../utils/checkDevPort.js';
+import { checkOS, Platforms } from '../../utils/checkOS.js';
+import debounce from '../../utils/debounce.js';
+import { getRoot } from '../../utils/fileUtils/base.js';
 import {
   getProjectConfig,
   generateConfigFile,
   getDevConf
 } from '../../utils/fileUtils/index.js';
-import { getRoot } from '../../utils/fileUtils/base.js';
-import SelectItems, { SelectItem } from '../../components/selectInput.js';
-import logger from '../../libs/logger.js';
-import MockServer from './mockWorker/server.js';
-import mockPack from './mockWorker/devPack.js';
-import Ew2Server from './ew2/server.js';
-import ew2Pack from './ew2/devPack.js';
 import { preCheckDeno } from '../../utils/installDeno.js';
 import { preCheckEw2 } from '../../utils/installEw2.js';
-import debounce from '../../utils/debounce.js';
-import t from '../../i18n/index.js';
-import checkAndInputPort from '../../utils/checkDevPort.js';
-import { checkOS, Platforms } from '../../utils/checkOS.js';
+
+import doProcess from './doProcess.js';
+import ew2Pack from './ew2/devPack.js';
+import Ew2Server from './ew2/server.js';
+import mockPack from './mockWorker/devPack.js';
+import MockServer from './mockWorker/server.js';
 
 let yargsIns: Argv;
 const OS = checkOS();
@@ -257,7 +260,7 @@ const dev: CommandModule = {
 
     await waitUntilExit();
     function onWorkerClosed() {
-      exit && exit();
+      exit?.();
     }
     watcher.close();
   }

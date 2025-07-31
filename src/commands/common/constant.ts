@@ -1,4 +1,3 @@
-import { Summary } from '../../libs/interface.js';
 import t from '../../i18n/index.js';
 
 export const getSummary = (routineName: string) => {

@@ -1,10 +1,13 @@
-import { CommandModule, ArgumentsCamelCase, Argv } from 'yargs';
-import chalk from 'chalk';
-import {
-  getProjectConfig,
-  readEdgeRoutineFile
-} from '../../utils/fileUtils/index.js';
+import path from 'path';
+import { exit } from 'process';
 
+import { ListRoutineCodeVersionsResponseBodyCodeVersions } from '@alicloud/esa20240910';
+import chalk from 'chalk';
+import moment from 'moment';
+import { CommandModule, ArgumentsCamelCase, Argv } from 'yargs';
+
+import t from '../../i18n/index.js';
+import { ApiService } from '../../libs/apiService.js';
 import {
   Environment,
   GetRoutineReq,
@@ -12,26 +15,25 @@ import {
   PublishType
 } from '../../libs/interface.js';
 import logger from '../../libs/logger.js';
+import { checkRoutineExist } from '../../utils/checkIsRoutineCreated.js';
+import {
+  getProjectConfig,
+  readEdgeRoutineFile
+} from '../../utils/fileUtils/index.js';
+import { ProjectConfig } from '../../utils/fileUtils/interface.js';
+import prodBuild from '../commit/prodBuild.js';
 import {
   checkDirectory,
   checkIsLoginSuccess,
   getRoutineVersionList
 } from '../utils.js';
-import { ProjectConfig } from '../../utils/fileUtils/interface.js';
-import { ApiService } from '../../libs/apiService.js';
+
 import {
   createAndDeployVersion,
   displaySelectDeployType,
   promptSelectVersion,
   yesNoPromptAndExecute
 } from './helper.js';
-import t from '../../i18n/index.js';
-import prodBuild from '../commit/prodBuild.js';
-import { exit } from 'process';
-import path from 'path';
-import { checkRoutineExist } from '../../utils/checkIsRoutineCreated.js';
-import moment from 'moment';
-import { ListRoutineCodeVersionsResponseBodyCodeVersions } from '@alicloud/esa20240910';
 
 const deploy: CommandModule = {
   command: 'deploy [entry]',
@@ -148,7 +150,9 @@ export async function handleDeploy(argv: ArgumentsCamelCase) {
         );
         if (!versionExists) {
           logger.error(
-            t('deploy_version_not_found').d(`Version '${argv.version}' not found`)
+            t('deploy_version_not_found').d(
+              `Version '${argv.version}' not found`
+            )
           );
           return;
         }
@@ -202,21 +206,21 @@ export async function handleDeploy(argv: ArgumentsCamelCase) {
   }
 }
 
-async function handleNoVersionsFound(
-  projectConfig: ProjectConfig,
-  customEntry?: string
-): Promise<void> {
-  logger.log(
-    `😄 ${t('deploy_first_time').d("This is first time to deploy. Let's create a version first!")}`
-  );
-  const created = await yesNoPromptAndExecute(
-    `📃 ${t('deploy_create_formal_version_ques').d('Do you want to create an unstable version now?')}`,
-    () => createAndDeployVersion(projectConfig, true)
-  );
-  if (created) {
-    await handleOnlyUnstableVersionFound(projectConfig);
-  }
-}
+// async function handleNoVersionsFound(
+//   projectConfig: ProjectConfig,
+//   customEntry?: string
+// ): Promise<void> {
+//   logger.log(
+//     `😄 ${t('deploy_first_time').d("This is first time to deploy. Let's create a version first!")}`
+//   );
+//   const created = await yesNoPromptAndExecute(
+//     `📃 ${t('deploy_create_formal_version_ques').d('Do you want to create an unstable version now?')}`,
+//     () => createAndDeployVersion(projectConfig, true)
+//   );
+//   if (created) {
+//     await handleOnlyUnstableVersionFound(projectConfig);
+//   }
+// }
 
 async function promptAndDeployVersion(projectConfig: ProjectConfig) {
   const versionList = await getRoutineVersionList(projectConfig.name);
@@ -240,7 +244,7 @@ export async function handleOnlyUnstableVersionFound(
 ) {
   const created = await yesNoPromptAndExecute(
     `📃 ${t('deploy_create_formal_version_ques').d('Do you want to create a formal version to deploy on production environment?')}`,
-    () => createAndDeployVersion(projectConfig)
+    () => createAndDeployVersion(projectConfig, false, customEntry)
   );
   if (created) {
     await promptAndDeployVersion(projectConfig);

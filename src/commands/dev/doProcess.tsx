@@ -1,13 +1,15 @@
-import React, { FC, useEffect } from 'react';
-import { Box, Text, useApp, useInput, useStdin, render } from 'ink';
 import chalk from 'chalk';
-import logger from '../../libs/logger.js';
-import openInBrowser from '../../utils/openInBrowser.js';
-import WorkerServer from './mockWorker/server.js';
-import Ew2Server from './ew2/server.js';
-import { getDevOpenBrowserUrl } from '../../utils/fileUtils/index.js';
-import { checkOS, Platforms } from '../../utils/checkOS.js';
+import { Box, Text, useApp, useInput, render } from 'ink';
+import React, { FC, useEffect } from 'react';
+
 import t from '../../i18n/index.js';
+import logger from '../../libs/logger.js';
+import { checkOS, Platforms } from '../../utils/checkOS.js';
+import { getDevOpenBrowserUrl } from '../../utils/fileUtils/index.js';
+import openInBrowser from '../../utils/openInBrowser.js';
+
+import Ew2Server from './ew2/server.js';
+import WorkerServer from './mockWorker/server.js';
 
 const InteractionBox: FC<{
   worker?: WorkerServer | Ew2Server;

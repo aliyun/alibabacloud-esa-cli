@@ -1,9 +1,10 @@
 import { CommandModule, ArgumentsCamelCase, Argv } from 'yargs';
-import { checkIsLoginSuccess } from '../utils.js';
-import { DeleteRoutineReq } from '../../libs/interface.js';
-import { ApiService } from '../../libs/apiService.js';
+
 import t from '../../i18n/index.js';
+import { ApiService } from '../../libs/apiService.js';
+import { DeleteRoutineReq } from '../../libs/interface.js';
 import logger from '../../libs/logger.js';
+import { checkIsLoginSuccess } from '../utils.js';
 
 const deleteCommand: CommandModule = {
   command: 'delete <routineName>',

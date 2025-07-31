@@ -1,12 +1,20 @@
-import { CommandModule, ArgumentsCamelCase, Argv } from 'yargs';
-import fs from 'fs-extra';
 import path from 'path';
-import inquirer from 'inquirer';
 import { exit } from 'process';
 
-import Template from '../../libs/templates/index.js';
-import { installGit } from '../../libs/git/index.js';
+import chalk from 'chalk';
+import fs from 'fs-extra';
+import inquirer from 'inquirer';
+import { CommandModule, ArgumentsCamelCase, Argv } from 'yargs';
+
+
+
 import multiLevelSelect from '../../components/mutiLevelSelect.js';
+import t from '../../i18n/index.js';
+import { ApiService } from '../../libs/apiService.js';
+import { installGit } from '../../libs/git/index.js';
+import logger from '../../libs/logger.js';
+import Template from '../../libs/templates/index.js';
+import { checkRoutineExist } from '../../utils/checkIsRoutineCreated.js';
 import {
   generateConfigFile,
   getCliConfig,
@@ -15,13 +23,9 @@ import {
   templateHubPath,
   updateProjectConfigFile
 } from '../../utils/fileUtils/index.js';
-import t from '../../i18n/index.js';
-import logger from '../../libs/logger.js';
 import { quickDeploy } from '../deploy/index.js';
-import { ApiService } from '../../libs/apiService.js';
-import { checkRoutineExist } from '../../utils/checkIsRoutineCreated.js';
 import { checkIsLoginSuccess } from '../utils.js';
-import chalk from 'chalk';
+
 
 import {
   checkAndUpdatePackage,
@@ -100,7 +104,7 @@ export function validateProjectName(name: string): boolean {
   return regex.test(name);
 }
 
-export async function promptProjectName(yes: boolean = false): Promise<string> {
+export async function promptProjectName(yes = false): Promise<string> {
   if (yes) {
     // Generate a default name when --yes is used
     const defaultName = `edge-routine-${Date.now()}`;
@@ -147,7 +151,7 @@ export function prepareTemplateItems(): {
 
 export async function selectTemplate(
   items: { label: string; value: string; children?: any }[],
-  yes: boolean = false
+  yes = false
 ): Promise<string | null> {
   if (yes) {
     // Select the first available template when --yes is used
@@ -203,7 +207,7 @@ export async function initializeProject(
 
 export async function handleGitInitialization(
   targetPath: string,
-  yes: boolean = false
+  yes = false
 ): Promise<void> {
   if (yes) {
     logger.log(
@@ -232,7 +236,7 @@ export async function handleGitInitialization(
 export async function handleDeployment(
   targetPath: string,
   projectConfig: any,
-  yes: boolean = false
+  yes = false
 ): Promise<void> {
   const isLoginSuccess = await checkIsLoginSuccess();
   if (!isLoginSuccess) {

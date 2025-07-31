@@ -1,12 +1,14 @@
 import fs from 'fs';
 import path from 'path';
-import esbuild from 'esbuild';
-import { lessLoader } from 'esbuild-plugin-less';
-import { getRoot } from '../../utils/fileUtils/base.js';
-import { NODE_EXTERNALS } from '../common/constant.js';
+
+import _generator from '@babel/generator';
 import parser from '@babel/parser';
 import _traverse from '@babel/traverse';
-import _generator from '@babel/generator';
+import esbuild from 'esbuild';
+import { lessLoader } from 'esbuild-plugin-less';
+
+import { getRoot } from '../../utils/fileUtils/base.js';
+import { NODE_EXTERNALS } from '../common/constant.js';
 
 interface BuildOptions {
   minify?: boolean;

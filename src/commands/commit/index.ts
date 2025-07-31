@@ -1,20 +1,23 @@
+import { exit } from 'process';
+
 import { CommandModule, Argv, ArgumentsCamelCase } from 'yargs';
-import {
-  getProjectConfig,
-  readEdgeRoutineFile
-} from '../../utils/fileUtils/index.js';
-import { checkDirectory, checkIsLoginSuccess } from '../utils.js';
+
+import { descriptionInput } from '../../components/descriptionInput.js';
+import t from '../../i18n/index.js';
+import { ApiService } from '../../libs/apiService.js';
 import {
   CreateRoutineReq,
   EdgeRoutineProps,
   GetRoutineReq
 } from '../../libs/interface.js';
-import { descriptionInput } from '../../components/descriptionInput.js';
-import { ApiService } from '../../libs/apiService.js';
-import prodBuild from './prodBuild.js';
 import logger from '../../libs/logger.js';
-import t from '../../i18n/index.js';
-import { exit } from 'process';
+import {
+  getProjectConfig,
+  readEdgeRoutineFile
+} from '../../utils/fileUtils/index.js';
+import { checkDirectory, checkIsLoginSuccess } from '../utils.js';
+
+import prodBuild from './prodBuild.js';
 
 const commit: CommandModule = {
   command: 'commit [entry]',

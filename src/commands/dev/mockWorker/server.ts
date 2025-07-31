@@ -1,17 +1,19 @@
 import { ChildProcess } from 'child_process';
-import spawn from 'cross-spawn';
-import logger from '../../../libs/logger.js';
 import path from 'path';
+
+import spawn from 'cross-spawn';
+
 import t from '../../../i18n/index.js';
-import { getDevConf } from '../../../utils/fileUtils/index.js';
+import logger from '../../../libs/logger.js';
 import { getRoot } from '../../../utils/fileUtils/base.js';
+import { getDevConf } from '../../../utils/fileUtils/index.js';
 
 interface Props {
   command: string;
 }
 class MockWorkerServer {
   private instance: ChildProcess | null = null;
-  private restarting: boolean = false;
+  private restarting = false;
   private command: string;
   constructor(props: Props) {
     this.command = props.command || 'deno';
@@ -69,13 +71,10 @@ class MockWorkerServer {
 
   private errorHandler(err: any) {
     logger.error(err.message ? err.message : err);
-    this.instance && this.instance.kill();
+    this.instance?.kill();
   }
 
-  private closeHandler(
-    code: number | null,
-    signal: NodeJS.Signals | null
-  ): void {
+  private closeHandler(): void {
     if (this.restarting) {
       this.restarting = false;
       return;
@@ -97,7 +96,7 @@ class MockWorkerServer {
         return;
       }
 
-      const onExit = (code: string, signal: string) => {
+      const onExit = () => {
         this.instance = null;
         resolve(true);
       };

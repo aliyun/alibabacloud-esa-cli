@@ -1,8 +1,9 @@
-import { CommandModule, ArgumentsCamelCase } from 'yargs';
+import { CommandModule } from 'yargs';
+
 import SelectItems, { SelectItem } from '../components/selectInput.js';
-import { updateCliConfigFile } from '../utils/fileUtils/index.js';
-import logger from '../libs/logger.js';
 import t from '../i18n/index.js';
+import logger from '../libs/logger.js';
+import { updateCliConfigFile } from '../utils/fileUtils/index.js';
 
 const docs: CommandModule = {
   command: 'lang',

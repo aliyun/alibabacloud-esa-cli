@@ -1,15 +1,16 @@
-import { CommandModule, ArgumentsCamelCase } from 'yargs';
+import chalk from 'chalk';
 import inquirer from 'inquirer';
+import { CommandModule, ArgumentsCamelCase } from 'yargs';
+
+import t from '../../i18n/index.js';
+import { ApiService } from '../../libs/apiService.js';
+import logger from '../../libs/logger.js';
 import {
   getApiConfig,
   getCliConfig,
   updateCliConfigFile,
   generateDefaultConfig
 } from '../../utils/fileUtils/index.js';
-import chalk from 'chalk';
-import { ApiService } from '../../libs/apiService.js';
-import t from '../../i18n/index.js';
-import logger from '../../libs/logger.js';
 
 const login: CommandModule = {
   command: 'login',

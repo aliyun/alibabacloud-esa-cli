@@ -1,10 +1,11 @@
 import { CommandModule, ArgumentsCamelCase, Argv } from 'yargs';
+
+import t from '../../i18n/index.js';
+import api from '../../libs/api.js';
+import logger from '../../libs/logger.js';
+import { validRoutine } from '../../utils/checkIsRoutineCreated.js';
 import { getProjectConfig } from '../../utils/fileUtils/index.js';
 import { checkDirectory, checkIsLoginSuccess } from '../utils.js';
-import logger from '../../libs/logger.js';
-import t from '../../i18n/index.js';
-import { validRoutine } from '../../utils/checkIsRoutineCreated.js';
-import api from '../../libs/api.js';
 
 const deleteRoute: CommandModule = {
   command: 'delete <routeName>',

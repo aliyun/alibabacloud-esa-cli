@@ -1,11 +1,12 @@
-import path from 'path';
 import fs from 'fs';
-import logger from '../../../libs/logger.js';
-import devBuild from '../build.js';
+import path from 'path';
+
 import t from '../../../i18n/index.js';
-import { getDevConf } from '../../../utils/fileUtils/index.js';
-import { getRoot, getDirName } from '../../../utils/fileUtils/base.js';
+import logger from '../../../libs/logger.js';
 import { checkPort } from '../../../utils/checkDevPort.js';
+import { getRoot, getDirName } from '../../../utils/fileUtils/base.js';
+import { getDevConf } from '../../../utils/fileUtils/index.js';
+import devBuild from '../build.js';
 
 const generateEntry = async (
   id: string,

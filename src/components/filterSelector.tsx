@@ -1,6 +1,7 @@
 import { Box, render, Text, useInput } from 'ink';
 import TextInput from 'ink-text-input';
 import React, { useState, useEffect } from 'react';
+
 import t from '../i18n/index.js';
 
 export interface Option {

@@ -1,16 +1,19 @@
-import * as http from 'http';
 import { ChildProcess } from 'child_process';
+import * as http from 'http';
+
+import chalk from 'chalk';
 import spawn from 'cross-spawn';
+import { HttpProxyAgent } from 'http-proxy-agent';
 import fetch from 'node-fetch';
+
+import t from '../../../i18n/index.js';
 import logger from '../../../libs/logger.js';
 import { getRoot } from '../../../utils/fileUtils/base.js';
 import { EW2BinPath } from '../../../utils/installEw2.js';
-import { HttpProxyAgent } from 'http-proxy-agent';
-import chalk from 'chalk';
+import sleep from '../../../utils/sleep.js';
+
 import CacheService, { SerializedResponse } from './cacheService.js';
 import EdgeKV from './kvService.js';
-import t from '../../../i18n/index.js';
-import sleep from '../../../utils/sleep.js';
 
 interface Props {
   port?: number;
@@ -85,7 +88,7 @@ class Ew2Server {
 
       this.workerStartTimeout = setTimeout(() => {
         reject(new Error(t('dev_worker_timeout').d('Worker start timeout')));
-        this.worker && this.worker.kill();
+        this.worker?.kill();
       }, 60000);
 
       const sendToRuntime = () => {
@@ -100,7 +103,7 @@ class Ew2Server {
           const req = http.get(options, (res) => {
             resolveStart(res.statusCode);
           });
-          req.on('error', (err) => {
+          req.on('error', () => {
             resolveStart(null);
           });
           req.end();
@@ -125,7 +128,7 @@ class Ew2Server {
       this.worker.on('close', this.closeHandler.bind(this));
       this.worker.on('error', this.errorHandler.bind(this));
       process.on('SIGTERM', () => {
-        this.worker && this.worker.kill();
+        this.worker?.kill();
       });
     });
   }
@@ -291,7 +294,7 @@ class Ew2Server {
     this.stop();
   }
 
-  private closeHandler(code: number | null, signal: NodeJS.Signals | null) {
+  private closeHandler() {
     if (this.restarting) {
       this.restarting = false;
       return;
@@ -301,7 +304,7 @@ class Ew2Server {
       logger.info('Worker server closed');
       // @ts-ignore
       global.port = undefined;
-      this.onClose && this.onClose();
+      this.onClose?.();
     });
   }
 
@@ -366,7 +369,7 @@ class Ew2Server {
         return;
       }
 
-      const onExit = (code: string, signal: string) => {
+      const onExit = () => {
         this.worker = null;
         resolve(true);
       };

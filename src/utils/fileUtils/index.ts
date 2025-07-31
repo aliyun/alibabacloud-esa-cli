@@ -1,12 +1,15 @@
-import fs from 'fs';
+import fs, { promises as fsPromises } from 'fs';
 import os from 'os';
 import path from 'path';
+
 import toml from '@iarna/toml';
-import { promises as fsPromises } from 'fs';
-import { CliConfig, DevToolProps, ProjectConfig } from './interface.js';
-import { getDirName, getRoot } from './base.js';
-import logger from '../../libs/logger.js';
+
 import t from '../../i18n/index.js';
+import logger from '../../libs/logger.js';
+
+import { getDirName, getRoot } from './base.js';
+import { CliConfig, DevToolProps, ProjectConfig } from './interface.js';
+
 
 const projectConfigFile = 'esa.toml';
 

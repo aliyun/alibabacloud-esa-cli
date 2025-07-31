@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
 import { Box, render, Text } from 'ink';
 import TextInput from 'ink-text-input';
+import React, { useState } from 'react';
 interface DescriptionInputProps {
   prompt: string;
   required: boolean;

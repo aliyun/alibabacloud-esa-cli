@@ -1,14 +1,17 @@
+import { execSync } from 'child_process';
+import https from 'https';
 import os from 'os';
-import fs from 'fs-extra';
 import path from 'path';
 import util from 'util';
-import https from 'https';
-import { execSync } from 'child_process';
-import logger from '../libs/logger.js';
-import { getDirName } from './fileUtils/base.js';
+
+import fs from 'fs-extra';
+
 import t from '../i18n/index.js';
-import { calculateFileMD5 } from './fileMd5.js';
+import logger from '../libs/logger.js';
+
 import { checkOS } from './checkOS.js';
+import { calculateFileMD5 } from './fileMd5.js';
+import { getDirName } from './fileUtils/base.js';
 
 export const EW2DirName = '.ew2';
 export const EW2BinName = 'edgeworker2';
@@ -85,7 +88,7 @@ export function fetchRemoteManifest(): Promise<Ew2Manifest> {
           });
         }
       )
-      .on('error', (err) => reject);
+      .on('error', () => reject);
   });
 }
 

@@ -1,10 +1,9 @@
-import portscanner from 'portscanner';
-import SelectItems, { SelectItem } from '../components/selectInput.js';
-import { descriptionInput } from '../components/descriptionInput.js';
-import inquirer from 'inquirer';
-import logger from '../libs/logger.js';
-import t from '../i18n/index.js';
 import chalk from 'chalk';
+import inquirer from 'inquirer';
+import portscanner from 'portscanner';
+
+import t from '../i18n/index.js';
+import logger from '../libs/logger.js';
 
 export const checkPort = (port: number): Promise<boolean> => {
   return new Promise((resolve) => {
@@ -15,20 +14,6 @@ export const checkPort = (port: number): Promise<boolean> => {
         resolve(false);
       } else {
         resolve(true);
-      }
-    });
-  });
-};
-
-const ask = () => {
-  return new Promise((resolve) => {
-    SelectItems({
-      items: [
-        { label: 'Yes', value: 'yes' },
-        { label: 'No', value: 'no' }
-      ],
-      handleSelect: async (item: SelectItem) => {
-        resolve(item.value === 'yes');
       }
     });
   });

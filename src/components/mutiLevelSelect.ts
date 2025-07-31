@@ -1,4 +1,5 @@
 import inquirer from 'inquirer';
+
 import logger from '../libs/logger.js';
 
 // Define the structure of a selection item
@@ -16,7 +17,7 @@ export interface SelectItem {
  */
 export default async function multiLevelSelect(
   items: SelectItem[],
-  message: string = 'Select a template:'
+  message = 'Select a template:'
 ): Promise<string | null> {
   let currentItems = items; // Current level options
   const stack: SelectItem[][] = []; // Stack to store previous level options for back navigation

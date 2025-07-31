@@ -1,6 +1,8 @@
 import { CommandModule, Argv } from 'yargs';
-import siteList from './list.js';
+
 import t from '../../i18n/index.js';
+
+import siteList from './list.js';
 
 let yargsIns: Argv;
 const siteCommand: CommandModule<{}> = {

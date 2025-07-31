@@ -1,13 +1,18 @@
-import fetch from 'node-fetch';
-import * as fs from 'fs/promises';
-import * as path from 'path';
-import os from 'os';
-import AdmZip from 'adm-zip';
 import { exec } from 'child_process';
+import * as fs from 'fs/promises';
+import os from 'os';
+import * as path from 'path';
 import { promisify } from 'util';
+
+import AdmZip from 'adm-zip';
+import chalk from 'chalk';
+import fetch from 'node-fetch';
+
+
+
 import t from '../i18n/index.js';
 import logger from '../libs/logger.js';
-import chalk from 'chalk';
+
 
 const execAsync = promisify(exec);
 

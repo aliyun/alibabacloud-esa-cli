@@ -1,5 +1,6 @@
-import { getSummary } from '../../commands/common/constant.js';
 import chalk from 'chalk';
+
+import { getSummary } from '../../commands/common/constant.js';
 import logger from '../logger.js';
 
 interface TemplateInterface {

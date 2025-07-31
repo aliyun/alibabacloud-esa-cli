@@ -1,10 +1,12 @@
 import { exec, execSync } from 'child_process';
 import os from 'os';
 import path from 'path';
-import logger from '../libs/logger.js';
-import { getDirName } from './fileUtils/base.js';
-import { downloadRuntimeAndUnzipForWindows } from './download.js';
+
 import t from '../i18n/index.js';
+import logger from '../libs/logger.js';
+
+import { downloadRuntimeAndUnzipForWindows } from './download.js';
+import { getDirName } from './fileUtils/base.js';
 
 export async function preCheckDeno(): Promise<string | false> {
   const command = await checkDenoInstalled();
@@ -39,7 +41,7 @@ export function checkDenoInstalled(): Promise<string | false> {
       .then((res: any) => {
         resolve(res);
       })
-      .catch((err: any) => {
+      .catch(() => {
         resolve(false);
       });
   });

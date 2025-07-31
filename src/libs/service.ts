@@ -1,9 +1,11 @@
 import * as $ESA from '@alicloud/esa20240910';
-import ora, { Ora } from 'ora';
-import chain from 'lodash';
 import FormData from 'form-data';
+import chain from 'lodash';
 import fetch from 'node-fetch';
+import ora, { Ora } from 'ora';
+
 import t from '../i18n/index.js';
+
 import api from './api.js';
 import {
   EdgeRoutineProps,

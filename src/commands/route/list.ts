@@ -1,12 +1,14 @@
-import { CommandModule } from 'yargs';
-import { getProjectConfig } from '../../utils/fileUtils/index.js';
-import { RelatedRouteProps } from '../../libs/interface.js';
 import Table from 'cli-table3';
-import { checkDirectory, checkIsLoginSuccess } from '../utils.js';
-import logger from '../../libs/logger.js';
+import { CommandModule } from 'yargs';
+
 import t from '../../i18n/index.js';
-import { validRoutine } from '../../utils/checkIsRoutineCreated.js';
 import api from '../../libs/api.js';
+import { RelatedRouteProps } from '../../libs/interface.js';
+import logger from '../../libs/logger.js';
+import { validRoutine } from '../../utils/checkIsRoutineCreated.js';
+import { getProjectConfig } from '../../utils/fileUtils/index.js';
+import { checkDirectory, checkIsLoginSuccess } from '../utils.js';
+
 import { transferRuleStringToRoute } from './helper.js';
 
 const listRoute: CommandModule = {

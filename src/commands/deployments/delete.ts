@@ -1,20 +1,20 @@
 import { CommandModule, ArgumentsCamelCase, Argv } from 'yargs';
+
+import {
+  displayMultiSelectTable,
+  TableItem
+} from '../../components/mutiSelectTable.js';
+import t from '../../i18n/index.js';
+import { ApiService } from '../../libs/apiService.js';
+import { DeleteRoutineCodeVersionReq } from '../../libs/interface.js';
+import logger from '../../libs/logger.js';
+import { validRoutine } from '../../utils/checkIsRoutineCreated.js';
 import { getProjectConfig } from '../../utils/fileUtils/index.js';
 import {
   checkDirectory,
   checkIsLoginSuccess,
   getRoutineVersionList
 } from '../utils.js';
-import { ApiService } from '../../libs/apiService.js';
-import { DeleteRoutineCodeVersionReq } from '../../libs/interface.js';
-import t from '../../i18n/index.js';
-import logger from '../../libs/logger.js';
-import {
-  displayMultiSelectTable,
-  TableItem
-} from '../../components/mutiSelectTable.js';
-import { Base64 } from 'js-base64';
-import { validRoutine } from '../../utils/checkIsRoutineCreated.js';
 
 const deploymentsDelete: CommandModule = {
   command: 'delete [deploymentId..]',

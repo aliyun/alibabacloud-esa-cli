@@ -1,7 +1,9 @@
 import { CommandModule, Argv } from 'yargs';
-import routineList from './list.js';
-import routineDelete from './delete.js';
+
 import t from '../../i18n/index.js';
+
+import routineDelete from './delete.js';
+import routineList from './list.js';
 
 let yargsIns: Argv;
 const routineCommand: CommandModule<{}> = {

@@ -1,24 +1,20 @@
+import { ListRoutineCodeVersionsResponseBodyCodeVersions } from '@alicloud/esa20240910/dist/models/ListRoutineCodeVersionsResponseBodyCodeVersions.js';
+
+import { descriptionInput } from '../../components/descriptionInput.js';
 import SelectItems, { SelectItem } from '../../components/selectInput.js';
 import { yesNoPrompt } from '../../components/yesNoPrompt.js';
-import {
-  CodeVersionProps,
-  CreateRoutineReq,
-  GetRoutineReq,
-  PublishType
-} from '../../libs/interface.js';
-import { ApiService } from '../../libs/apiService.js';
-import { descriptionInput } from '../../components/descriptionInput.js';
+import t from '../../i18n/index.js';
+import { CreateRoutineReq, PublishType } from '../../libs/interface.js';
+import logger from '../../libs/logger.js';
 import { readEdgeRoutineFile } from '../../utils/fileUtils/index.js';
 import {
   createEdgeRoutine,
   releaseOfficialVersion,
   uploadEdgeRoutineCode
 } from '../commit/index.js';
-import logger from '../../libs/logger.js';
-import t from '../../i18n/index.js';
-import { ProjectConfig } from './../../utils/fileUtils/interface.js';
 import prodBuild from '../commit/prodBuild.js';
-import { ListRoutineCodeVersionsResponseBodyCodeVersions } from '@alicloud/esa20240910/dist/models/ListRoutineCodeVersionsResponseBodyCodeVersions.js';
+
+import { ProjectConfig } from './../../utils/fileUtils/interface.js';
 
 export function yesNoPromptAndExecute(
   message: string,
@@ -79,8 +75,6 @@ export async function createAndDeployVersion(
   customEntry?: string
 ) {
   try {
-    const server = await ApiService.getInstance();
-
     const description = await descriptionInput(
       createUnstable
         ? `🖊️ ${t('deploy_description_routine').d('Enter the description of the routine')}:`

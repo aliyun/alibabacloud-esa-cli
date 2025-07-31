@@ -1,8 +1,10 @@
 import { CommandModule, Argv } from 'yargs';
+
+import t from '../../i18n/index.js';
+
+import addRoute from './add.js';
 import deleteRoute from './delete.js';
 import listRoute from './list.js';
-import addRoute from './add.js';
-import t from '../../i18n/index.js';
 
 let yargsIns: Argv;
 const routeCommand: CommandModule<{}> = {

@@ -1,12 +1,13 @@
-import path from 'path';
 import fs from 'fs';
-import logger from '../../../libs/logger.js';
-import devBuild from '../build.js';
+import path from 'path';
+
 import t from '../../../i18n/index.js';
-import { getDevConf } from '../../../utils/fileUtils/index.js';
-import { getRoot, getDirName } from '../../../utils/fileUtils/base.js';
+import logger from '../../../libs/logger.js';
 import { checkPort } from '../../../utils/checkDevPort.js';
+import { getRoot, getDirName } from '../../../utils/fileUtils/base.js';
+import { getDevConf } from '../../../utils/fileUtils/index.js';
 import { EW2Path } from '../../../utils/installEw2.js';
+import devBuild from '../build.js';
 
 // 生成可用的Ew2端口
 const generateEw2Port = async () => {
@@ -148,7 +149,7 @@ const prepare = async (
   );
 };
 
-const devPack = async (restarting = false) => {
+const devPack = async () => {
   logger.ora.start('Processing...\n');
 
   const userRoot = getRoot();

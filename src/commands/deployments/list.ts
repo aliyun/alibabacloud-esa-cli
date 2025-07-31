@@ -1,33 +1,34 @@
-import { CommandModule, ArgumentsCamelCase, Argv } from 'yargs';
+import chalk from 'chalk';
+import { CommandModule } from 'yargs';
+
+import t from '../../i18n/index.js';
+import { ApiService } from '../../libs/apiService.js';
+import {
+  GetRoutineReq,
+  GetRoutineRes,
+  GetRoutineStagingEnvIpRes
+} from '../../libs/interface.js';
+import logger from '../../libs/logger.js';
+import { validRoutine } from '../../utils/checkIsRoutineCreated.js';
+import { getProjectConfig } from '../../utils/fileUtils/index.js';
 import { displayVersionList } from '../deploy/index.js';
 import {
   checkDirectory,
   checkIsLoginSuccess,
   getRoutineVersionList
 } from '../utils.js';
-import { getProjectConfig } from '../../utils/fileUtils/index.js';
-import {
-  GetRoutineReq,
-  GetRoutineRes,
-  GetRoutineStagingEnvIpRes
-} from '../../libs/interface.js';
-import chalk from 'chalk';
-import { ApiService } from '../../libs/apiService.js';
-import t from '../../i18n/index.js';
-import logger from '../../libs/logger.js';
-import { validRoutine } from '../../utils/checkIsRoutineCreated.js';
 
 const deploymentsList: CommandModule = {
   command: 'list',
   describe: `🔍 ${t('deployments_list_describe').d('List all deployments')}`,
-  handler: async (argv: ArgumentsCamelCase) => {
-    handleListDeployments(argv);
+  handler: async () => {
+    handleListDeployments();
   }
 };
 
 export default deploymentsList;
 
-export async function handleListDeployments(argv: ArgumentsCamelCase) {
+export async function handleListDeployments() {
   if (!checkDirectory()) {
     return;
   }

@@ -359,6 +359,18 @@
     "en": "The name of route to add",
     "zh_CN": "要添加的路由名称"
   },
+  "route_add_site_describe": {
+    "en": "The site to bind the route to. For example: example.com",
+    "zh_CN": "要绑定路由的站点"
+  },
+  "route_add_route_name_option": {
+    "en": "Route name (aliases)",
+    "zh_CN": "路由名称（别名）"
+  },
+  "route_add_route_value_option": {
+    "en": "The route value. For example: example.com/*",
+    "zh_CN": "路由值"
+  },
   "route_add_invalid": {
     "en": "The route does not correspond to the domain.",
     "zh_CN": "该路由与域名不对应。"
@@ -481,7 +493,7 @@
   },
   "route_validate": {
     "en": "You can add an asterisk (*) as the prefix or suffix to match more URLs, such as \"*.example.com/*\".",
-    "zh_CN": "您可以通过添加前缀或后缀通配符（*）来匹配更多的URL，例如: “*.example.com/*”。"
+    "zh_CN": "您可以通过添加前缀或后缀通配符（*）来匹配更多的URL，例如: \"*.example.com/*\"."
   },
   "domain_input": {
     "en": "Enter the name of domain (Support fuzzy matching on tab press):",
@@ -507,6 +519,18 @@
     "en": "Generate a config file for your project",
     "zh_CN": "在您的项目中生成一个esa.toml配置文件"
   },
+  "init_project_name": {
+    "en": "Project name",
+    "zh_CN": "项目名称"
+  },
+  "init_template_name": {
+    "en": "Template name to use",
+    "zh_CN": "要使用的模板名称"
+  },
+  "init_template_not_found": {
+    "en": "Template \"${templateName}\" not found. Please check the template name and try again.",
+    "zh_CN": "未找到模板 \"${templateName}\"。请检查模板名称并重试。"
+  },
   "generate_config_error": {
     "en": "esa.toml already exists",
     "zh_CN": "esa.toml 文件已经存在"
@@ -518,6 +542,10 @@
   "commit_option_minify": {
     "en": "Minify code before committing",
     "zh_CN": "上传前压缩代码"
+  },
+  "commit_option_description": {
+    "en": "Description for the routine/version (skip interactive input)",
+    "zh_CN": "函数/版本的描述（跳过交互式输入）"
   },
   "dev_entry_describe": {
     "en": "Entry file of the Routine",
@@ -704,8 +732,8 @@
     "zh_CN": "无权限：Access Key 或 Secret 错误，或没有必要的权限。"
   },
   "init_skip": {
-    "en": "Initialization was skipped.",
-    "zh_CN": "初始化已被跳过。"
+    "en": "Answer \"No\" to any prompts for new projects.",
+    "zh_CN": "回答 \"否\" 到所有提示。"
   },
   "quick_deploy_success": {
     "en": "Your code has been successfully deployed",
@@ -754,6 +782,30 @@
   "deploy_url_warn": {
     "en": "The domain may take some time to take effect, please try again later.",
     "zh_CN": "域名生效可能需要一段时间，请稍后再试。"
+  },
+  "deploy_quick_describe": {
+    "en": "Quick deploy the routine to production environment",
+    "zh_CN": "快速部署到生产环境"
+  },
+  "deploy_option_version": {
+    "en": "Version to deploy (skip interactive selection)",
+    "zh_CN": "要部署的版本（跳过交互式选择）"
+  },
+  "deploy_option_environment": {
+    "en": "Environment to deploy to: staging or production (skip interactive selection)",
+    "zh_CN": "部署环境：staging 或 production（跳过交互式选择）"
+  },
+  "deploy_version_not_found": {
+    "en": "Version '${argv.version}' not found",
+    "zh_CN": "版本 '${version}' 未找到"
+  },
+  "deploy_using_version": {
+    "en": "Using version",
+    "zh_CN": "使用版本"
+  },
+  "deploy_using_environment": {
+    "en": "Using environment",
+    "zh_CN": "使用环境"
   },
   "init_install_dependence": {
     "en": "⌛️ Installing dependencies...",
@@ -928,51 +980,91 @@
     "zh_CN": "边缘函数创建失败"
   },
   "create_route_route": {
-    "en": "Enter a Route:",
-    "zh_CN": ""
+    "en": "Enter a Route (e.g., example.com/*):",
+    "zh_CN": "输入路由:"
   },
   "route_name_input_required": {
     "en": "Route name is required",
-    "zh_CN": ""
+    "zh_CN": "路由名称是必需的"
   },
   "create_route_mode": {
     "en": "Which mode of route do you want to use?",
-    "zh_CN": ""
+    "zh_CN": "您想要使用哪种路由模式？"
   },
   "create_route_site": {
     "en": "Select a site that is active in your account:",
-    "zh_CN": ""
+    "zh_CN": "选择您账户中已激活的站点:"
   },
   "route_input_required": {
     "en": "Route is required",
-    "zh_CN": ""
+    "zh_CN": "路由是必需的"
   },
   "create_route_rule": {
     "en": "Enter a Rule Expression:",
-    "zh_CN": ""
+    "zh_CN": "输入规则表达式:"
   },
   "rule_input_required": {
     "en": "Rule is required",
-    "zh_CN": ""
+    "zh_CN": "规则是必需的"
   },
   "route_list_simple_title": {
     "en": "Related simple mode routes",
-    "zh_CN": ""
+    "zh_CN": "相关简单模式路由"
   },
   "route_list_custom_title": {
     "en": "Related custom mode routes",
-    "zh_CN": ""
+    "zh_CN": "相关自定义模式路由"
   },
   "create_route_route_name": {
     "en": "Enter a Route Name (Aliases):",
-    "zh_CN": ""
+    "zh_CN": "输入路由名称（别名）:"
   },
   "no_route_found": {
     "en": "No route found! Please check the route name.",
-    "zh_CN": ""
+    "zh_CN": "未找到路由！请检查路由名称。"
   },
   "init_template_not_ready": {
     "en": "Template is not ready. We will install it for you now.",
     "zh_CN": "模版未准备好，我们为您安装模版。"
+  },
+  "login_option_access_key_id": {
+    "en": "AccessKey ID (AK)",
+    "zh_CN": "AccessKey ID (AK)"
+  },
+  "login_option_access_key_secret": {
+    "en": "AccessKey Secret (SK)",
+    "zh_CN": "AccessKey Secret (SK)"
+  },
+  "login_option_skip_login": {
+    "en": "Skip login",
+    "zh_CN": "跳过登录"
+  },
+  "check_and_update_package_error": {
+    "en": "Error: An error occurred while checking and updating the package, skipping template update",
+    "zh_CN": "检测和更新包时发生错误，跳过更新模版"
+  },
+  "init_yes": {
+    "en": "Answer \"Yes\" to all prompts.",
+    "zh_CN": "回答 \"是\" 到所有提示。"
+  },
+  "init_no_templates": {
+    "en": "No templates available.",
+    "zh_CN": "没有可用的模版。"
+  },
+  "no_active_sites": {
+    "en": "No active sites found in your account",
+    "zh_CN": "没有找到已激活的站点"
+  },
+  "route_format_invalid": {
+    "en": "Invalid route format",
+    "zh_CN": "无效的路由格式"
+  },
+  "creating_route": {
+    "en": "Creating route...",
+    "zh_CN": "创建路由..."
+  },
+  "site_not_found": {
+    "en": "Site \"${siteName}\" not found in your account",
+    "zh_CN": "站点 \"${siteName}\" 未找到"
   }
 }

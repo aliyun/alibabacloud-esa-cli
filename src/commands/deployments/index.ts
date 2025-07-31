@@ -1,7 +1,9 @@
 import { CommandModule, Argv } from 'yargs';
-import deploymentsList from './list.js';
-import deploymentsDelete from './delete.js';
+
 import t from '../../i18n/index.js';
+
+import deploymentsDelete from './delete.js';
+import deploymentsList from './list.js';
 
 let yargsIns: Argv;
 const deploymentsCommand: CommandModule<{}> = {

@@ -1,16 +1,19 @@
-import fs from 'fs-extra';
+
+
+import { execSync } from 'child_process';
 import path from 'path';
 
-import Template from '../../libs/templates/index.js';
 
-import { getProjectConfig, TemplateItem } from '../../utils/fileUtils/index.js';
-import logger from '../../libs/logger.js';
-import { execSync } from 'child_process';
-import t from '../../i18n/index.js';
 import chalk from 'chalk';
-import { SelectItem } from '../../components/mutiLevelSelect.js';
+import fs from 'fs-extra';
 import inquirer from 'inquirer';
+
+import { SelectItem } from '../../components/mutiLevelSelect.js';
+import t from '../../i18n/index.js';
+import logger from '../../libs/logger.js';
+import Template from '../../libs/templates/index.js';
 import { getDirName } from '../../utils/fileUtils/base.js';
+import { getProjectConfig, TemplateItem } from '../../utils/fileUtils/index.js';
 
 export const getTemplateInstances = (templateHubPath: string) => {
   return fs
@@ -164,7 +167,11 @@ export async function checkAndUpdatePackage(
   } catch (error) {
     console.log(error);
     if (error instanceof Error) {
-      logger.error('检测和更新包时发生错误，跳过更新模版');
+      logger.error(
+        t('check_and_update_package_error').d(
+          'Error: An error occurred while checking and updating the package, skipping template update'
+        )
+      );
     }
   }
 }

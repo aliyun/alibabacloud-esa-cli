@@ -1,5 +1,6 @@
-import fs from 'fs-extra';
 import crypto from 'crypto';
+
+import fs from 'fs-extra';
 
 export function calculateFileMD5(filePath: string) {
   return new Promise((resolve, reject) => {

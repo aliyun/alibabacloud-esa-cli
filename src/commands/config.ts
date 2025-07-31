@@ -1,9 +1,11 @@
 import fs from 'fs';
+
 import spawn from 'cross-spawn';
 import { CommandModule, ArgumentsCamelCase, Argv } from 'yargs';
-import { projectConfigPath, cliConfigPath } from '../utils/fileUtils/index.js';
+
 import t from '../i18n/index.js';
 import logger from '../libs/logger.js';
+import { projectConfigPath, cliConfigPath } from '../utils/fileUtils/index.js';
 
 const editConfigFile = (configPath: string) => {
   const editor = process.env.EDITOR || 'vi';

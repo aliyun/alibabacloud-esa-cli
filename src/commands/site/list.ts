@@ -1,10 +1,11 @@
-import { CommandModule, ArgumentsCamelCase, Argv } from 'yargs';
+import chalk from 'chalk';
+import { CommandModule, Argv } from 'yargs';
+
+import t from '../../i18n/index.js';
+import { ApiService } from '../../libs/apiService.js';
 import { ListSitesReq } from '../../libs/interface.js';
 import logger from '../../libs/logger.js';
 import { checkIsLoginSuccess } from '../utils.js';
-import chalk from 'chalk';
-import { ApiService } from '../../libs/apiService.js';
-import t from '../../i18n/index.js';
 
 const list: CommandModule = {
   command: 'list',
@@ -12,16 +13,14 @@ const list: CommandModule = {
   builder: (yargs: Argv) => {
     return yargs.usage(`${t('common_usage').d('Usage')}: \$0 list []`);
   },
-  handler: async (argv: ArgumentsCamelCase) => {
-    handleList(argv);
+  handler: async () => {
+    handleList();
   }
 };
 
 export default list;
 
-export async function handleList(argv: ArgumentsCamelCase) {
-  //   const { site, ...args } = argv;
-
+export async function handleList() {
   const isSuccess = await checkIsLoginSuccess();
   if (!isSuccess) return;
   const server = await ApiService.getInstance();

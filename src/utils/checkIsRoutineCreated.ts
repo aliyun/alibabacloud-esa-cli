@@ -1,13 +1,16 @@
 import path from 'path';
+import { exit } from 'process';
+
+import chalk from 'chalk';
+
 import { createEdgeRoutine } from '../commands/commit/index.js';
+import prodBuild from '../commands/commit/prodBuild.js';
+import t from '../i18n/index.js';
 import { ApiService } from '../libs/apiService.js';
-import { readEdgeRoutineFile } from './fileUtils/index.js';
 import { GetRoutineReq } from '../libs/interface.js';
 import logger from '../libs/logger.js';
-import t from '../i18n/index.js';
-import prodBuild from '../commands/commit/prodBuild.js';
-import { exit } from 'process';
-import chalk from 'chalk';
+
+import { readEdgeRoutineFile } from './fileUtils/index.js';
 
 export async function isRoutineExist(name: string) {
   const server = await ApiService.getInstance();

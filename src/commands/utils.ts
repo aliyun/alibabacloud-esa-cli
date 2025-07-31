@@ -1,23 +1,22 @@
-import fs from 'fs';
 import { execSync } from 'child_process';
+import fs from 'fs';
+
+import { ListRoutineCodeVersionsResponseBodyCodeVersions } from '@alicloud/esa20240910/dist/models/ListRoutineCodeVersionsResponseBodyCodeVersions.js';
+import chalk from 'chalk';
+
+import { Option } from '../components/filterSelector.js';
+import t from '../i18n/index.js';
+import api from '../libs/api.js';
+import { ApiService } from '../libs/apiService.js';
 import { isInstalledGit } from '../libs/git/index.js';
 import {
-  CodeVersionProps,
   CreateRoutineRelatedRecordReq,
   GetMatchSiteReq,
-  GetRoutineReq,
-  GetRoutineRes,
   ListSitesReq
 } from '../libs/interface.js';
-import { getCliConfig, projectConfigPath } from '../utils/fileUtils/index.js';
-import { getRoot } from '../utils/fileUtils/base.js';
-import chalk from 'chalk';
-import t from '../i18n/index.js';
-import { ApiService } from '../libs/apiService.js';
 import logger from '../libs/logger.js';
-import { Option } from '../components/filterSelector.js';
-import api from '../libs/api.js';
-import { ListRoutineCodeVersionsResponseBodyCodeVersions } from '@alicloud/esa20240910/dist/models/ListRoutineCodeVersionsResponseBodyCodeVersions.js';
+import { getRoot } from '../utils/fileUtils/base.js';
+import { getCliConfig, projectConfigPath } from '../utils/fileUtils/index.js';
 
 export const checkDirectory = (isCheckGit = false): boolean => {
   const root = getRoot();

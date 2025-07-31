@@ -1,6 +1,7 @@
 import { promises as fs } from 'fs';
-import { getDirName } from '../utils/fileUtils/base.js';
 import path from 'path';
+
+import { getDirName } from '../utils/fileUtils/base.js';
 
 export async function handleCheckVersion() {
   const __dirname = getDirName(import.meta.url);

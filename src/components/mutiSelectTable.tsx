@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
 import { Box, render, Text, useInput } from 'ink';
+import React, { useState } from 'react';
+
 import t from '../i18n/index.js';
 
 export interface TableItem {

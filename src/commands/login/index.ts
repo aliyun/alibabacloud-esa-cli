@@ -1,31 +1,50 @@
-import { CommandModule, ArgumentsCamelCase } from 'yargs';
+import chalk from 'chalk';
 import inquirer from 'inquirer';
+import { CommandModule, ArgumentsCamelCase } from 'yargs';
+
+import t from '../../i18n/index.js';
+import { ApiService } from '../../libs/apiService.js';
+import logger from '../../libs/logger.js';
 import {
   getApiConfig,
   getCliConfig,
   updateCliConfigFile,
   generateDefaultConfig
 } from '../../utils/fileUtils/index.js';
-import chalk from 'chalk';
-import { ApiService } from '../../libs/apiService.js';
-import t from '../../i18n/index.js';
-import logger from '../../libs/logger.js';
 
 const login: CommandModule = {
   command: 'login',
   describe: `🔑 ${t('login_describe').d('Login to the server')}`,
-  builder: {},
+  builder: (yargs) => {
+    return yargs
+      .option('access-key-id', {
+        alias: 'ak',
+        describe: t('login_option_access_key_id')?.d('AccessKey ID'),
+        type: 'string'
+      })
+      .option('access-key-secret', {
+        alias: 'sk',
+        describe: t('login_option_access_key_secret')?.d('AccessKey Secret'),
+        type: 'string'
+      });
+  },
   handler: async (argv: ArgumentsCamelCase) => {
-    handleLogin();
+    handleLogin(argv);
   }
 };
 
 export default login;
 
-export async function handleLogin(): Promise<void> {
+export async function handleLogin(argv?: ArgumentsCamelCase): Promise<void> {
   generateDefaultConfig();
+  // Prioritize command line parameters
+  const accessKeyId = argv?.['access-key-id'];
+  const accessKeySecret = argv?.['access-key-secret'];
+  if (accessKeyId && accessKeySecret) {
+    await handleLoginWithAKSK(accessKeyId as string, accessKeySecret as string);
+    return;
+  }
   const cliConfig = getCliConfig();
-
   if (!cliConfig) return;
   if (
     cliConfig &&
@@ -34,7 +53,7 @@ export async function handleLogin(): Promise<void> {
     cliConfig.auth.accessKeySecret
   ) {
     const service = await ApiService.getInstance();
-    const loginStatus = await service.checkLogin(false);
+    const loginStatus = await service.checkLogin();
     if (loginStatus.success) {
       logger.warn(t('login_already').d('You are already logged in.'));
       const action = await inquirer.prompt([
@@ -52,7 +71,6 @@ export async function handleLogin(): Promise<void> {
           ]
         }
       ]);
-
       if (action.action === t('common_exit').d('Exit')) {
         return;
       }
@@ -69,6 +87,34 @@ export async function handleLogin(): Promise<void> {
   } else {
     logger.log(`${t('login_logging').d('Logging in')}...`);
     await getUserInputAuthInfo();
+  }
+}
+
+async function handleLoginWithAKSK(
+  accessKeyId: string,
+  accessKeySecret: string
+): Promise<void> {
+  let apiConfig = getApiConfig();
+  apiConfig.auth = {
+    accessKeyId,
+    accessKeySecret
+  };
+  try {
+    await updateCliConfigFile({
+      auth: apiConfig.auth
+    });
+    const service = await ApiService.getInstance();
+    service.updateConfig(apiConfig);
+    const loginStatus = await service.checkLogin();
+    if (loginStatus.success) {
+      logger.success(t('login_success').d('Login success!'));
+    } else {
+      logger.error(loginStatus.message || 'Login failed');
+    }
+  } catch (error) {
+    logger.error(
+      t('login_failed').d('An error occurred while trying to log in.')
+    );
   }
 }
 

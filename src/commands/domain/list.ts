@@ -1,26 +1,27 @@
-import { CommandModule, ArgumentsCamelCase, Argv } from 'yargs';
-import { checkDirectory, checkIsLoginSuccess } from '../utils.js';
-import logger from '../../libs/logger.js';
-import { getProjectConfig } from '../../utils/fileUtils/index.js';
+import { CommandModule } from 'yargs';
+
+import t from '../../i18n/index.js';
+import { ApiService } from '../../libs/apiService.js';
 import {
   ListRoutineRelatedRecordsReq,
   RelatedRecordProps
 } from '../../libs/interface.js';
-import { ApiService } from '../../libs/apiService.js';
-import t from '../../i18n/index.js';
+import logger from '../../libs/logger.js';
 import { validRoutine } from '../../utils/checkIsRoutineCreated.js';
+import { getProjectConfig } from '../../utils/fileUtils/index.js';
+import { checkDirectory, checkIsLoginSuccess } from '../utils.js';
 
 const listDomain: CommandModule = {
   command: 'list',
   describe: `🔍 ${t('domain_list_describe').d('List all related domains')}`,
-  handler: async (argv: ArgumentsCamelCase) => {
-    handleListDomains(argv);
+  handler: async () => {
+    handleListDomains();
   }
 };
 
 export default listDomain;
 
-export async function handleListDomains(argv: ArgumentsCamelCase) {
+export async function handleListDomains() {
   if (!checkDirectory()) {
     return;
   }

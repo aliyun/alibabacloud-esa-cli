@@ -3,7 +3,7 @@
 ### init
 
 Initialize a routine with a template.
-    
+
 ```bash
 $ esa init [OPTIONS]
 ```
@@ -14,7 +14,7 @@ $ esa init [OPTIONS]
 ### routine [script]
 
 Manage your routine.
-    
+
 #### delete <routineName>
 
 Delete a routine.
@@ -37,7 +37,7 @@ $ esa routine list
 ### route [script]
 
 Manage the routes bound to your routine.
-    
+
 #### add [route] [site]
 
 Bind a Route to a routine.
@@ -68,7 +68,7 @@ $ esa route list
 ### login
 
 Login to the server.
-    
+
 ```bash
 $ esa login
 ```
@@ -76,7 +76,7 @@ $ esa login
 ### dev [entry]
 
 Start a local server for developing your routine.
-    
+
 ```bash
 $ esa dev [entry] [OPTIONS]
 ```
@@ -102,7 +102,7 @@ $ esa dev [entry] [OPTIONS]
 ### deployments [script]
 
 Manage your deployments.
-    
+
 #### delete <deploymentId>
 
 Delete one or more deployment versions.
@@ -125,7 +125,7 @@ $ esa deployments list
 ### deploy [entry]
 
 Deploy your project.
-    
+
 ```bash
 $ esa deploy [entry]
 ```
@@ -136,7 +136,7 @@ $ esa deploy [entry]
 ### domain [script]
 
 Manage the domain names bound to your routine.
-    
+
 #### add <domain>
 
 Bind a domain to a routine.
@@ -170,7 +170,7 @@ $ esa domain list
 ### commit [entry]
 
 Commit your code, save as a new version.
-    
+
 ```bash
 $ esa commit [entry] [OPTIONS]
 ```
@@ -184,7 +184,7 @@ $ esa commit [entry] [OPTIONS]
 ### logout
 
 Logout.
-    
+
 ```bash
 $ esa logout
 ```
@@ -192,7 +192,7 @@ $ esa logout
 ### config
 
 Modify your local or global configuration using -l, -g.
-    
+
 ```bash
 $ esa config [OPTIONS]
 ```
@@ -206,7 +206,7 @@ $ esa config [OPTIONS]
 ### lang
 
 Set the language of the CLI.
-    
+
 ```bash
 $ esa lang
 ```
@@ -214,7 +214,7 @@ $ esa lang
 ### site [script]
 
 Manage your sites.
-    
+
 #### list
 
 List all your sites.

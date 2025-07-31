@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
 import { render, Text, useApp } from 'ink';
 import SelectInput from 'ink-select-input';
-import Item from './selectItem.js';
-import { SelectItem } from './selectInput.js';
+import React, { useState } from 'react';
+
 import t from '../i18n/index.js';
+
+import { SelectItem } from './selectInput.js';
+import Item from './selectItem.js';
 
 export interface Props {
   items: SelectItem[];

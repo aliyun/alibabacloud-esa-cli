@@ -1,10 +1,13 @@
-import { CommandModule, ArgumentsCamelCase, Argv } from 'yargs';
-import chalk from 'chalk';
-import {
-  getProjectConfig,
-  readEdgeRoutineFile
-} from '../../utils/fileUtils/index.js';
+import path from 'path';
+import { exit } from 'process';
 
+import { ListRoutineCodeVersionsResponseBodyCodeVersions } from '@alicloud/esa20240910';
+import chalk from 'chalk';
+import moment from 'moment';
+import { CommandModule, ArgumentsCamelCase, Argv } from 'yargs';
+
+import t from '../../i18n/index.js';
+import { ApiService } from '../../libs/apiService.js';
 import {
   Environment,
   GetRoutineReq,
@@ -12,26 +15,25 @@ import {
   PublishType
 } from '../../libs/interface.js';
 import logger from '../../libs/logger.js';
+import { checkRoutineExist } from '../../utils/checkIsRoutineCreated.js';
+import {
+  getProjectConfig,
+  readEdgeRoutineFile
+} from '../../utils/fileUtils/index.js';
+import { ProjectConfig } from '../../utils/fileUtils/interface.js';
+import prodBuild from '../commit/prodBuild.js';
 import {
   checkDirectory,
   checkIsLoginSuccess,
   getRoutineVersionList
 } from '../utils.js';
-import { ProjectConfig } from '../../utils/fileUtils/interface.js';
-import { ApiService } from '../../libs/apiService.js';
+
 import {
   createAndDeployVersion,
   displaySelectDeployType,
   promptSelectVersion,
   yesNoPromptAndExecute
 } from './helper.js';
-import t from '../../i18n/index.js';
-import prodBuild from '../commit/prodBuild.js';
-import { exit } from 'process';
-import path from 'path';
-import { checkRoutineExist } from '../../utils/checkIsRoutineCreated.js';
-import moment from 'moment';
-import { ListRoutineCodeVersionsResponseBodyCodeVersions } from '@alicloud/esa20240910';
 
 const deploy: CommandModule = {
   command: 'deploy [entry]',
@@ -44,7 +46,25 @@ const deploy: CommandModule = {
       })
       .option('quick', {
         alias: 'q',
+        describe: t('deploy_quick_describe').d(
+          'Quick deploy the routine to production environment'
+        ),
         type: 'boolean'
+      })
+      .option('version', {
+        alias: 'v',
+        describe: t('deploy_option_version').d(
+          'Version to deploy (skip interactive selection)'
+        ),
+        type: 'string'
+      })
+      .option('environment', {
+        alias: 'e',
+        describe: t('deploy_option_environment').d(
+          'Environment to deploy to: staging or production (skip interactive selection)'
+        ),
+        type: 'string',
+        choices: ['staging', 'production']
       });
   },
   describe: `🚀 ${t('deploy_describe').d('Deploy your project')}`,
@@ -117,14 +137,66 @@ export async function handleDeploy(argv: ArgumentsCamelCase) {
     await handleOnlyUnstableVersionFound(projectConfig, customEntry);
   } else {
     await displayVersionList(versionList, stagingVersion, productionVersion);
-    logger.log(
-      chalk.bold(
-        `${t('deploy_version_select').d('Select the version you want to publish')}:`
-      )
-    );
 
-    const selectedVersion = await promptSelectVersion(versionList);
-    const selectedType = await displaySelectDeployType();
+    let selectedVersion: string;
+    let selectedType: PublishType;
+
+    // Check if version and/or environment are provided via command line arguments
+    if (argv.version || argv.environment) {
+      // Validate version if provided
+      if (argv.version) {
+        const versionExists = versionList.some(
+          (v) => v.codeVersion === argv.version
+        );
+        if (!versionExists) {
+          logger.error(
+            t('deploy_version_not_found').d(
+              `Version '${argv.version}' not found`
+            )
+          );
+          return;
+        }
+        selectedVersion = argv.version as string;
+        logger.log(
+          chalk.bold(
+            `${t('deploy_using_version').d('Using version')}: ${selectedVersion}`
+          )
+        );
+      } else {
+        // If version not provided, prompt for it
+        logger.log(
+          chalk.bold(
+            `${t('deploy_version_select').d('Select the version you want to publish')}:`
+          )
+        );
+        selectedVersion = await promptSelectVersion(versionList);
+      }
+
+      // Validate environment if provided
+      if (argv.environment) {
+        selectedType =
+          (argv.environment as string) === 'staging'
+            ? PublishType.Staging
+            : PublishType.Production;
+        logger.log(
+          chalk.bold(
+            `${t('deploy_using_environment').d('Using environment')}: ${argv.environment}`
+          )
+        );
+      } else {
+        // If environment not provided, prompt for it
+        selectedType = await displaySelectDeployType();
+      }
+    } else {
+      logger.log(
+        chalk.bold(
+          `${t('deploy_version_select').d('Select the version you want to publish')}:`
+        )
+      );
+
+      selectedVersion = await promptSelectVersion(versionList);
+      selectedType = await displaySelectDeployType();
+    }
 
     await deploySelectedCodeVersion(
       projectConfig.name,
@@ -134,21 +206,21 @@ export async function handleDeploy(argv: ArgumentsCamelCase) {
   }
 }
 
-async function handleNoVersionsFound(
-  projectConfig: ProjectConfig,
-  customEntry?: string
-): Promise<void> {
-  logger.log(
-    `😄 ${t('deploy_first_time').d("This is first time to deploy. Let's create a version first!")}`
-  );
-  const created = await yesNoPromptAndExecute(
-    `📃 ${t('deploy_create_formal_version_ques').d('Do you want to create an unstable version now?')}`,
-    () => createAndDeployVersion(projectConfig, true)
-  );
-  if (created) {
-    await handleOnlyUnstableVersionFound(projectConfig);
-  }
-}
+// async function handleNoVersionsFound(
+//   projectConfig: ProjectConfig,
+//   customEntry?: string
+// ): Promise<void> {
+//   logger.log(
+//     `😄 ${t('deploy_first_time').d("This is first time to deploy. Let's create a version first!")}`
+//   );
+//   const created = await yesNoPromptAndExecute(
+//     `📃 ${t('deploy_create_formal_version_ques').d('Do you want to create an unstable version now?')}`,
+//     () => createAndDeployVersion(projectConfig, true)
+//   );
+//   if (created) {
+//     await handleOnlyUnstableVersionFound(projectConfig);
+//   }
+// }
 
 async function promptAndDeployVersion(projectConfig: ProjectConfig) {
   const versionList = await getRoutineVersionList(projectConfig.name);
@@ -172,7 +244,7 @@ export async function handleOnlyUnstableVersionFound(
 ) {
   const created = await yesNoPromptAndExecute(
     `📃 ${t('deploy_create_formal_version_ques').d('Do you want to create a formal version to deploy on production environment?')}`,
-    () => createAndDeployVersion(projectConfig)
+    () => createAndDeployVersion(projectConfig, false, customEntry)
   );
   if (created) {
     await promptAndDeployVersion(projectConfig);

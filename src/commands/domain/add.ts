@@ -1,5 +1,9 @@
 import { CommandModule, ArgumentsCamelCase, Argv } from 'yargs';
 
+import t from '../../i18n/index.js';
+import logger from '../../libs/logger.js';
+import { validRoutine } from '../../utils/checkIsRoutineCreated.js';
+import { getProjectConfig } from '../../utils/fileUtils/index.js';
 import {
   bindRoutineWithDomain,
   checkDirectory,
@@ -7,10 +11,6 @@ import {
   validDomain,
   validName
 } from '../utils.js';
-import { getProjectConfig } from '../../utils/fileUtils/index.js';
-import t from '../../i18n/index.js';
-import logger from '../../libs/logger.js';
-import { validRoutine } from '../../utils/checkIsRoutineCreated.js';
 
 const addDomain: CommandModule = {
   command: 'add <domain>',

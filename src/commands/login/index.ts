@@ -53,7 +53,7 @@ export async function handleLogin(argv?: ArgumentsCamelCase): Promise<void> {
     cliConfig.auth.accessKeySecret
   ) {
     const service = await ApiService.getInstance();
-    const loginStatus = await service.checkLogin(false);
+    const loginStatus = await service.checkLogin();
     if (loginStatus.success) {
       logger.warn(t('login_already').d('You are already logged in.'));
       const action = await inquirer.prompt([

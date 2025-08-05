@@ -12,6 +12,11 @@ import {
 } from '../../libs/interface.js';
 import logger from '../../libs/logger.js';
 import {
+  checkConfigRoutineType,
+  EDGE_ROUTINE_TYPE
+} from '../../utils/checkAssetsExist.js';
+import compress from '../../utils/compress.js';
+import {
   getProjectConfig,
   readEdgeRoutineFile
 } from '../../utils/fileUtils/index.js';
@@ -59,7 +64,20 @@ export async function handleCommit(argv: ArgumentsCamelCase) {
 
   if (!(await checkIsLoginSuccess())) return;
 
-  await prodBuild(!!argv.minify, argv?.entry as string);
+  const routineType = checkConfigRoutineType();
+
+  let zip;
+  if (
+    routineType === EDGE_ROUTINE_TYPE.ASSETS_ONLY ||
+    routineType === EDGE_ROUTINE_TYPE.JS_AND_ASSETS
+  ) {
+    logger.log(
+      `🔔 ${t('commit_assets_exist').d('This is a routine with assets project')}`
+    );
+    zip = await compress();
+  } else {
+    await prodBuild(!!argv.minify, argv?.entry as string);
+  }
 
   try {
     const server = await ApiService.getInstance();
@@ -103,17 +121,45 @@ export async function handleCommit(argv: ArgumentsCamelCase) {
         code,
         description: ''
       };
+
       await createEdgeRoutine(edgeRoutineProps);
     }
-    const versionProps: EdgeRoutineProps = {
-      name: projectConfig.name,
-      code,
-      description: description
-    };
 
-    const uploadResult = await uploadEdgeRoutineCode(versionProps);
-    if (uploadResult) {
-      await releaseOfficialVersion(versionProps);
+    if (
+      routineType === EDGE_ROUTINE_TYPE.JS_ONLY ||
+      routineType === EDGE_ROUTINE_TYPE.NOT_EXIST
+    ) {
+      const versionProps: EdgeRoutineProps = {
+        name: projectConfig.name,
+        code,
+        description: description
+      };
+
+      const uploadResult = await uploadEdgeRoutineCode(versionProps);
+      if (uploadResult) {
+        await releaseOfficialVersion(versionProps);
+      }
+    } else {
+      const isSuccess = await server.createRoutineWithAssetsCodeVersion(
+        {
+          Name: projectConfig.name,
+          CodeDescription: description
+        },
+        zip?.toBuffer() as Buffer
+      );
+      if (isSuccess) {
+        logger.success(
+          t('commit_routine_with_assets_success').d(
+            'Routine with assets code version committed successfully.'
+          )
+        );
+      } else {
+        logger.error(
+          t('commit_routine_with_assets_fail').d(
+            'An error occurred while trying to commit your routine with assets.'
+          )
+        );
+      }
     }
   } catch (error) {
     logger.error(
@@ -140,7 +186,18 @@ export async function createEdgeRoutine(
     logger.success(
       t('commit_create_er_success').d('Routine created successfully.')
     );
-    return await uploadEdgeRoutineCode(edgeRoutine);
+
+    const routineType = checkConfigRoutineType();
+
+    if (
+      routineType === EDGE_ROUTINE_TYPE.JS_ONLY ||
+      routineType === EDGE_ROUTINE_TYPE.NOT_EXIST
+    ) {
+      const code = readEdgeRoutineFile() || '';
+      edgeRoutine.code = code;
+      return await uploadEdgeRoutineCode(edgeRoutine);
+    }
+    return true;
   } catch (error) {
     logger.error(
       `${t('common_error_occurred').d('An error occurred:')} ${error}`
@@ -164,10 +221,10 @@ export async function uploadEdgeRoutineCode(
       );
       process.exit(0);
     }
+
     logger.success(t('commit_upload_success').d('Code uploaded successfully.'));
     return true;
   } catch (error) {
-    logger.error('123');
     logger.error(
       `${t('common_error_occurred').d('An error occurred:')} ${error}`
     );

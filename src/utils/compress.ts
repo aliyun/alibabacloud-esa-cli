@@ -14,37 +14,53 @@ port = 18080
 localUpstream = ''
 */
 
-import path from 'path';
 import fs from 'fs';
-import { getProjectConfig, readEdgeRoutineFile } from './fileUtils/index.js';
+import path from 'path';
+
 import AdmZip from 'adm-zip';
+
 import prodBuild from '../commands/commit/prodBuild.js';
+
+import {
+  checkConfigRoutineType,
+  EDGE_ROUTINE_TYPE
+} from './checkAssetsExist.js';
+import { getProjectConfig, readEdgeRoutineFile } from './fileUtils/index.js';
 
 const compress = async () => {
   const projectConfig = getProjectConfig();
   const entry = projectConfig?.entry;
+  const routineType = checkConfigRoutineType();
 
-  if (!entry) {
+  if (routineType === EDGE_ROUTINE_TYPE.NOT_EXIST) {
     throw new Error('Entry file not found in project config');
   }
 
-  await prodBuild(false, entry);
-  const code = readEdgeRoutineFile();
+  let code;
+  const zip = new AdmZip();
+
+  if (routineType === EDGE_ROUTINE_TYPE.JS_ONLY) {
+    await prodBuild(false, entry);
+    code = readEdgeRoutineFile();
+    zip.addFile(`routine/index.js`, Buffer.from(code || ''));
+  } else {
+    code = '';
+  }
 
   const assets = projectConfig?.assets;
 
-  // The entry file and assets folder are compressed into a zip file, the entry file is in the /routine directory, and the assets folder is in the /assets directory
-  const zip = new AdmZip();
-
   // Add the entry file to the /routine directory
-  if (fs.existsSync(entry)) {
+  if (routineType === EDGE_ROUTINE_TYPE.JS_AND_ASSETS) {
     zip.addFile(`routine/index.js`, Buffer.from(code || ''));
-  } else {
-    throw new Error(`Entry file not found: ${entry}`);
   }
 
   // Add all files in the assets directory to the /assets directory
-  if (assets?.directory && fs.existsSync(assets.directory)) {
+  if (
+    (routineType === EDGE_ROUTINE_TYPE.JS_AND_ASSETS ||
+      routineType === EDGE_ROUTINE_TYPE.ASSETS_ONLY) &&
+    assets?.directory &&
+    fs.existsSync(assets.directory)
+  ) {
     const addDirectoryToZip = (dirPath: string, zipPath: string) => {
       const files = fs.readdirSync(dirPath);
 
@@ -64,10 +80,6 @@ const compress = async () => {
 
     addDirectoryToZip(assets.directory, 'assets');
   }
-  // Output the final zip to the current directory
-  const currentDir = process.cwd();
-  const zipPath = path.join(currentDir, 'routine.zip');
-  zip.writeZip(zipPath);
 
   return zip;
 };

@@ -329,3 +329,25 @@ export interface CreateRoutineRouteRes {
   code: number;
   data: { RequestId: string; ConfigId: number };
 }
+
+export interface CreateRoutineWithAssetsCodeVersionReq {
+  Name: string;
+  CodeDescription?: string;
+  BuildId?: string;
+}
+export interface CreateRoutineWithAssetsCodeVersionRes {
+  code: string;
+  data: {
+    RequestId?: string;
+    CodeVersion?: string;
+    Status?: string;
+    OssPostConfig?: {
+      Url?: string;
+      OSSAccessKeyId?: string;
+      XOssSecurityToken?: string;
+      Key?: string;
+      Policy?: string;
+      Signature?: string;
+    };
+  };
+}

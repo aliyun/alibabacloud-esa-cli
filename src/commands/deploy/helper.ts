@@ -1,11 +1,15 @@
+import fs from 'fs';
+
 import { ListRoutineCodeVersionsResponseBodyCodeVersions } from '@alicloud/esa20240910/dist/models/ListRoutineCodeVersionsResponseBodyCodeVersions.js';
 
 import { descriptionInput } from '../../components/descriptionInput.js';
 import SelectItems, { SelectItem } from '../../components/selectInput.js';
 import { yesNoPrompt } from '../../components/yesNoPrompt.js';
 import t from '../../i18n/index.js';
+import { ApiService } from '../../libs/apiService.js';
 import { CreateRoutineReq, PublishType } from '../../libs/interface.js';
 import logger from '../../libs/logger.js';
+import compress from '../../utils/compress.js';
 import { readEdgeRoutineFile } from '../../utils/fileUtils/index.js';
 import {
   createEdgeRoutine,
@@ -72,6 +76,7 @@ export function displaySelectDeployType(): Promise<PublishType> {
 export async function createAndDeployVersion(
   projectConfig: ProjectConfig,
   createUnstable = false,
+  hasAssets = false,
   customEntry?: string
 ) {
   try {
@@ -81,8 +86,13 @@ export async function createAndDeployVersion(
         : `🖊️ ${t('deploy_description_version').d('Enter the description of the code version')}:`,
       false
     );
-    await prodBuild(false, customEntry);
-    const code = readEdgeRoutineFile();
+    let code = '';
+    if (customEntry && fs.existsSync(customEntry)) {
+      await prodBuild(false, customEntry);
+      code = readEdgeRoutineFile() || '';
+    } else {
+      code = '';
+    }
 
     const edgeRoutine: CreateRoutineReq = {
       name: projectConfig.name,
@@ -93,11 +103,24 @@ export async function createAndDeployVersion(
     if (createUnstable) {
       return await createEdgeRoutine(edgeRoutine);
     } else {
-      const uploadResult = await uploadEdgeRoutineCode(edgeRoutine);
-      if (!uploadResult) {
-        return false;
+      if (hasAssets) {
+        const server = await ApiService.getInstance();
+        const zip = await compress();
+        const isSuccess = await server.createRoutineWithAssetsCodeVersion(
+          {
+            Name: projectConfig.name,
+            CodeDescription: description
+          },
+          zip?.toBuffer() as Buffer
+        );
+        return isSuccess ?? false;
+      } else {
+        const uploadResult = await uploadEdgeRoutineCode(edgeRoutine);
+        if (!uploadResult) {
+          return false;
+        }
+        return await releaseOfficialVersion(edgeRoutine);
       }
-      return await releaseOfficialVersion(edgeRoutine);
     }
   } catch (error) {
     logger.error(`

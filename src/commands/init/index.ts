@@ -6,8 +6,6 @@ import fs from 'fs-extra';
 import inquirer from 'inquirer';
 import { CommandModule, ArgumentsCamelCase, Argv } from 'yargs';
 
-
-
 import multiLevelSelect from '../../components/mutiLevelSelect.js';
 import t from '../../i18n/index.js';
 import { ApiService } from '../../libs/apiService.js';
@@ -23,9 +21,9 @@ import {
   templateHubPath,
   updateProjectConfigFile
 } from '../../utils/fileUtils/index.js';
+import { ProjectConfig } from '../../utils/fileUtils/interface.js';
 import { quickDeploy } from '../deploy/index.js';
 import { checkIsLoginSuccess } from '../utils.js';
-
 
 import {
   checkAndUpdatePackage,
@@ -235,7 +233,7 @@ export async function handleGitInitialization(
 
 export async function handleDeployment(
   targetPath: string,
-  projectConfig: any,
+  projectConfig: ProjectConfig,
   yes = false
 ): Promise<void> {
   const isLoginSuccess = await checkIsLoginSuccess();
@@ -359,6 +357,9 @@ export async function handleInit(argv: ArgumentsCamelCase) {
 
   if (!argv.skip) {
     const projectConfig = getProjectConfig(targetPath);
+    if (!projectConfig) {
+      return;
+    }
     await handleDeployment(targetPath, projectConfig, argv.yes as boolean);
   }
 

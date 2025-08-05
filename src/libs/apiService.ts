@@ -1,7 +1,10 @@
-import { CliConfig } from '../utils/fileUtils/interface.js';
 import * as $OpenApi from '@alicloud/openapi-client';
 import FormData from 'form-data';
 import fetch from 'node-fetch';
+
+import t from '../i18n/index.js';
+import { getApiConfig } from '../utils/fileUtils/index.js';
+import { CliConfig } from '../utils/fileUtils/interface.js';
 
 import {
   PublishRoutineCodeVersionReq,
@@ -35,11 +38,10 @@ import {
   ListRoutineRelatedRecordsRes,
   CreateRoutineRouteReq,
   CreateRoutineRouteRes,
-  ListUserRoutinesRes
+  ListUserRoutinesRes,
+  IOssConfig,
+  CreateRoutineWithAssetsCodeVersionReq
 } from './interface.js';
-import { getApiConfig } from '../utils/fileUtils/index.js';
-import { IOssConfig } from './interface.js';
-import t from '../i18n/index.js';
 
 export class ApiService {
   private static instance: ApiService | null = null;
@@ -78,9 +80,7 @@ export class ApiService {
    *   - success: A boolean indicating if the login check was successful.
    *   - message: (Optional) A string providing additional information in case of failure.
    */
-  async checkLogin(
-    isShowError = true
-  ): Promise<{ success: boolean; message?: string }> {
+  async checkLogin(): Promise<{ success: boolean; message?: string }> {
     try {
       let params = {
         action: 'GetErService',
@@ -123,7 +123,6 @@ export class ApiService {
         };
       }
     } catch (error) {
-      isShowError && console.log(error);
       return {
         success: false,
         message: t('login_failed').d(
@@ -712,7 +711,6 @@ export class ApiService {
         body: formData,
         headers: formData.getHeaders()
       });
-      // console.log('oss result', oss);
       if (ossRes && ossRes.status === 200) {
         return true;
       }
@@ -969,5 +967,70 @@ export class ApiService {
       console.log(error);
     }
     return null;
+  }
+
+  async createRoutineWithAssetsCodeVersion(
+    requestParams: CreateRoutineWithAssetsCodeVersionReq,
+    zipBuffer: Buffer
+  ): Promise<boolean | null> {
+    try {
+      let params = {
+        action: 'CreateRoutineWithAssetsCodeVersion',
+        version: '2024-09-10',
+        protocol: 'https',
+        method: 'POST',
+        authType: 'AK',
+        bodyType: 'json',
+        reqBodyType: 'json',
+        style: 'RPC',
+        pathname: '/',
+        toMap: function () {
+          return this;
+        }
+      };
+
+      let request = new $OpenApi.OpenApiRequest({
+        query: {
+          Name: requestParams.Name,
+          CodeDescription: requestParams.CodeDescription,
+          BuildId: requestParams.BuildId
+        }
+      });
+      let runtime = {
+        toMap: function () {
+          return this;
+        }
+      };
+      const uploadResult = await this.client.callApi(params, request, runtime);
+      const ossConfig = uploadResult.body.OssPostConfig;
+
+      if (uploadResult.statusCode !== 200 || !ossConfig) {
+        return false;
+      }
+
+      const { OSSAccessKeyId, Signature, Url, Key, Policy, XOssSecurityToken } =
+        ossConfig;
+
+      const formData = new FormData();
+      formData.append('OSSAccessKeyId', OSSAccessKeyId);
+      formData.append('Signature', Signature);
+      formData.append('x-oss-security-token', XOssSecurityToken);
+      formData.append('policy', Policy);
+      formData.append('key', Key);
+      formData.append('file', zipBuffer);
+
+      const ossRes = await fetch(Url, {
+        method: 'POST',
+        body: formData,
+        headers: formData.getHeaders()
+      });
+
+      if (ossRes && (ossRes.status === 200 || ossRes.status === 204)) {
+        return true;
+      }
+      return false;
+    } catch (error) {
+      return false;
+    }
   }
 }

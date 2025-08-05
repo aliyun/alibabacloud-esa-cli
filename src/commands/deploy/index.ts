@@ -15,7 +15,12 @@ import {
   PublishType
 } from '../../libs/interface.js';
 import logger from '../../libs/logger.js';
+import {
+  checkConfigRoutineType,
+  EDGE_ROUTINE_TYPE
+} from '../../utils/checkAssetsExist.js';
 import { checkRoutineExist } from '../../utils/checkIsRoutineCreated.js';
+import compress from '../../utils/compress.js';
 import {
   getProjectConfig,
   readEdgeRoutineFile
@@ -78,25 +83,68 @@ export default deploy;
 
 export async function quickDeploy(entry: string, projectConfig: ProjectConfig) {
   const server = await ApiService.getInstance();
-  const entryFile = path.resolve(entry ?? '', 'src/index.js');
 
-  await prodBuild(false, entryFile, entry);
-  const code = readEdgeRoutineFile(entry) || '';
+  const routineType = checkConfigRoutineType();
 
-  const res = await server.quickDeployRoutine({
-    name: projectConfig.name,
-    code: code
-  });
-  if (res) {
-    logger.success(
-      t('quick_deploy_success').d('Your code has been successfully deployed')
-    );
+  if (
+    routineType === EDGE_ROUTINE_TYPE.ASSETS_ONLY ||
+    routineType === EDGE_ROUTINE_TYPE.JS_AND_ASSETS
+  ) {
+    // Handle assets project
     logger.log(
-      `👉 ${t('quick_deploy_success_guide').d('Run this command to add domains')}: ${chalk.green('esa domain add <DOMAIN>')}`
+      `🔔 ${t('quick_deploy_assets_detected').d('Static assets detected, deploying with assets support')}`
     );
+
+    // Compress assets and code
+    const zip = await compress();
+    const res = await server.createRoutineWithAssetsCodeVersion(
+      {
+        Name: projectConfig.name,
+        CodeDescription: 'Quick deploy with assets'
+      },
+      zip?.toBuffer() as Buffer
+    );
+
+    if (res) {
+      logger.success(
+        t('quick_deploy_assets_success').d(
+          'Your code with assets has been successfully deployed'
+        )
+      );
+      logger.log(
+        `👉 ${t('quick_deploy_success_guide').d('Run this command to add domains')}: ${chalk.green('esa domain add <DOMAIN>')}`
+      );
+    } else {
+      logger.error(
+        t('quick_deploy_assets_failed').d('Quick deploy with assets failed')
+      );
+      throw Error(
+        t('quick_deploy_assets_failed').d('Quick deploy with assets failed')
+      );
+    }
   } else {
-    logger.error(t('quick_deploy_failed').d('Quick deploy failed'));
-    throw Error(t('quick_deploy_failed').d('Quick deploy failed'));
+    // Handle regular project without assets
+    const entryFile = path.resolve(entry ?? '', 'src/index.js');
+
+    await prodBuild(false, entryFile, entry);
+    const code = readEdgeRoutineFile(entry) || '';
+
+    const res = await server.quickDeployRoutine({
+      name: projectConfig.name,
+      code: code
+    });
+
+    if (res) {
+      logger.success(
+        t('quick_deploy_success').d('Your code has been successfully deployed')
+      );
+      logger.log(
+        `👉 ${t('quick_deploy_success_guide').d('Run this command to add domains')}: ${chalk.green('esa domain add <DOMAIN>')}`
+      );
+    } else {
+      logger.error(t('quick_deploy_failed').d('Quick deploy failed'));
+      throw Error(t('quick_deploy_failed').d('Quick deploy failed'));
+    }
   }
 }
 
@@ -108,10 +156,13 @@ export async function handleDeploy(argv: ArgumentsCamelCase) {
   const projectConfig = getProjectConfig();
   if (!projectConfig) return logger.notInProject();
 
+  const routineType = checkConfigRoutineType();
+
   const isSuccess = await checkIsLoginSuccess();
   if (!isSuccess) return;
 
   const server = await ApiService.getInstance();
+
   const entry = argv.entry as string;
   await checkRoutineExist(projectConfig.name, entry);
 
@@ -123,6 +174,7 @@ export async function handleDeploy(argv: ArgumentsCamelCase) {
 
   const stagingVersion = routineDetail?.data?.Envs[1]?.CodeVersion;
   const productionVersion = routineDetail?.data?.Envs[0]?.CodeVersion;
+
   if (argv.quick) {
     await quickDeploy(customEntry, projectConfig);
     exit(0);
@@ -134,7 +186,13 @@ export async function handleDeploy(argv: ArgumentsCamelCase) {
         'No formal version found, you need to create a version first.'
       )
     );
-    await handleOnlyUnstableVersionFound(projectConfig, customEntry);
+
+    await handleOnlyUnstableVersionFound(
+      projectConfig,
+      customEntry,
+      routineType === EDGE_ROUTINE_TYPE.ASSETS_ONLY ||
+        routineType === EDGE_ROUTINE_TYPE.JS_AND_ASSETS
+    );
   } else {
     await displayVersionList(versionList, stagingVersion, productionVersion);
 
@@ -240,11 +298,12 @@ async function promptAndDeployVersion(projectConfig: ProjectConfig) {
 
 export async function handleOnlyUnstableVersionFound(
   projectConfig: ProjectConfig,
-  customEntry?: string
+  customEntry?: string,
+  hasAssets = false
 ) {
   const created = await yesNoPromptAndExecute(
     `📃 ${t('deploy_create_formal_version_ques').d('Do you want to create a formal version to deploy on production environment?')}`,
-    () => createAndDeployVersion(projectConfig, false, customEntry)
+    () => createAndDeployVersion(projectConfig, false, hasAssets, customEntry)
   );
   if (created) {
     await promptAndDeployVersion(projectConfig);

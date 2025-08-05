@@ -9,6 +9,7 @@ export interface ProjectConfig {
   name: string;
   description?: string;
   endpoint?: string;
+  entry?: string;
   routes?: string[];
   domains?: string[];
   codeVersions?: CodeVersionProps[];

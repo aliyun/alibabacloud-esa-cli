@@ -747,6 +747,18 @@
     "en": "Quick deploy failed",
     "zh_CN": "快速部署失败。"
   },
+  "quick_deploy_assets_detected": {
+    "en": "Static assets detected, deploying with assets support",
+    "zh_CN": "检测到静态资源，正在使用资源支持进行部署"
+  },
+  "quick_deploy_assets_success": {
+    "en": "Your code with assets has been successfully deployed",
+    "zh_CN": "您的代码和静态资源已成功部署"
+  },
+  "quick_deploy_assets_failed": {
+    "en": "Quick deploy with assets failed",
+    "zh_CN": "带静态资源的快速部署失败"
+  },
   "auto_deploy": {
     "en": "Do you want to deploy your project?",
     "zh_CN": "您想要部署您的项目吗？"
@@ -1066,5 +1078,17 @@
   "site_not_found": {
     "en": "Site \"${siteName}\" not found in your account",
     "zh_CN": "站点 \"${siteName}\" 未找到"
+  },
+  "commit_assets_exist": {
+    "en": "This is a routine with assets project",
+    "zh_CN": ""
+  },
+  "commit_routine_with_assets_success": {
+    "en": "Routine with assets code version committed successfully.",
+    "zh_CN": ""
+  },
+  "commit_routine_with_assets_fail": {
+    "en": "An error occurred while trying to commit your routine with assets.",
+    "zh_CN": ""
   }
 }

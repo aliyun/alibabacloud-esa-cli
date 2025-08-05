@@ -11,7 +11,6 @@ import { ApiService } from '../libs/apiService.js';
 import { GetRoutineReq } from '../libs/interface.js';
 import logger from '../libs/logger.js';
 
-import { checkConfigRoutineType } from './checkAssetsExist.js';
 import { readEdgeRoutineFile } from './fileUtils/index.js';
 
 export async function isRoutineExist(name: string) {
@@ -34,9 +33,7 @@ export async function validRoutine(name: string) {
 }
 
 export async function checkRoutineExist(name: string, entry?: string) {
-  console.log('check', entry);
   const isCreatedRoutine = await isRoutineExist(name);
-  console.log('isCreatedRoutine', isCreatedRoutine);
 
   // If entry does not exist, create a new routine
   if (!isCreatedRoutine) {

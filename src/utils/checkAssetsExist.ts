@@ -39,11 +39,13 @@ const isValidPath = (
   if (!filePath || typeof filePath !== 'string' || filePath.trim() === '') {
     return false;
   }
-
+  console.log(filePath, isDirectory);
   try {
     const resolvedPath = path.isAbsolute(filePath)
       ? filePath
       : path.resolve(filePath);
+
+    console.log(resolvedPath);
     const exists = fs.existsSync(resolvedPath);
 
     if (!exists) {
@@ -70,6 +72,8 @@ export const checkConfigRoutineType = (): EDGE_ROUTINE_TYPE => {
 
   const hasAssets = isValidPath(projectConfig.assets?.directory, true);
   const hasEntry = isValidPath(projectConfig.entry, false);
+
+  console.log(hasAssets, hasEntry);
 
   // Both assets and entry exist
   if (hasAssets && hasEntry) {

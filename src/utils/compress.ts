@@ -27,39 +27,38 @@ import {
 } from './checkAssetsExist.js';
 import { getProjectConfig, readEdgeRoutineFile } from './fileUtils/index.js';
 
-const compress = async () => {
+const compress = async (scriptEntry?: string, assetsDir?: string) => {
+  let code;
+  const zip = new AdmZip();
   const projectConfig = getProjectConfig();
-  const entry = projectConfig?.entry;
+
+  // 参数优先：如果有参数则使用参数，否则使用配置文件中的值
+  const entry = scriptEntry || projectConfig?.entry;
   const routineType = checkConfigRoutineType();
+
+  // 处理 assets：参数优先，如果没有参数则使用配置文件中的 assets
+  const assetsDirectory = assetsDir || projectConfig?.assets?.directory;
 
   if (routineType === EDGE_ROUTINE_TYPE.NOT_EXIST) {
     throw new Error('Entry file not found in project config');
   }
 
-  let code;
-  const zip = new AdmZip();
-
-  if (routineType === EDGE_ROUTINE_TYPE.JS_ONLY) {
+  console.log(routineType);
+  if (
+    routineType === EDGE_ROUTINE_TYPE.JS_ONLY ||
+    routineType === EDGE_ROUTINE_TYPE.JS_AND_ASSETS
+  ) {
     await prodBuild(false, entry);
     code = readEdgeRoutineFile();
-    zip.addFile(`routine/index.js`, Buffer.from(code || ''));
-  } else {
-    code = '';
-  }
-
-  const assets = projectConfig?.assets;
-
-  // Add the entry file to the /routine directory
-  if (routineType === EDGE_ROUTINE_TYPE.JS_AND_ASSETS) {
+    console.log(code);
     zip.addFile(`routine/index.js`, Buffer.from(code || ''));
   }
-
   // Add all files in the assets directory to the /assets directory
   if (
     (routineType === EDGE_ROUTINE_TYPE.JS_AND_ASSETS ||
       routineType === EDGE_ROUTINE_TYPE.ASSETS_ONLY) &&
-    assets?.directory &&
-    fs.existsSync(assets.directory)
+    assetsDirectory &&
+    fs.existsSync(assetsDirectory)
   ) {
     const addDirectoryToZip = (dirPath: string, zipPath: string) => {
       const files = fs.readdirSync(dirPath);
@@ -72,15 +71,13 @@ const compress = async () => {
           addDirectoryToZip(fullPath, path.join(zipPath, file));
         } else {
           const fileContent = fs.readFileSync(fullPath);
-          const relativePath = path.relative(assets.directory, fullPath);
+          const relativePath = path.relative(assetsDirectory, fullPath);
           zip.addFile(`assets/${relativePath}`, fileContent);
         }
       }
     };
-
-    addDirectoryToZip(assets.directory, 'assets');
+    addDirectoryToZip(assetsDirectory, 'assets');
   }
-
   return zip;
 };
 

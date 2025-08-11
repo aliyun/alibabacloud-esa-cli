@@ -1,24 +1,10 @@
-import fs from 'fs';
-
 import { ListRoutineCodeVersionsResponseBodyCodeVersions } from '@alicloud/esa20240910/dist/models/ListRoutineCodeVersionsResponseBodyCodeVersions.js';
 
-import { descriptionInput } from '../../components/descriptionInput.js';
 import SelectItems, { SelectItem } from '../../components/selectInput.js';
 import { yesNoPrompt } from '../../components/yesNoPrompt.js';
 import t from '../../i18n/index.js';
-import { ApiService } from '../../libs/apiService.js';
-import { CreateRoutineReq, PublishType } from '../../libs/interface.js';
+import { PublishType } from '../../libs/interface.js';
 import logger from '../../libs/logger.js';
-import compress from '../../utils/compress.js';
-import { readEdgeRoutineFile } from '../../utils/fileUtils/index.js';
-import {
-  createEdgeRoutine,
-  releaseOfficialVersion,
-  uploadEdgeRoutineCode
-} from '../commit/index.js';
-import prodBuild from '../commit/prodBuild.js';
-
-import { ProjectConfig } from './../../utils/fileUtils/interface.js';
 
 export function yesNoPromptAndExecute(
   message: string,
@@ -73,60 +59,70 @@ export function displaySelectDeployType(): Promise<PublishType> {
   });
 }
 
-export async function createAndDeployVersion(
-  projectConfig: ProjectConfig,
-  createUnstable = false,
-  hasAssets = false,
-  customEntry?: string
-) {
-  try {
-    const description = await descriptionInput(
-      createUnstable
-        ? `🖊️ ${t('deploy_description_routine').d('Enter the description of the routine')}:`
-        : `🖊️ ${t('deploy_description_version').d('Enter the description of the code version')}:`,
-      false
+export async function quickDeploy(entry: string, projectConfig: ProjectConfig) {
+  const server = await ApiService.getInstance();
+
+  const routineType = checkConfigRoutineType();
+
+  if (
+    routineType === EDGE_ROUTINE_TYPE.ASSETS_ONLY ||
+    routineType === EDGE_ROUTINE_TYPE.JS_AND_ASSETS
+  ) {
+    // Handle assets project
+    logger.log(
+      `🔔 ${t('quick_deploy_assets_detected').d('Static assets detected, deploying with assets support')}`
     );
-    let code = '';
-    if (customEntry && fs.existsSync(customEntry)) {
-      await prodBuild(false, customEntry);
-      code = readEdgeRoutineFile() || '';
-    } else {
-      code = '';
-    }
 
-    const edgeRoutine: CreateRoutineReq = {
+    // Compress assets and code
+    const zip = await compress();
+
+    const res = await commitRoutineWithAssets(
+      {
+        Name: projectConfig.name,
+        CodeDescription: 'Quick deploy with assets'
+      },
+      zip?.toBuffer() as Buffer
+    );
+
+    if (res) {
+      logger.success(
+        t('quick_deploy_assets_success').d(
+          'Your code with assets has been successfully deployed'
+        )
+      );
+      logger.log(
+        `👉 ${t('quick_deploy_success_guide').d('Run this command to add domains')}: ${chalk.green('esa domain add <DOMAIN>')}`
+      );
+    } else {
+      logger.error(
+        t('quick_deploy_assets_failed').d('Quick deploy with assets failed')
+      );
+      throw Error(
+        t('quick_deploy_assets_failed').d('Quick deploy with assets failed')
+      );
+    }
+  } else {
+    // Handle regular project without assets
+    const entryFile = path.resolve(entry ?? '', 'src/index.js');
+
+    await prodBuild(false, entryFile, entry);
+    const code = readEdgeRoutineFile(entry) || '';
+
+    const res = await server.quickDeployRoutine({
       name: projectConfig.name,
-      code: code || '',
-      description: description
-    };
+      code: code
+    });
 
-    if (createUnstable) {
-      return await createEdgeRoutine(edgeRoutine);
+    if (res) {
+      logger.success(
+        t('quick_deploy_success').d('Your code has been successfully deployed')
+      );
+      logger.log(
+        `👉 ${t('quick_deploy_success_guide').d('Run this command to add domains')}: ${chalk.green('esa domain add <DOMAIN>')}`
+      );
     } else {
-      if (hasAssets) {
-        const server = await ApiService.getInstance();
-        const zip = await compress();
-        const isSuccess = await server.createRoutineWithAssetsCodeVersion(
-          {
-            Name: projectConfig.name,
-            CodeDescription: description
-          },
-          zip?.toBuffer() as Buffer
-        );
-        return isSuccess ?? false;
-      } else {
-        const uploadResult = await uploadEdgeRoutineCode(edgeRoutine);
-        if (!uploadResult) {
-          return false;
-        }
-        return await releaseOfficialVersion(edgeRoutine);
-      }
+      logger.error(t('quick_deploy_failed').d('Quick deploy failed'));
+      throw Error(t('quick_deploy_failed').d('Quick deploy failed'));
     }
-  } catch (error) {
-    logger.error(`
-      ${t('deploy_error').d(
-        'An error occurred during the creation or publishing process'
-      )}: ${error}`);
-    return false;
   }
 }

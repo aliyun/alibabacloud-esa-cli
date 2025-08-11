@@ -26,7 +26,6 @@ export interface EdgeRoutineProps {
 export interface CreateRoutineReq {
   name: string;
   description?: string;
-  code: string;
 }
 
 export interface CreateRoutineRes {

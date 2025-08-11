@@ -19,13 +19,14 @@ import {
   checkConfigRoutineType,
   EDGE_ROUTINE_TYPE
 } from '../../utils/checkAssetsExist.js';
-import { checkRoutineExist } from '../../utils/checkIsRoutineCreated.js';
+import { ensureRoutineExists } from '../../utils/checkIsRoutineCreated.js';
 import compress from '../../utils/compress.js';
 import {
   getProjectConfig,
   readEdgeRoutineFile
 } from '../../utils/fileUtils/index.js';
 import { ProjectConfig } from '../../utils/fileUtils/interface.js';
+import { commitRoutineWithAssets } from '../commit/helper.js';
 import prodBuild from '../commit/prodBuild.js';
 import {
   checkDirectory,
@@ -33,12 +34,7 @@ import {
   getRoutineVersionList
 } from '../utils.js';
 
-import {
-  createAndDeployVersion,
-  displaySelectDeployType,
-  promptSelectVersion,
-  yesNoPromptAndExecute
-} from './helper.js';
+import { displaySelectDeployType, promptSelectVersion } from './helper.js';
 
 const deploy: CommandModule = {
   command: 'deploy [entry]',
@@ -70,6 +66,16 @@ const deploy: CommandModule = {
         ),
         type: 'string',
         choices: ['staging', 'production']
+      })
+      .option('name', {
+        alias: 'n',
+        describe: t('deploy_option_name').d('Name of the routine'),
+        type: 'string'
+      })
+      .option('assets', {
+        alias: 'a',
+        describe: t('deploy_option_assets').d('Deploy assets'),
+        type: 'boolean'
       });
   },
   describe: `🚀 ${t('deploy_describe').d('Deploy your project')}`,
@@ -80,6 +86,141 @@ const deploy: CommandModule = {
 };
 
 export default deploy;
+export async function handleDeploy(argv: ArgumentsCamelCase) {
+  if (!checkDirectory()) {
+    return;
+  }
+
+  const projectConfig = getProjectConfig();
+  if (!projectConfig) return logger.notInProject();
+  const projectName = (argv.name as string) || projectConfig.name;
+
+  const isSuccess = await checkIsLoginSuccess();
+  if (!isSuccess) return;
+
+  const server = await ApiService.getInstance();
+  await ensureRoutineExists(projectConfig.name);
+
+  const req: GetRoutineReq = { Name: projectConfig.name };
+  const routineDetail = await server.getRoutine(req, false);
+
+  const versionList = await getRoutineVersionList(projectConfig.name);
+
+  const entry = (argv.entry as string) || projectConfig.entry;
+  const assets = (argv.assets as string) || projectConfig.assets?.directory;
+
+  const stagingVersion = routineDetail?.data?.Envs[1]?.CodeVersion;
+  const productionVersion = routineDetail?.data?.Envs[0]?.CodeVersion;
+
+  if (argv.quick) {
+    await quickDeploy(entry ?? '', projectConfig);
+    exit(0);
+  }
+
+  if (versionList.length === 0 || argv.quick) {
+    logger.log(
+      t('no_formal_version_found').d(
+        'No formal version found, you need to create a version first.'
+      )
+    );
+    // create a new version
+    const zip = await compress(entry, assets);
+    const res = await commitRoutineWithAssets(
+      {
+        Name: projectName,
+        CodeDescription: ''
+      },
+      zip?.toBuffer() as Buffer
+    );
+    const isSuccess = res?.isSuccess;
+    if (isSuccess) {
+      logger.success(
+        t('quick_deploy_assets_success').d(
+          'A new version has been successfully generated'
+        )
+      );
+      logger.log(
+        `👉 ${t('quick_deploy_success_guide').d('Run this command to add domains')}: ${chalk.green('esa domain add <DOMAIN>')}`
+      );
+    }
+
+    const codeVersion = res?.res?.data?.CodeVersion;
+    const deployRes = await server.publishRoutineCodeVersion({
+      Name: projectName,
+      CodeVersion: codeVersion,
+      Env: Environment.Production
+    });
+    if (deployRes) {
+      logger.success(
+        t('quick_deploy_success').d('Your code has been successfully deployed')
+      );
+    } else {
+      logger.error(t('quick_deploy_failed').d('Quick deploy failed'));
+    }
+  }
+
+  await displayVersionList(versionList, stagingVersion, productionVersion);
+
+  let selectedVersion: string;
+  let selectedType: PublishType;
+
+  // Check if version and/or environment are provided via command line arguments
+  if (argv.version || argv.environment) {
+    // Validate version if provided
+    if (argv.version) {
+      const versionExists = versionList.some(
+        (v) => v.codeVersion === argv.version
+      );
+      if (!versionExists) {
+        logger.error(
+          t('deploy_version_not_found').d(`Version '${argv.version}' not found`)
+        );
+        return;
+      }
+      selectedVersion = argv.version as string;
+      logger.log(
+        chalk.bold(
+          `${t('deploy_using_version').d('Using version')}: ${selectedVersion}`
+        )
+      );
+    } else {
+      // If version not provided, prompt for it
+      logger.log(
+        chalk.bold(
+          `${t('deploy_version_select').d('Select the version you want to publish')}:`
+        )
+      );
+      selectedVersion = await promptSelectVersion(versionList);
+    }
+
+    // Validate environment if provided
+    if (argv.environment) {
+      selectedType =
+        (argv.environment as string) === 'staging'
+          ? PublishType.Staging
+          : PublishType.Production;
+      logger.log(
+        chalk.bold(
+          `${t('deploy_using_environment').d('Using environment')}: ${argv.environment}`
+        )
+      );
+    } else {
+      // If environment not provided, prompt for it
+      selectedType = await displaySelectDeployType();
+    }
+  } else {
+    logger.log(
+      chalk.bold(
+        `${t('deploy_version_select').d('Select the version you want to publish')}:`
+      )
+    );
+
+    selectedVersion = await promptSelectVersion(versionList);
+    selectedType = await displaySelectDeployType();
+  }
+
+  await deploySelectedCodeVersion(projectName, selectedType, selectedVersion);
+}
 
 export async function quickDeploy(entry: string, projectConfig: ProjectConfig) {
   const server = await ApiService.getInstance();
@@ -97,7 +238,8 @@ export async function quickDeploy(entry: string, projectConfig: ProjectConfig) {
 
     // Compress assets and code
     const zip = await compress();
-    const res = await server.createRoutineWithAssetsCodeVersion(
+
+    const res = await commitRoutineWithAssets(
       {
         Name: projectConfig.name,
         CodeDescription: 'Quick deploy with assets'
@@ -148,168 +290,6 @@ export async function quickDeploy(entry: string, projectConfig: ProjectConfig) {
   }
 }
 
-export async function handleDeploy(argv: ArgumentsCamelCase) {
-  if (!checkDirectory()) {
-    return;
-  }
-
-  const projectConfig = getProjectConfig();
-  if (!projectConfig) return logger.notInProject();
-
-  const routineType = checkConfigRoutineType();
-
-  const isSuccess = await checkIsLoginSuccess();
-  if (!isSuccess) return;
-
-  const server = await ApiService.getInstance();
-
-  const entry = argv.entry as string;
-  await checkRoutineExist(projectConfig.name, entry);
-
-  const req: GetRoutineReq = { Name: projectConfig.name };
-  const routineDetail = await server.getRoutine(req, false);
-
-  const versionList = await getRoutineVersionList(projectConfig.name);
-  const customEntry = argv.entry as string;
-
-  const stagingVersion = routineDetail?.data?.Envs[1]?.CodeVersion;
-  const productionVersion = routineDetail?.data?.Envs[0]?.CodeVersion;
-
-  if (argv.quick) {
-    await quickDeploy(customEntry, projectConfig);
-    exit(0);
-  }
-
-  if (versionList.length === 0) {
-    logger.log(
-      t('no_formal_version_found').d(
-        'No formal version found, you need to create a version first.'
-      )
-    );
-
-    await handleOnlyUnstableVersionFound(
-      projectConfig,
-      customEntry,
-      routineType === EDGE_ROUTINE_TYPE.ASSETS_ONLY ||
-        routineType === EDGE_ROUTINE_TYPE.JS_AND_ASSETS
-    );
-  } else {
-    await displayVersionList(versionList, stagingVersion, productionVersion);
-
-    let selectedVersion: string;
-    let selectedType: PublishType;
-
-    // Check if version and/or environment are provided via command line arguments
-    if (argv.version || argv.environment) {
-      // Validate version if provided
-      if (argv.version) {
-        const versionExists = versionList.some(
-          (v) => v.codeVersion === argv.version
-        );
-        if (!versionExists) {
-          logger.error(
-            t('deploy_version_not_found').d(
-              `Version '${argv.version}' not found`
-            )
-          );
-          return;
-        }
-        selectedVersion = argv.version as string;
-        logger.log(
-          chalk.bold(
-            `${t('deploy_using_version').d('Using version')}: ${selectedVersion}`
-          )
-        );
-      } else {
-        // If version not provided, prompt for it
-        logger.log(
-          chalk.bold(
-            `${t('deploy_version_select').d('Select the version you want to publish')}:`
-          )
-        );
-        selectedVersion = await promptSelectVersion(versionList);
-      }
-
-      // Validate environment if provided
-      if (argv.environment) {
-        selectedType =
-          (argv.environment as string) === 'staging'
-            ? PublishType.Staging
-            : PublishType.Production;
-        logger.log(
-          chalk.bold(
-            `${t('deploy_using_environment').d('Using environment')}: ${argv.environment}`
-          )
-        );
-      } else {
-        // If environment not provided, prompt for it
-        selectedType = await displaySelectDeployType();
-      }
-    } else {
-      logger.log(
-        chalk.bold(
-          `${t('deploy_version_select').d('Select the version you want to publish')}:`
-        )
-      );
-
-      selectedVersion = await promptSelectVersion(versionList);
-      selectedType = await displaySelectDeployType();
-    }
-
-    await deploySelectedCodeVersion(
-      projectConfig.name,
-      selectedType,
-      selectedVersion
-    );
-  }
-}
-
-// async function handleNoVersionsFound(
-//   projectConfig: ProjectConfig,
-//   customEntry?: string
-// ): Promise<void> {
-//   logger.log(
-//     `😄 ${t('deploy_first_time').d("This is first time to deploy. Let's create a version first!")}`
-//   );
-//   const created = await yesNoPromptAndExecute(
-//     `📃 ${t('deploy_create_formal_version_ques').d('Do you want to create an unstable version now?')}`,
-//     () => createAndDeployVersion(projectConfig, true)
-//   );
-//   if (created) {
-//     await handleOnlyUnstableVersionFound(projectConfig);
-//   }
-// }
-
-async function promptAndDeployVersion(projectConfig: ProjectConfig) {
-  const versionList = await getRoutineVersionList(projectConfig.name);
-  await displayVersionList(versionList);
-  logger.log(
-    `📃 ${t('deploy_select_version').d("Select which version you'd like to deploy")}`
-  );
-  const selectedVersion = await promptSelectVersion(versionList);
-  const selectedType = await displaySelectDeployType();
-
-  await deploySelectedCodeVersion(
-    projectConfig.name,
-    selectedType,
-    selectedVersion
-  );
-}
-
-export async function handleOnlyUnstableVersionFound(
-  projectConfig: ProjectConfig,
-  customEntry?: string,
-  hasAssets = false
-) {
-  const created = await yesNoPromptAndExecute(
-    `📃 ${t('deploy_create_formal_version_ques').d('Do you want to create a formal version to deploy on production environment?')}`,
-    () => createAndDeployVersion(projectConfig, false, hasAssets, customEntry)
-  );
-  if (created) {
-    await promptAndDeployVersion(projectConfig);
-  }
-}
-
 export async function deploySelectedCodeVersion(
   name: string,
   selectedType: PublishType,
@@ -327,19 +307,15 @@ export async function deploySelectedCodeVersion(
 
   param.CodeVersion = version;
 
-  try {
-    const res = await server.publishRoutineCodeVersion(param);
+  const res = await server.publishRoutineCodeVersion(param);
 
-    if (res) {
-      logger.success(
-        t('deploy_success').d('Your code has been successfully deployed')
-      );
-      logger.log(
-        `👉 ${t('deploy_success_guide').d('Run this command to add domains')}: ${chalk.green('esa domain add <DOMAIN>')}`
-      );
-    }
-  } catch (e) {
-    console.error(e);
+  if (res) {
+    logger.success(
+      t('deploy_success').d('Your code has been successfully deployed')
+    );
+    logger.log(
+      `👉 ${t('deploy_success_guide').d('Run this command to add domains')}: ${chalk.green('esa domain add <DOMAIN>')}`
+    );
   }
 }
 

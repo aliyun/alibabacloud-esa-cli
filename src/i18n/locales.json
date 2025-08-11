@@ -1090,5 +1090,21 @@
   "commit_routine_with_assets_fail": {
     "en": "An error occurred while trying to commit your routine with assets.",
     "zh_CN": ""
+  },
+  "commit_option_assets": {
+    "en": "Assets directory",
+    "zh_CN": ""
+  },
+  "commit_option_name": {
+    "en": "Edge Routine name",
+    "zh_CN": ""
+  },
+  "deploy_option_name": {
+    "en": "Name of the routine",
+    "zh_CN": ""
+  },
+  "deploy_option_assets": {
+    "en": "Deploy assets",
+    "zh_CN": ""
   }
 }

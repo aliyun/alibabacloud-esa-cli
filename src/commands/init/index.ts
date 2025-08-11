@@ -12,7 +12,7 @@ import { ApiService } from '../../libs/apiService.js';
 import { installGit } from '../../libs/git/index.js';
 import logger from '../../libs/logger.js';
 import Template from '../../libs/templates/index.js';
-import { checkRoutineExist } from '../../utils/checkIsRoutineCreated.js';
+import { ensureRoutineExists } from '../../utils/checkIsRoutineCreated.js';
 import {
   generateConfigFile,
   getCliConfig,
@@ -252,7 +252,7 @@ export async function handleDeployment(
     logger.log(
       `${t('auto_deploy').d('Do you want to deploy your project?')} Yes`
     );
-    await checkRoutineExist(projectConfig?.name ?? '', targetPath);
+    await ensureRoutineExists(projectConfig?.name ?? '');
     await quickDeploy(targetPath, projectConfig);
     const service = await ApiService.getInstance();
     const res = await service.getRoutine({ Name: projectConfig?.name ?? '' });
@@ -278,7 +278,7 @@ export async function handleDeployment(
     }
   ]);
   if (deploy === 'Yes') {
-    await checkRoutineExist(projectConfig?.name ?? '', targetPath);
+    await ensureRoutineExists(projectConfig?.name ?? '');
     await quickDeploy(targetPath, projectConfig);
     const service = await ApiService.getInstance();
     const res = await service.getRoutine({ Name: projectConfig?.name ?? '' });

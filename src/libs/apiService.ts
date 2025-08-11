@@ -40,7 +40,8 @@ import {
   CreateRoutineRouteRes,
   ListUserRoutinesRes,
   IOssConfig,
-  CreateRoutineWithAssetsCodeVersionReq
+  CreateRoutineWithAssetsCodeVersionReq,
+  CreateRoutineWithAssetsCodeVersionRes
 } from './interface.js';
 
 export class ApiService {
@@ -969,10 +970,12 @@ export class ApiService {
     return null;
   }
 
-  async createRoutineWithAssetsCodeVersion(
-    requestParams: CreateRoutineWithAssetsCodeVersionReq,
-    zipBuffer: Buffer
-  ): Promise<boolean | null> {
+  /**
+   * 调用 CreateRoutineWithAssetsCodeVersion API 获取 OSS 上传配置
+   */
+  async CreateRoutineWithAssetsCodeVersion(
+    requestParams: CreateRoutineWithAssetsCodeVersionReq
+  ): Promise<CreateRoutineWithAssetsCodeVersionRes | null> {
     try {
       let params = {
         action: 'CreateRoutineWithAssetsCodeVersion',
@@ -1001,13 +1004,43 @@ export class ApiService {
           return this;
         }
       };
-      const uploadResult = await this.client.callApi(params, request, runtime);
-      const ossConfig = uploadResult.body.OssPostConfig;
 
-      if (uploadResult.statusCode !== 200 || !ossConfig) {
-        return false;
+      const result = await this.client.callApi(params, request, runtime);
+
+      if (result.statusCode === 200 && result.body) {
+        return {
+          code: result.statusCode.toString(),
+          data: {
+            RequestId: result.body.RequestId,
+            CodeVersion: result.body.CodeVersion,
+            Status: result.body.Status,
+            OssPostConfig: result.body.OssPostConfig
+          }
+        };
       }
 
+      return null;
+    } catch (error) {
+      console.error('Error calling CreateRoutineWithAssetsCodeVersion:', error);
+      return null;
+    }
+  }
+
+  /**
+   * 上传文件到 OSS
+   */
+  async uploadToOss(
+    ossConfig: {
+      OSSAccessKeyId: string;
+      Signature: string;
+      Url: string;
+      Key: string;
+      Policy: string;
+      XOssSecurityToken: string;
+    },
+    zipBuffer: Buffer
+  ): Promise<boolean> {
+    try {
       const { OSSAccessKeyId, Signature, Url, Key, Policy, XOssSecurityToken } =
         ossConfig;
 
@@ -1025,11 +1058,9 @@ export class ApiService {
         headers: formData.getHeaders()
       });
 
-      if (ossRes && (ossRes.status === 200 || ossRes.status === 204)) {
-        return true;
-      }
-      return false;
+      return ossRes && (ossRes.status === 200 || ossRes.status === 204);
     } catch (error) {
+      console.error('Error uploading to OSS:', error);
       return false;
     }
   }

@@ -1,18 +1,15 @@
 import path from 'path';
 import { exit } from 'process';
 
-import chalk from 'chalk';
 import fs from 'fs-extra';
 import inquirer from 'inquirer';
 import { CommandModule, ArgumentsCamelCase, Argv } from 'yargs';
 
 import multiLevelSelect from '../../components/mutiLevelSelect.js';
 import t from '../../i18n/index.js';
-import { ApiService } from '../../libs/apiService.js';
 import { installGit } from '../../libs/git/index.js';
 import logger from '../../libs/logger.js';
 import Template from '../../libs/templates/index.js';
-import { ensureRoutineExists } from '../../utils/checkIsRoutineCreated.js';
 import {
   generateConfigFile,
   getCliConfig,
@@ -22,8 +19,7 @@ import {
   updateProjectConfigFile
 } from '../../utils/fileUtils/index.js';
 import { ProjectConfig } from '../../utils/fileUtils/interface.js';
-import { quickDeploy } from '../deploy/index.js';
-import { checkIsLoginSuccess } from '../utils.js';
+import { quickDeployForInit } from '../common/routineUtils.js';
 
 import {
   checkAndUpdatePackage,
@@ -231,71 +227,11 @@ export async function handleGitInitialization(
   }
 }
 
-export async function handleDeployment(
-  targetPath: string,
-  projectConfig: ProjectConfig,
-  yes = false
-): Promise<void> {
-  const isLoginSuccess = await checkIsLoginSuccess();
-  if (!isLoginSuccess) {
-    logger.log(
-      chalk.yellow(
-        t('not_login_auto_deploy').d(
-          'You are not logged in, automatic deployment cannot be performed. Please log in later and manually deploy.'
-        )
-      )
-    );
-    return;
-  }
-
-  if (yes) {
-    logger.log(
-      `${t('auto_deploy').d('Do you want to deploy your project?')} Yes`
-    );
-    await ensureRoutineExists(projectConfig?.name ?? '');
-    await quickDeploy(targetPath, projectConfig);
-    const service = await ApiService.getInstance();
-    const res = await service.getRoutine({ Name: projectConfig?.name ?? '' });
-    const defaultUrl = res?.data?.DefaultRelatedRecord;
-    const visitUrl = defaultUrl ? 'http://' + defaultUrl : '';
-    logger.success(
-      `${t('init_deploy_success').d('Project deployment completed. Visit: ')}${chalk.yellowBright(visitUrl)}`
-    );
-    logger.warn(
-      t('deploy_url_warn').d(
-        'The domain may take some time to take effect, please try again later.'
-      )
-    );
-    return;
-  }
-
-  const { deploy } = await inquirer.prompt([
-    {
-      type: 'list',
-      name: 'deploy',
-      message: t('auto_deploy').d('Do you want to deploy your project?'),
-      choices: ['Yes', 'No']
-    }
-  ]);
-  if (deploy === 'Yes') {
-    await ensureRoutineExists(projectConfig?.name ?? '');
-    await quickDeploy(targetPath, projectConfig);
-    const service = await ApiService.getInstance();
-    const res = await service.getRoutine({ Name: projectConfig?.name ?? '' });
-    const defaultUrl = res?.data?.DefaultRelatedRecord;
-    const visitUrl = defaultUrl ? 'http://' + defaultUrl : '';
-    logger.success(
-      `${t('init_deploy_success').d('Project deployment completed. Visit: ')}${chalk.yellowBright(visitUrl)}`
-    );
-    logger.warn(
-      t('deploy_url_warn').d(
-        'The domain may take some time to take effect, please try again later.'
-      )
-    );
-  }
-}
-
 export async function handleInit(argv: ArgumentsCamelCase) {
+  if (argv.config) {
+    await generateConfigFile();
+    exit(0);
+  }
   // Update the template package (currently commented out)
   await checkAndUpdatePackage('esa-template');
 
@@ -360,9 +296,35 @@ export async function handleInit(argv: ArgumentsCamelCase) {
     if (!projectConfig) {
       return;
     }
-    await handleDeployment(targetPath, projectConfig, argv.yes as boolean);
+    await initDeployment(targetPath, projectConfig, argv.yes as boolean);
   }
 
   template.printSummary();
   return;
+}
+
+export async function initDeployment(
+  targetPath: string,
+  projectConfig: ProjectConfig,
+  yes = false
+): Promise<void> {
+  if (yes) {
+    logger.log(
+      `${t('auto_deploy').d('Do you want to deploy your project?')} Yes`
+    );
+    await quickDeployForInit(targetPath, projectConfig);
+    return;
+  }
+
+  const { deploy } = await inquirer.prompt([
+    {
+      type: 'list',
+      name: 'deploy',
+      message: t('auto_deploy').d('Do you want to deploy your project?'),
+      choices: ['Yes', 'No']
+    }
+  ]);
+  if (deploy === 'Yes') {
+    await quickDeployForInit(targetPath, projectConfig);
+  }
 }

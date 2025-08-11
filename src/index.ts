@@ -15,7 +15,6 @@ import logout from './commands/logout.js';
 import routeCommand from './commands/route/index.js';
 import routine from './commands/routine/index.js';
 import site from './commands/site/index.js';
-import test from './commands/test/index.js';
 import t from './i18n/index.js';
 import { handleCheckVersion } from './utils/checkVersion.js';
 import { getCliConfig } from './utils/fileUtils/index.js';
@@ -66,7 +65,6 @@ const main = async () => {
       }
     }
   );
-  esa.command(test);
 
   esa.command(init);
 

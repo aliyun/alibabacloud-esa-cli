@@ -124,8 +124,20 @@ export interface GetRoutineRes {
   code: string;
   data: {
     RequestId: string;
-    CodeVersions: CodeVersionProps[];
-    Envs: EnvProps[];
+    Envs: {
+      Env: string;
+      CodeDeploy: {
+        DeployId: string;
+        CreationTime: string;
+        Strategy: string;
+        CodeVersions: {
+          CodeVersion: string;
+          Percentage: number;
+          Description: string;
+          CreateTime: string;
+        }[];
+      };
+    }[];
     CreateTime: string;
     Description: string;
     DefaultRelatedRecord: string;
@@ -348,5 +360,38 @@ export interface CreateRoutineWithAssetsCodeVersionRes {
       Policy?: string;
       Signature?: string;
     };
+  };
+}
+
+export interface CreateRoutineCodeDeploymentReq {
+  Name: string;
+  Env: string;
+  Strategy: string;
+  CodeVersions: { Percentage: number; CodeVersion: string }[];
+}
+export interface CreateRoutineCodeDeploymentRes {
+  code: string;
+  data: {
+    RequestId: string;
+    Strategy: string;
+    DeploymentId: string;
+    CodeVersions: { Percentage: number; CodeVersion: string }[];
+  };
+}
+
+export interface GetRoutineCodeVersionInfoReq {
+  Name: string;
+  CodeVersion: string;
+}
+export interface GetRoutineCodeVersionInfoRes {
+  code: string;
+  data: {
+    RequestId: string;
+    CodeVersion: string;
+    Status: string;
+    CodeDescription: string;
+    CreateTime: string;
+    HasAssets: boolean;
+    ExtraInfo: string;
   };
 }

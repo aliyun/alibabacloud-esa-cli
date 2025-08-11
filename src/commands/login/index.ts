@@ -37,13 +37,26 @@ export default login;
 
 export async function handleLogin(argv?: ArgumentsCamelCase): Promise<void> {
   generateDefaultConfig();
-  // Prioritize command line parameters
+
   const accessKeyId = argv?.['access-key-id'];
   const accessKeySecret = argv?.['access-key-secret'];
   if (accessKeyId && accessKeySecret) {
     await handleLoginWithAKSK(accessKeyId as string, accessKeySecret as string);
     return;
   }
+
+  if (process.env.ESA_ACCESS_KEY_ID && process.env.ESA_ACCESS_KEY_SECRET) {
+    logger.log(
+      `🔑 ${t('login_get_from_env').d(`Get AccessKey ID and AccessKey Secret from environment variables.`)}`
+    );
+
+    await handleLoginWithAKSK(
+      process.env.ESA_ACCESS_KEY_ID,
+      process.env.ESA_ACCESS_KEY_SECRET
+    );
+    return;
+  }
+
   const cliConfig = getCliConfig();
   if (!cliConfig) return;
   if (

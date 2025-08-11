@@ -4,7 +4,7 @@ import path from 'path';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 import {
-  checkConfigRoutineType,
+  checkEdgeRoutineType,
   EDGE_ROUTINE_TYPE
 } from '../../src/utils/checkAssetsExist.js';
 import { getProjectConfig } from '../../src/utils/fileUtils/index.js';
@@ -50,7 +50,7 @@ describe('checkConfigRoutineType', () => {
     it('should return NOT_EXIST', () => {
       mockGetProjectConfig.mockReturnValue(null);
 
-      const result = checkConfigRoutineType();
+      const result = checkEdgeRoutineType();
 
       expect(result).toBe(EDGE_ROUTINE_TYPE.NOT_EXIST);
     });
@@ -62,7 +62,7 @@ describe('checkConfigRoutineType', () => {
         name: 'test-project'
       } as any);
 
-      const result = checkConfigRoutineType();
+      const result = checkEdgeRoutineType();
 
       expect(result).toBe(EDGE_ROUTINE_TYPE.NOT_EXIST);
     });
@@ -81,7 +81,7 @@ describe('checkConfigRoutineType', () => {
         isFile: () => false
       } as any);
 
-      const result = checkConfigRoutineType();
+      const result = checkEdgeRoutineType();
 
       expect(result).toBe(EDGE_ROUTINE_TYPE.ASSETS_ONLY);
     });
@@ -100,7 +100,7 @@ describe('checkConfigRoutineType', () => {
         isFile: () => true
       } as any);
 
-      const result = checkConfigRoutineType();
+      const result = checkEdgeRoutineType();
 
       expect(result).toBe(EDGE_ROUTINE_TYPE.JS_ONLY);
     });
@@ -129,7 +129,7 @@ describe('checkConfigRoutineType', () => {
         }
       });
 
-      const result = checkConfigRoutineType();
+      const result = checkEdgeRoutineType();
 
       expect(result).toBe(EDGE_ROUTINE_TYPE.JS_AND_ASSETS);
     });
@@ -143,7 +143,7 @@ describe('checkConfigRoutineType', () => {
         entry: ''
       } as any);
 
-      const result = checkConfigRoutineType();
+      const result = checkEdgeRoutineType();
 
       expect(result).toBe(EDGE_ROUTINE_TYPE.NOT_EXIST);
     });
@@ -155,7 +155,7 @@ describe('checkConfigRoutineType', () => {
         entry: undefined
       } as any);
 
-      const result = checkConfigRoutineType();
+      const result = checkEdgeRoutineType();
 
       expect(result).toBe(EDGE_ROUTINE_TYPE.NOT_EXIST);
     });
@@ -167,7 +167,7 @@ describe('checkConfigRoutineType', () => {
         entry: '  '
       } as any);
 
-      const result = checkConfigRoutineType();
+      const result = checkEdgeRoutineType();
 
       expect(result).toBe(EDGE_ROUTINE_TYPE.NOT_EXIST);
     });
@@ -181,7 +181,7 @@ describe('checkConfigRoutineType', () => {
 
       mockFs.existsSync.mockReturnValue(false);
 
-      const result = checkConfigRoutineType();
+      const result = checkEdgeRoutineType();
 
       expect(result).toBe(EDGE_ROUTINE_TYPE.NOT_EXIST);
     });
@@ -198,7 +198,7 @@ describe('checkConfigRoutineType', () => {
         throw new Error('Permission denied');
       });
 
-      const result = checkConfigRoutineType();
+      const result = checkEdgeRoutineType();
 
       expect(result).toBe(EDGE_ROUTINE_TYPE.NOT_EXIST);
     });
@@ -230,7 +230,7 @@ describe('checkConfigRoutineType', () => {
         }
       });
 
-      const result = checkConfigRoutineType();
+      const result = checkEdgeRoutineType();
 
       expect(result).toBe(EDGE_ROUTINE_TYPE.JS_AND_ASSETS);
       expect(mockPath.isAbsolute).toHaveBeenCalledWith('/absolute/assets');
@@ -266,7 +266,7 @@ describe('checkConfigRoutineType', () => {
         }
       });
 
-      const result = checkConfigRoutineType();
+      const result = checkEdgeRoutineType();
 
       expect(result).toBe(EDGE_ROUTINE_TYPE.JS_AND_ASSETS);
       expect(mockPath.resolve).toHaveBeenCalledWith('./assets');

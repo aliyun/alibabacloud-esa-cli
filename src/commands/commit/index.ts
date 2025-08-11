@@ -4,13 +4,10 @@ import { CommandModule, Argv, ArgumentsCamelCase } from 'yargs';
 
 import { descriptionInput } from '../../components/descriptionInput.js';
 import t from '../../i18n/index.js';
-import logger from '../../libs/logger.js';
-import { ensureRoutineExists } from '../../utils/checkIsRoutineCreated.js';
-import compress from '../../utils/compress.js';
-import { getProjectConfig } from '../../utils/fileUtils/index.js';
-import { checkIsLoginSuccess } from '../utils.js';
-
-import { commitRoutineWithAssets } from './helper.js';
+import {
+  validateAndInitializeProject,
+  generateCodeVersion
+} from '../common/routineUtils.js';
 
 const commit: CommandModule = {
   command: 'commit [entry]',
@@ -50,16 +47,9 @@ const commit: CommandModule = {
 export default commit;
 
 export async function handleCommit(argv: ArgumentsCamelCase) {
-  const projectConfig = getProjectConfig();
-  if (!projectConfig) return logger.notInProject();
-
-  if (!(await checkIsLoginSuccess())) return;
-
-  const projectName = (argv?.name as string) || projectConfig.name;
-  await ensureRoutineExists(projectName);
-
-  let zip = await compress(argv?.entry as string, argv?.assets as string);
-
+  const projectInfo = await validateAndInitializeProject(argv?.name as string);
+  if (!projectInfo) return;
+  const { projectName } = projectInfo;
   let description;
   if (argv.description) {
     description = argv.description as string;
@@ -69,27 +59,11 @@ export async function handleCommit(argv: ArgumentsCamelCase) {
       false
     );
   }
-
-  const isSuccess = (
-    await commitRoutineWithAssets(
-      {
-        Name: projectName,
-        CodeDescription: description
-      },
-      zip?.toBuffer() as Buffer
-    )
-  )?.isSuccess;
-  if (isSuccess) {
-    logger.success(
-      t('commit_routine_with_assets_success').d(
-        'Routine with assets code version committed successfully.'
-      )
-    );
-  } else {
-    logger.error(
-      t('commit_routine_with_assets_fail').d(
-        'An error occurred while trying to commit your routine with assets.'
-      )
-    );
-  }
+  await generateCodeVersion(
+    projectName,
+    description,
+    argv?.entry as string,
+    argv?.assets as string,
+    argv?.minify as boolean
+  );
 }

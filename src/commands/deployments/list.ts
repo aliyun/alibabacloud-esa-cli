@@ -11,11 +11,11 @@ import {
 import logger from '../../libs/logger.js';
 import { validRoutine } from '../../utils/checkIsRoutineCreated.js';
 import { getProjectConfig } from '../../utils/fileUtils/index.js';
-import { displayVersionList } from '../deploy/index.js';
+import { displayVersionList } from '../deploy/helper.js';
 import {
   checkDirectory,
   checkIsLoginSuccess,
-  getRoutineVersionList
+  getRoutineCodeVersions
 } from '../utils.js';
 
 const deploymentsList: CommandModule = {
@@ -41,26 +41,26 @@ export async function handleListDeployments() {
   await validRoutine(projectConfig.name);
 
   const server = await ApiService.getInstance();
-
-  const versionList = await getRoutineVersionList(projectConfig.name);
   const req: GetRoutineReq = { Name: projectConfig.name };
   const routineDetail = await server.getRoutine(req);
-
   if (!routineDetail) return;
 
-  //测试环境版本
-  const stagingVersion = routineDetail?.data?.Envs[1]?.CodeVersion;
-  //生产环境版本
-  const productionVersion = routineDetail?.data?.Envs[0]?.CodeVersion;
+  const { allVersions, stagingVersions, productionVersions } =
+    await getRoutineCodeVersions(projectConfig.name);
 
-  await displayListPrompt(routineDetail);
-  await displayVersionList(versionList, stagingVersion, productionVersion);
+  await displayDeployingVersions(
+    routineDetail,
+    stagingVersions,
+    productionVersions
+  );
+  await displayVersionList(allVersions, stagingVersions, productionVersions);
 }
 
-async function displayListPrompt(routineDetail: GetRoutineRes) {
-  const stagingEnv = routineDetail.data.Envs[1];
-  const prodEnv = routineDetail.data.Envs[0];
-
+async function displayDeployingVersions(
+  routineDetail: GetRoutineRes,
+  stagingVersions: string[],
+  productionVersions: string[]
+) {
   const server = await ApiService.getInstance();
   const res: GetRoutineStagingEnvIpRes | null =
     await server.getRoutineStagingEnvIp();
@@ -70,12 +70,8 @@ async function displayListPrompt(routineDetail: GetRoutineRes) {
     return chalk.green(ip);
   });
 
-  const showEnvTable = (version: string, region?: string) => {
+  const showEnvTable = (version: string) => {
     const data: Record<string, string>[] = [{ Version: version }];
-
-    if (region) {
-      data.push({ Region: region });
-    }
 
     logger.table([], data);
   };
@@ -84,12 +80,17 @@ async function displayListPrompt(routineDetail: GetRoutineRes) {
   if (stagingIpList.length > 0) {
     logger.log(`Staging IP: ${coloredStagingIpList.join(', ')}`);
   }
-  showEnvTable(stagingEnv.CodeVersion);
+  if (stagingVersions.length > 0) {
+    showEnvTable(stagingVersions.join(','));
+  }
+
   logger.block();
   logger.log(
     `${chalk.bold(`${t('deploy_env_production').d('Production')} ${chalk.green('●')}`)}`
   );
-  showEnvTable(prodEnv.CodeVersion);
+  if (productionVersions.length > 0) {
+    showEnvTable(productionVersions.join(','));
+  }
 
   logger.log(
     `${t('show_default_url').d(`You can visit:`)} ${chalk.yellowBright(routineDetail.data.DefaultRelatedRecord)}`

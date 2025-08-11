@@ -41,7 +41,11 @@ import {
   ListUserRoutinesRes,
   IOssConfig,
   CreateRoutineWithAssetsCodeVersionReq,
-  CreateRoutineWithAssetsCodeVersionRes
+  CreateRoutineWithAssetsCodeVersionRes,
+  CreateRoutineCodeDeploymentReq,
+  CreateRoutineCodeDeploymentRes,
+  GetRoutineCodeVersionInfoRes,
+  GetRoutineCodeVersionInfoReq
 } from './interface.js';
 
 export class ApiService {
@@ -124,6 +128,7 @@ export class ApiService {
         };
       }
     } catch (error) {
+      console.log('error', error);
       return {
         success: false,
         message: t('login_failed').d(
@@ -589,14 +594,7 @@ export class ApiService {
       if (res.statusCode === 200 && res.body) {
         const routineResponse: GetRoutineRes = {
           code: res.statusCode,
-          data: {
-            RequestId: res.body?.RequestId,
-            CodeVersions: res.body?.CodeVersions || [],
-            Envs: res.body?.Envs || [],
-            CreateTime: res.body?.CreateTime,
-            Description: res.body?.Description,
-            DefaultRelatedRecord: res.body?.DefaultRelatedRecord
-          }
+          data: res.body
         };
         return routineResponse;
       }
@@ -1006,7 +1004,6 @@ export class ApiService {
       };
 
       const result = await this.client.callApi(params, request, runtime);
-
       if (result.statusCode === 200 && result.body) {
         return {
           code: result.statusCode.toString(),
@@ -1063,5 +1060,102 @@ export class ApiService {
       console.error('Error uploading to OSS:', error);
       return false;
     }
+  }
+
+  async createRoutineCodeDeployment(
+    requestParams: CreateRoutineCodeDeploymentReq
+  ): Promise<CreateRoutineCodeDeploymentRes | null> {
+    try {
+      let params = {
+        action: 'CreateRoutineCodeDeployment',
+        version: '2024-09-10',
+        protocol: 'https',
+        method: 'POST',
+        authType: 'AK',
+        bodyType: 'json',
+        reqBodyType: 'json',
+        style: 'RPC',
+        pathname: '/',
+        toMap: function () {
+          return this;
+        }
+      };
+
+      let request = new $OpenApi.OpenApiRequest({
+        query: {
+          Name: requestParams.Name,
+          Env: requestParams.Env,
+          Strategy: requestParams.Strategy,
+          CodeVersions: JSON.stringify(requestParams.CodeVersions)
+        }
+      });
+
+      let runtime = {
+        toMap: function () {
+          return this;
+        }
+      };
+      const res = await this.client.callApi(params, request, runtime);
+      if (res.statusCode === 200 && res.body) {
+        const ret: CreateRoutineCodeDeploymentRes = {
+          code: res.statusCode,
+          data: {
+            RequestId: res.body.RequestId,
+            Strategy: res.body.Strategy,
+            DeploymentId: res.body.DeploymentId,
+            CodeVersions: res.body.CodeVersions
+          }
+        };
+        return ret;
+      }
+    } catch (error) {
+      console.log(error);
+    }
+    return null;
+  }
+
+  async getRoutineCodeVersionInfo(
+    requestParams: GetRoutineCodeVersionInfoReq
+  ): Promise<GetRoutineCodeVersionInfoRes | null> {
+    try {
+      let params = {
+        action: 'GetRoutineCodeVersionInfo',
+        version: '2024-09-10',
+        protocol: 'https',
+        method: 'GET',
+        authType: 'AK',
+        bodyType: 'json',
+        reqBodyType: 'json',
+        style: 'RPC',
+        pathname: '/',
+        toMap: function () {
+          return this;
+        }
+      };
+
+      let request = new $OpenApi.OpenApiRequest({
+        query: {
+          Name: requestParams.Name,
+          CodeVersion: requestParams.CodeVersion
+        }
+      });
+
+      let runtime = {
+        toMap: function () {
+          return this;
+        }
+      };
+      const res = await this.client.callApi(params, request, runtime);
+      if (res.statusCode === 200 && res.body) {
+        const ret: GetRoutineCodeVersionInfoRes = {
+          code: res.statusCode,
+          data: res.body
+        };
+        return ret;
+      }
+    } catch (error) {
+      console.log(error);
+    }
+    return null;
   }
 }

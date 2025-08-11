@@ -1,3 +1,4 @@
+import chalk from 'chalk';
 import { CommandModule, ArgumentsCamelCase, Argv } from 'yargs';
 
 import {
@@ -13,7 +14,7 @@ import { getProjectConfig } from '../../utils/fileUtils/index.js';
 import {
   checkDirectory,
   checkIsLoginSuccess,
-  getRoutineVersionList
+  getRoutineCodeVersions
 } from '../utils.js';
 
 const deploymentsDelete: CommandModule = {
@@ -59,17 +60,52 @@ export async function handleDeleteDeployments(argv: ArgumentsCamelCase) {
   let versions: string[] = argv.deploymentId as string[];
   const isInteractive = argv.i;
   if (isInteractive) {
-    const versionList = await getRoutineVersionList(projectConfig.name);
+    const { allVersions, stagingVersions, productionVersions } =
+      await getRoutineCodeVersions(projectConfig.name);
+
+    // 显示正在部署的版本信息
+    if (stagingVersions.length > 0 || productionVersions.length > 0) {
+      logger.log(chalk.yellow('⚠️  Currently deploying versions:'));
+      if (stagingVersions.length > 0) {
+        logger.log(chalk.yellow(`   Staging: ${stagingVersions.join(',')}`));
+      }
+      if (productionVersions.length > 0) {
+        logger.log(
+          chalk.yellow(`   Production: ${productionVersions.join(',')}`)
+        );
+      }
+      logger.log('');
+    }
+
     logger.log(
       t('delete_deployments_table_title').d(
         '  Version ID            Description'
       )
     );
-    const selectList: TableItem[] = versionList.map((item) => {
-      return {
-        label: item.codeVersion + '   ' + item.codeDescription
-      };
-    });
+
+    // 过滤掉正在部署的版本
+    const selectList: TableItem[] = allVersions
+      .filter((item) => {
+        if (stagingVersions.length === 0 && productionVersions.length === 0)
+          return true;
+        return (
+          !stagingVersions.includes(item.codeVersion ?? '') &&
+          !productionVersions.includes(item.codeVersion ?? '')
+        );
+      })
+      .map((item) => {
+        return {
+          label: item.codeVersion + '   ' + item.codeDescription
+        };
+      });
+
+    if (selectList.length === 0) {
+      logger.error(
+        'No deletable versions found. All versions are currently deployed.'
+      );
+      return;
+    }
+
     versions = (await displayMultiSelectTable(selectList, 1, 100)).map((item) =>
       item.slice(0, item.indexOf(' '))
     );

@@ -752,7 +752,7 @@
     "zh_CN": "检测到静态资源，正在使用资源支持进行部署"
   },
   "quick_deploy_assets_success": {
-    "en": "Your code with assets has been successfully deployed",
+    "en": "A new version has been successfully generated",
     "zh_CN": "您的代码和静态资源已成功部署"
   },
   "quick_deploy_assets_failed": {
@@ -1105,6 +1105,26 @@
   },
   "deploy_option_assets": {
     "en": "Deploy assets",
+    "zh_CN": ""
+  },
+  "deploy_invalid_environment": {
+    "en": "Invalid environment",
+    "zh_CN": ""
+  },
+  "deploy_success_guide_2": {
+    "en": "Run this command to add routes",
+    "zh_CN": ""
+  },
+  "login_get_from_env": {
+    "en": "Get AccessKey ID and AccessKey Secret from environment variables.",
+    "zh_CN": ""
+  },
+  "deploy_option_description": {
+    "en": "Description of the version",
+    "zh_CN": ""
+  },
+  "deploy_option_minify": {
+    "en": "Minify the code",
     "zh_CN": ""
   }
 }

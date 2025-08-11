@@ -18,6 +18,8 @@ import logger from '../libs/logger.js';
 import { getRoot } from '../utils/fileUtils/base.js';
 import { getCliConfig, projectConfigPath } from '../utils/fileUtils/index.js';
 
+import { getRoutineDetails } from './common/routineUtils.js';
+
 export const checkDirectory = (isCheckGit = false): boolean => {
   const root = getRoot();
   if (fs.existsSync(projectConfigPath)) {
@@ -83,14 +85,6 @@ export const bindRoutineWithDomain = async (name: string, domain: string) => {
   }
 };
 
-export const getRoutineVersionList = async (
-  name: string
-): Promise<ListRoutineCodeVersionsResponseBodyCodeVersions[]> => {
-  const req = { name };
-  const res = await api.listRoutineCodeVersions(req);
-  return res.body?.codeVersions ?? [];
-};
-
 export function validName(name: any): boolean {
   return /^[a-zA-Z0-9-_]+$/.test(name);
 }
@@ -103,12 +97,21 @@ export function validDomain(domain: any): boolean {
 }
 
 export async function checkIsLoginSuccess(): Promise<boolean> {
+  let accessKeyId = process.env.ESA_ACCESS_KEY_ID;
+  let accessKeySecret = process.env.ESA_ACCESS_KEY_SECRET;
+  let endpoint = process.env.ESA_ENDPOINT;
   const cliConfig = getCliConfig();
-  const namedCommand = chalk.green('esa login');
-  if (!cliConfig || !cliConfig.auth) {
-    return false;
+  if (!accessKeyId || !accessKeySecret) {
+    accessKeyId = cliConfig?.auth?.accessKeyId;
+    accessKeySecret = cliConfig?.auth?.accessKeySecret;
   }
-  if (!cliConfig.auth.accessKeyId || !cliConfig.auth.accessKeySecret) {
+
+  if (!endpoint) {
+    endpoint = cliConfig?.endpoint;
+  }
+
+  const namedCommand = chalk.green('esa login');
+  if (!accessKeyId || !accessKeySecret) {
     logger.log(
       `❌ ${t('utils_login_error').d('Maybe you are not logged in yet.')}`
     );
@@ -117,20 +120,55 @@ export async function checkIsLoginSuccess(): Promise<boolean> {
     );
     return false;
   }
+
+  return await validateLoginCredentials(
+    accessKeyId,
+    accessKeySecret,
+    endpoint,
+    namedCommand
+  );
+}
+
+/**
+ * 验证登录凭据的公共函数
+ * @param accessKeyId AccessKey ID
+ * @param accessKeySecret AccessKey Secret
+ * @param namedCommand 命令名称（用于错误提示）
+ * @param showError 是否显示错误信息
+ * @returns 登录是否成功
+ */
+export async function validateLoginCredentials(
+  accessKeyId: string,
+  accessKeySecret: string,
+  endpoint?: string,
+  namedCommand?: string,
+  showError = true
+): Promise<boolean> {
   const server = await ApiService.getInstance();
-  server.updateConfig(cliConfig);
+  server.updateConfig({
+    auth: {
+      accessKeyId,
+      accessKeySecret
+    },
+    endpoint: endpoint
+  });
   const res = await server.checkLogin();
 
   if (res.success) {
     return true;
   }
-  logger.log(res.message || '');
-  logger.log(
-    `❌ ${t('utils_login_error').d('Maybe you are not logged in yet.')}`
-  );
-  logger.log(
-    `🔔 ${t('utils_login_error_config', { namedCommand }).d(`Please run command to login: ${namedCommand}`)}`
-  );
+
+  if (showError) {
+    logger.log(res.message || '');
+    logger.log(
+      `❌ ${t('utils_login_error').d('Maybe you are not logged in yet.')}`
+    );
+    if (namedCommand) {
+      logger.log(
+        `🔔 ${t('utils_login_error_config', { namedCommand }).d(`Please run command to login: ${namedCommand}`)}`
+      );
+    }
+  }
   return false;
 }
 
@@ -168,4 +206,27 @@ export const getAllSites = async (): Promise<Option[]> => {
       value: site.SiteId
     };
   });
+};
+
+export const getRoutineCodeVersions = async (
+  projectName: string
+): Promise<{
+  allVersions: ListRoutineCodeVersionsResponseBodyCodeVersions[];
+  stagingVersions: string[];
+  productionVersions: string[];
+}> => {
+  const routineDetail = await getRoutineDetails(projectName);
+  const req = { name: projectName };
+  const res = await api.listRoutineCodeVersions(req);
+  const allVersions = res.body?.codeVersions ?? [];
+
+  const stagingVersions =
+    routineDetail?.data?.Envs?.find(
+      (item) => item.Env === 'staging'
+    )?.CodeDeploy?.CodeVersions?.map((item) => item.CodeVersion) || [];
+  const productionVersions =
+    routineDetail?.data?.Envs?.find(
+      (item) => item.Env === 'production'
+    )?.CodeDeploy?.CodeVersions?.map((item) => item.CodeVersion) || [];
+  return { allVersions, stagingVersions, productionVersions };
 };

@@ -1,4 +1,6 @@
 import { ListRoutineCodeVersionsResponseBodyCodeVersions } from '@alicloud/esa20240910/dist/models/ListRoutineCodeVersionsResponseBodyCodeVersions.js';
+import chalk from 'chalk';
+import moment from 'moment';
 
 import SelectItems, { SelectItem } from '../../components/selectInput.js';
 import { yesNoPrompt } from '../../components/yesNoPrompt.js';
@@ -40,7 +42,7 @@ export function promptSelectVersion(
   });
 }
 
-export function displaySelectDeployType(): Promise<PublishType> {
+export function displaySelectDeployEnv(): Promise<PublishType> {
   logger.log(
     `📃 ${t('deploy_env_select_description').d('Please select which environment you want to deploy')}`
   );
@@ -59,70 +61,44 @@ export function displaySelectDeployType(): Promise<PublishType> {
   });
 }
 
-export async function quickDeploy(entry: string, projectConfig: ProjectConfig) {
-  const server = await ApiService.getInstance();
+export async function displayVersionList(
+  allVersions: ListRoutineCodeVersionsResponseBodyCodeVersions[],
+  stagingVersions: string[],
+  productionVersions: string[]
+) {
+  logger.log(
+    `${chalk.bgYellow('Active')} ${t('deploy_env_staging').d('Staging')}`
+  );
+  logger.log(
+    `${chalk.bgGreen('Active')} ${t('deploy_env_production').d('Production')}`
+  );
 
-  const routineType = checkConfigRoutineType();
+  const data: string[][] = [];
+  for (let i = 0; i < allVersions.length; i++) {
+    const version = allVersions[i];
+    const createTime = moment(version.createTime).format('YYYY/MM/DD HH:mm:ss');
+    const tags = [
+      stagingVersions.includes(version.codeVersion ?? '')
+        ? chalk.bgYellow('Active')
+        : '',
+      productionVersions.includes(version.codeVersion ?? '')
+        ? chalk.bgGreen('Active')
+        : ''
+    ];
 
-  if (
-    routineType === EDGE_ROUTINE_TYPE.ASSETS_ONLY ||
-    routineType === EDGE_ROUTINE_TYPE.JS_AND_ASSETS
-  ) {
-    // Handle assets project
-    logger.log(
-      `🔔 ${t('quick_deploy_assets_detected').d('Static assets detected, deploying with assets support')}`
-    );
-
-    // Compress assets and code
-    const zip = await compress();
-
-    const res = await commitRoutineWithAssets(
-      {
-        Name: projectConfig.name,
-        CodeDescription: 'Quick deploy with assets'
-      },
-      zip?.toBuffer() as Buffer
-    );
-
-    if (res) {
-      logger.success(
-        t('quick_deploy_assets_success').d(
-          'Your code with assets has been successfully deployed'
-        )
-      );
-      logger.log(
-        `👉 ${t('quick_deploy_success_guide').d('Run this command to add domains')}: ${chalk.green('esa domain add <DOMAIN>')}`
-      );
-    } else {
-      logger.error(
-        t('quick_deploy_assets_failed').d('Quick deploy with assets failed')
-      );
-      throw Error(
-        t('quick_deploy_assets_failed').d('Quick deploy with assets failed')
-      );
-    }
-  } else {
-    // Handle regular project without assets
-    const entryFile = path.resolve(entry ?? '', 'src/index.js');
-
-    await prodBuild(false, entryFile, entry);
-    const code = readEdgeRoutineFile(entry) || '';
-
-    const res = await server.quickDeployRoutine({
-      name: projectConfig.name,
-      code: code
-    });
-
-    if (res) {
-      logger.success(
-        t('quick_deploy_success').d('Your code has been successfully deployed')
-      );
-      logger.log(
-        `👉 ${t('quick_deploy_success_guide').d('Run this command to add domains')}: ${chalk.green('esa domain add <DOMAIN>')}`
-      );
-    } else {
-      logger.error(t('quick_deploy_failed').d('Quick deploy failed'));
-      throw Error(t('quick_deploy_failed').d('Quick deploy failed'));
-    }
+    data.push([
+      `${version.codeVersion} ${tags.join(' ')}`,
+      createTime,
+      version.codeDescription ?? ''
+    ]);
   }
+
+  logger.table(
+    [
+      t('deploy_table_header_version').d('Version'),
+      t('deploy_table_header_created').d('Created'),
+      t('deploy_table_header_description').d('Description')
+    ],
+    data
+  );
 }

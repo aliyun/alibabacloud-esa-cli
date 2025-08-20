@@ -1,14 +1,15 @@
 import { describe, expect, it, vi } from 'vitest';
+
 import {
   displayRoutineList,
   handleList
 } from '../../src/commands/routine/list.js';
+import { ApiService } from '../../src/libs/apiService.js';
 import {
   EdgeFunctionItem,
   ListUserRoutinesRes
 } from '../../src/libs/interface.js';
 import { mockConsoleMethods } from '../helper/mockConsole.js';
-import { ApiService } from '../../src/libs/apiService.js';
 
 describe('displayRoutineList', () => {
   let std = mockConsoleMethods();

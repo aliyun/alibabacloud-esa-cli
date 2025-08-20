@@ -1,16 +1,14 @@
+import { describe, expect, it, vi } from 'vitest';
+
 import { handleListDomains } from '../../../src/commands/domain/list.js';
-import { afterEach, describe, expect, it, vi } from 'vitest';
-import { mockConsoleMethods } from '../../helper/mockConsole.js';
 import { ApiService } from '../../../src/libs/apiService.js';
+import { mockConsoleMethods } from '../../helper/mockConsole.js';
 
 describe('handleDeleteDomain', () => {
   const std = mockConsoleMethods();
 
   it('should list domains successfully', async () => {
-    await handleListDomains({
-      _: [],
-      $0: ''
-    });
+    await handleListDomains();
     expect(std.out).toMatchInlineSnapshot(`
       [MockFunction log] {
         "calls": [
@@ -44,10 +42,7 @@ describe('handleDeleteDomain', () => {
         RelatedRecords: []
       }
     } as any);
-    await handleListDomains({
-      _: [],
-      $0: ''
-    });
+    await handleListDomains();
     expect(std.out).toBeCalledWith('🙅 No related domains found');
     expect(std.out).toMatchInlineSnapshot(`
       [MockFunction log] {

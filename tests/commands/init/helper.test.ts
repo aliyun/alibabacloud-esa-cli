@@ -1,9 +1,11 @@
-import { it, describe, expect, vi, beforeEach, afterEach } from 'vitest';
-import { checkAndUpdatePackage } from '../../../src/commands/init/helper.js';
 import { execSync } from 'child_process';
+
 import inquirer from 'inquirer';
-import logger from '../../../src/libs/logger.js';
+import { it, describe, expect, vi, beforeEach, afterEach } from 'vitest';
+
+import { checkAndUpdatePackage } from '../../../src/commands/init/helper.js';
 import t from '../../../src/i18n/index.js';
+import logger from '../../../src/libs/logger.js';
 
 vi.mock('child_process');
 vi.mock('inquirer');

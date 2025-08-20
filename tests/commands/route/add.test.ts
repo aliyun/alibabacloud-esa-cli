@@ -1,15 +1,10 @@
 import { it, describe, expect, vi } from 'vitest';
-import * as descriptionInput from '../../../src/components/descriptionInput.js';
-import { handlerAddRoute } from '../../../src/commands/route/add.js';
-import logger from '../../../src/libs/logger.js';
-import { Option } from './../../../src/components/filterSelector';
 
+import { handlerAddRoute } from '../../../src/commands/route/add.js';
 import { validDomain, validName } from '../../../src/commands/utils.js';
-import { mockConsoleMethods } from '../../helper/mockConsole.js';
 import { ApiService } from '../../../src/libs/apiService.js';
-import * as Component from '../../../src/components/filterSelector.js';
+import { mockConsoleMethods } from '../../helper/mockConsole.js';
 import { mockInquirerPrompt } from '../helper.js';
-import api from '../../../src/libs/api.js';
 
 describe('handle add routes', () => {
   let std = mockConsoleMethods();

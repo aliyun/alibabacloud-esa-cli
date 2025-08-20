@@ -1,11 +1,10 @@
 import { it, describe, expect, vi } from 'vitest';
-import { handleDeleteDeployments } from '../../../src/commands/deployments/delete.js';
-import { validDomain, validName } from '../../../src/commands/utils.js';
-import { mockConsoleMethods } from '../../helper/mockConsole.js';
-import { ApiService } from '../../../src/libs/apiService.js';
 
-import logger from '../../../src/libs/logger.js';
+import { handleDeleteDeployments } from '../../../src/commands/deployments/delete.js';
 import { displayMultiSelectTable } from '../../../src/components/mutiSelectTable.js';
+import { ApiService } from '../../../src/libs/apiService.js';
+import logger from '../../../src/libs/logger.js';
+import { mockConsoleMethods } from '../../helper/mockConsole.js';
 
 describe('handle delete deployments', async () => {
   let std = mockConsoleMethods();

@@ -1,15 +1,52 @@
 // init.test.js
-import { it, describe, expect, vi } from 'vitest';
-import { handleInit } from '../../src/commands/init/index.js';
-import { mockConsoleMethods } from '../helper/mockConsole.js';
 import fs from 'fs';
+
 import fsExtra from 'fs-extra';
+import { it, describe, expect, vi } from 'vitest';
+
+import { handleInit } from '../../src/commands/init/index.js';
 import * as Util from '../../src/utils/fileUtils/index.js';
+import { mockConsoleMethods } from '../helper/mockConsole.js';
+
 import { mockInquirerPrompt } from './helper.js';
 
 vi.mock('child_process');
 vi.mock('fs/promises', () => ({
   rename: vi.fn()
+}));
+
+// Mock the compress function to avoid errors in tests
+vi.mock('../../src/utils/compress.js', () => ({
+  default: vi.fn().mockResolvedValue({
+    toBuffer: () => Buffer.from('test')
+  })
+}));
+
+// Mock ApiService to avoid API calls in tests
+vi.mock('../../src/libs/apiService.js', () => ({
+  ApiService: {
+    getInstance: vi.fn().mockResolvedValue({
+      CreateRoutineWithAssetsCodeVersion: vi.fn().mockResolvedValue({
+        data: {
+          OssPostConfig: {
+            OSSAccessKeyId: 'test-key',
+            Signature: 'test-signature',
+            Url: 'test-url',
+            Key: 'test-key',
+            Policy: 'test-policy'
+          }
+        }
+      }),
+      uploadToOss: vi.fn().mockResolvedValue(true)
+    })
+  }
+}));
+
+// Mock other utility functions
+vi.mock('../../src/commands/common/routineUtils.js', () => ({
+  checkIsLoginSuccess: vi.fn().mockResolvedValue(true),
+  ensureRoutineExists: vi.fn().mockResolvedValue(undefined),
+  quickDeployForInit: vi.fn().mockResolvedValue(true)
 }));
 
 vi.mock(import('../../src/commands/init/helper.js'), async (importOriginal) => {
@@ -41,6 +78,13 @@ describe('handleInit', () => {
         children: []
       }
     ]);
+
+    // Mock getProjectConfig to return a valid project configuration
+    vi.spyOn(Util, 'getProjectConfig').mockReturnValue({
+      name: 'test-template-1',
+      entry: 'src/index.js',
+      assets: { directory: 'assets' }
+    } as any);
   });
   afterEach(() => {
     vi.clearAllMocks();
@@ -85,21 +129,6 @@ describe('handleInit', () => {
             },
           ],
           [
-            "
-      🎉  SUCCESS  Your code has been successfully deployed",
-          ],
-          [
-            "👉 Run this command to add domains: esa domain add <DOMAIN>",
-          ],
-          [
-            "
-      🎉  SUCCESS  Project deployment completed. Visit: ",
-          ],
-          [
-            "
-       WARNING  The domain may take some time to take effect, please try again later.",
-          ],
-          [
             "Enter your routine project folder: 💡 cd test-template-1",
           ],
           [
@@ -113,22 +142,6 @@ describe('handleInit', () => {
           ],
         ],
         "results": [
-          {
-            "type": "return",
-            "value": undefined,
-          },
-          {
-            "type": "return",
-            "value": undefined,
-          },
-          {
-            "type": "return",
-            "value": undefined,
-          },
-          {
-            "type": "return",
-            "value": undefined,
-          },
           {
             "type": "return",
             "value": undefined,
@@ -205,21 +218,6 @@ describe('handleInit', () => {
             },
           ],
           [
-            "
-      🎉  SUCCESS  Your code has been successfully deployed",
-          ],
-          [
-            "👉 Run this command to add domains: esa domain add <DOMAIN>",
-          ],
-          [
-            "
-      🎉  SUCCESS  Project deployment completed. Visit: ",
-          ],
-          [
-            "
-       WARNING  The domain may take some time to take effect, please try again later.",
-          ],
-          [
             "Enter your routine project folder: 💡 cd test-template-1",
           ],
           [
@@ -233,22 +231,6 @@ describe('handleInit', () => {
           ],
         ],
         "results": [
-          {
-            "type": "return",
-            "value": undefined,
-          },
-          {
-            "type": "return",
-            "value": undefined,
-          },
-          {
-            "type": "return",
-            "value": undefined,
-          },
-          {
-            "type": "return",
-            "value": undefined,
-          },
           {
             "type": "return",
             "value": undefined,

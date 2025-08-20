@@ -40,6 +40,22 @@ describe('checkConfigRoutineType', () => {
     // Default path mocking
     mockPath.isAbsolute.mockReturnValue(false);
     mockPath.resolve.mockImplementation((p) => `/resolved/${p}`);
+
+    // Default fs mocking
+    mockFs.existsSync.mockReturnValue(true);
+    mockFs.statSync.mockImplementation((path) => {
+      if (String(path).includes('assets')) {
+        return {
+          isDirectory: () => true,
+          isFile: () => false
+        } as any;
+      } else {
+        return {
+          isDirectory: () => false,
+          isFile: () => true
+        } as any;
+      }
+    });
   });
 
   afterEach(() => {
@@ -114,19 +130,42 @@ describe('checkConfigRoutineType', () => {
         entry: 'src/index.js'
       } as any);
 
-      mockFs.existsSync.mockReturnValue(true);
+      // Mock path.resolve to handle the specific paths used in the function
+      mockPath.resolve.mockImplementation((p1, p2) => {
+        if (p1 === '' && p2 === 'assets') {
+          return 'assets';
+        } else if (p1 === '' && p2 === 'src/index.js') {
+          return 'src/index.js';
+        } else if (p1 === 'assets') {
+          return '/resolved/assets';
+        } else if (p1 === 'src/index.js') {
+          return '/resolved/src/index.js';
+        }
+        return `/resolved/${p1}${p2 ? '/' + p2 : ''}`;
+      });
+
+      // Mock fs.existsSync to return true for the resolved paths
+      mockFs.existsSync.mockImplementation((path) => {
+        return path === '/resolved/assets' || path === '/resolved/src/index.js';
+      });
+
+      // Mock fs.statSync to return different stats for assets and entry
       mockFs.statSync.mockImplementation((path) => {
-        if (path.includes('assets')) {
+        if (path === '/resolved/assets') {
           return {
             isDirectory: () => true,
             isFile: () => false
           } as any;
-        } else {
+        } else if (path === '/resolved/src/index.js') {
           return {
             isDirectory: () => false,
             isFile: () => true
           } as any;
         }
+        return {
+          isDirectory: () => false,
+          isFile: () => false
+        } as any;
       });
 
       const result = checkEdgeRoutineType();
@@ -166,6 +205,19 @@ describe('checkConfigRoutineType', () => {
         assets: { directory: '   ' },
         entry: '  '
       } as any);
+
+      // Mock path.resolve to return empty strings for whitespace paths
+      mockPath.resolve.mockImplementation((p1, p2) => {
+        if (p1 === '' && (p2 === '   ' || p2 === '  ')) {
+          return '';
+        }
+        return `/resolved/${p1}${p2 ? '/' + p2 : ''}`;
+      });
+
+      // Mock fs.existsSync to return false for empty paths
+      mockFs.existsSync.mockImplementation((path) => {
+        return path !== '';
+      });
 
       const result = checkEdgeRoutineType();
 
@@ -213,21 +265,34 @@ describe('checkConfigRoutineType', () => {
       } as any);
 
       mockPath.isAbsolute.mockImplementation((p) => p.startsWith('/'));
-      mockPath.resolve.mockImplementation((p) => p);
+      mockPath.resolve.mockImplementation((p1, p2) => {
+        if (p1 === '' && p2 === '/absolute/assets') {
+          return '/absolute/assets';
+        } else if (p1 === '' && p2 === '/absolute/src/index.js') {
+          return '/absolute/src/index.js';
+        }
+        return p1;
+      });
 
-      mockFs.existsSync.mockReturnValue(true);
+      mockFs.existsSync.mockImplementation((path) => {
+        return path === '/absolute/assets' || path === '/absolute/src/index.js';
+      });
       mockFs.statSync.mockImplementation((path) => {
-        if (path.includes('assets')) {
+        if (path === '/absolute/assets') {
           return {
             isDirectory: () => true,
             isFile: () => false
           } as any;
-        } else {
+        } else if (path === '/absolute/src/index.js') {
           return {
             isDirectory: () => false,
             isFile: () => true
           } as any;
         }
+        return {
+          isDirectory: () => false,
+          isFile: () => false
+        } as any;
       });
 
       const result = checkEdgeRoutineType();
@@ -247,23 +312,38 @@ describe('checkConfigRoutineType', () => {
       } as any);
 
       mockPath.isAbsolute.mockReturnValue(false);
-      mockPath.resolve.mockImplementation(
-        (p) => `/resolved/${p.replace('./', '')}`
-      );
+      mockPath.resolve.mockImplementation((p1, p2) => {
+        if (p1 === '' && p2 === './assets') {
+          return './assets';
+        } else if (p1 === '' && p2 === './src/index.js') {
+          return './src/index.js';
+        } else if (p1 === './assets') {
+          return '/resolved/assets';
+        } else if (p1 === './src/index.js') {
+          return '/resolved/src/index.js';
+        }
+        return `/resolved/${p1}`;
+      });
 
-      mockFs.existsSync.mockReturnValue(true);
+      mockFs.existsSync.mockImplementation((path) => {
+        return path === '/resolved/assets' || path === '/resolved/src/index.js';
+      });
       mockFs.statSync.mockImplementation((path) => {
-        if (path.includes('assets')) {
+        if (path === '/resolved/assets') {
           return {
             isDirectory: () => true,
             isFile: () => false
           } as any;
-        } else {
+        } else if (path === '/resolved/src/index.js') {
           return {
             isDirectory: () => false,
             isFile: () => true
           } as any;
         }
+        return {
+          isDirectory: () => false,
+          isFile: () => false
+        } as any;
       });
 
       const result = checkEdgeRoutineType();

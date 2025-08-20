@@ -1,10 +1,9 @@
 import { it, describe, expect, vi } from 'vitest';
+
 import { handleListRoutes } from '../../../src/commands/route/list.js';
-import { validDomain, validName } from '../../../src/commands/utils.js';
-import { mockConsoleMethods } from '../../helper/mockConsole.js';
-import { ApiService } from '../../../src/libs/apiService.js';
-import logger from '../../../src/libs/logger.js';
 import api from '../../../src/libs/api.js';
+import logger from '../../../src/libs/logger.js';
+import { mockConsoleMethods } from '../../helper/mockConsole.js';
 
 describe('handle list related routes', () => {
   let std = mockConsoleMethods();

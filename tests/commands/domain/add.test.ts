@@ -1,4 +1,5 @@
 import { it, describe, expect, vi } from 'vitest';
+
 import { handleAddDomain } from '../../../src/commands/domain/add.js';
 import {
   checkDirectory,

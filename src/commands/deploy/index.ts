@@ -55,10 +55,10 @@ const deploy: CommandModule = {
         describe: t('deploy_option_minify').d('Minify the code'),
         type: 'boolean'
       })
-      .option('version', {
-        alias: 'v',
-        describe: t('deploy_option_version').d('Version to deploy'),
-        type: 'string'
+      .option('minify', {
+        alias: 'm',
+        describe: t('deploy_option_minify').d('Minify the code'),
+        type: 'boolean'
       });
   },
   describe: `🚀 ${t('deploy_describe').d('Deploy your project')}`,

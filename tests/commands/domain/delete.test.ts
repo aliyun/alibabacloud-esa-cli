@@ -1,7 +1,8 @@
+import { describe, expect, it, vi } from 'vitest';
+
 import { handleDeleteDomain } from '../../../src/commands/domain/delete.js';
-import { afterEach, describe, expect, it, vi } from 'vitest';
-import { mockConsoleMethods } from '../../helper/mockConsole.js';
 import logger from '../../../src/libs/logger.js';
+import { mockConsoleMethods } from '../../helper/mockConsole.js';
 
 describe('handleDeleteDomain', () => {
   const std = mockConsoleMethods();

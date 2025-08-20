@@ -1,111 +1,17 @@
-// deploy.test.js
+// deploy.test.ts
 import { it, describe, expect, vi } from 'vitest';
+
+import * as routineUtils from '../../src/commands/common/routineUtils.js';
 import { handleDeploy } from '../../src/commands/deploy/index.js';
-import * as HandleCommit from '../../src/commands/commit/index.js';
-import { ApiService } from '../../src/libs/apiService.js';
-import * as fileUtils from '../../src/utils/fileUtils/index.js';
-import * as Utils from '../../src/commands/utils.js';
-import * as DeployHelper from '../../src/commands/deploy/helper.js';
-import { PublishType } from '../../src/libs/interface.js';
-import * as descriptionInput from '../../src/components/descriptionInput.js';
-import { mockConsoleMethods } from '../helper/mockConsole.js';
-import api from '../../src/libs/api.js';
 
 describe('handleDeploy', () => {
-  let std = mockConsoleMethods();
-
   afterEach(() => {
     vi.clearAllMocks();
   });
 
-  it('should return early if directory check fails', async () => {
-    vi.spyOn(Utils, 'checkDirectory').mockReturnValue(false);
-
-    await handleDeploy({
-      _: [],
-      $0: ''
-    });
-
-    expect(std.out).not.toBeCalled();
-  });
-
-  it('should return early if project config is not found', async () => {
-    vi.spyOn(Utils, 'checkDirectory').mockReturnValue(true);
-    vi.spyOn(fileUtils, 'getProjectConfig').mockReturnValue(null);
-
-    await handleDeploy({
-      _: [],
-      $0: ''
-    });
-
-    expect(std.out).toMatchInlineSnapshot(`
-      [MockFunction log] {
-        "calls": [
-          [
-            "
-      ❌  ERROR  You are not in an esa project, Please run esa init to initialize a project, or enter an esa project.",
-          ],
-        ],
-        "results": [
-          {
-            "type": "return",
-            "value": undefined,
-          },
-        ],
-      }
-    `);
-  });
-
-  it('should return early if login check fails', async () => {
-    vi.spyOn(fileUtils, 'getProjectConfig').mockReturnValue({ name: 'test' });
-    vi.spyOn(Utils, 'checkIsLoginSuccess').mockResolvedValue(false);
-
-    await handleDeploy({
-      _: [],
-      $0: ''
-    });
-
-    expect(std.out).not.toBeCalled();
-  });
-
-  it('should handle no versions found, create version and deploy it', async () => {
-    vi.spyOn(Utils, 'checkIsLoginSuccess').mockResolvedValue(true);
-
-    vi.mocked((await ApiService.getInstance()).getRoutine).mockResolvedValue({
-      data: {
-        CodeVersions: [],
-        Envs: [
-          { CodeVersion: 'stagingVersion' },
-          {
-            CodeVersion: 'productionVersion'
-          }
-        ],
-
-        RelatedRecords: [
-          {
-            RecordName: 'test.com',
-            SiteId: 1,
-            SiteName: 'test',
-            RecordId: 1
-          },
-          {
-            RecordName: 'test2.com',
-            SiteId: 2,
-            SiteName: 'test2',
-            RecordId: 2
-          }
-        ],
-        RelatedRoutes: [
-          { Route: 'test.com/1', SiteName: 'test.com', RouteId: 1 },
-          { Route: 'test.com/2', SiteName: 'test.com', RouteId: 1 }
-        ]
-      }
-    } as any);
-
-    vi.spyOn(DeployHelper, 'yesNoPromptAndExecute').mockResolvedValue(true);
-    vi.spyOn(DeployHelper, 'promptSelectVersion').mockResolvedValue('v1');
-    vi.spyOn(DeployHelper, 'displaySelectDeployType').mockResolvedValue(
-      PublishType.Staging
+  it('should return early if project validation fails', async () => {
+    vi.spyOn(routineUtils, 'validateAndInitializeProject').mockResolvedValue(
+      null
     );
 
     await handleDeploy({
@@ -113,212 +19,409 @@ describe('handleDeploy', () => {
       $0: ''
     });
 
-    expect(std.out).toMatchInlineSnapshot(`
-      [MockFunction log] {
-        "calls": [
-          [
-            "Active Staging",
-          ],
-          [
-            "Active Production",
-          ],
-          [
-            "[90m┌──────────────────────────────[39m[90m┬─────────────────────────[39m[90m┬───────────────┐[39m
-      [90m│[39m[31m Version                      [39m[90m│[39m[31m Created                 [39m[90m│[39m[31m Description   [39m[90m│[39m
-      [90m├──────────────────────────────[39m[90m┼─────────────────────────[39m[90m┼───────────────┤[39m
-      [90m│[39m unstable                     [90m│[39m 2025/06/05 17:46:55     [90m│[39m               [90m│[39m
-      [90m├──────────────────────────────[39m[90m┼─────────────────────────[39m[90m┼───────────────┤[39m
-      [90m│[39m v1                           [90m│[39m 2025/06/05 17:46:55     [90m│[39m test          [90m│[39m
-      [90m├──────────────────────────────[39m[90m┼─────────────────────────[39m[90m┼───────────────┤[39m
-      [90m│[39m v2                           [90m│[39m 2025/06/05 17:46:55     [90m│[39m test2         [90m│[39m
-      [90m└──────────────────────────────[39m[90m┴─────────────────────────[39m[90m┴───────────────┘[39m",
-          ],
-          [
-            "
-      ",
-          ],
-          [
-            "Select the version you want to publish:",
-          ],
-          [
-            "
-      🎉  SUCCESS  Your code has been successfully deployed",
-          ],
-          [
-            "👉 Run this command to add domains: esa domain add <DOMAIN>",
-          ],
-        ],
-        "results": [
-          {
-            "type": "return",
-            "value": undefined,
-          },
-          {
-            "type": "return",
-            "value": undefined,
-          },
-          {
-            "type": "return",
-            "value": undefined,
-          },
-          {
-            "type": "return",
-            "value": undefined,
-          },
-          {
-            "type": "return",
-            "value": undefined,
-          },
-          {
-            "type": "return",
-            "value": undefined,
-          },
-          {
-            "type": "return",
-            "value": undefined,
-          },
-        ],
-      }
-    `);
+    expect(routineUtils.validateAndInitializeProject).toHaveBeenCalledWith(
+      undefined
+    );
+    // When validation fails, the function should return early without calling other functions
+    // We don't need to check commitAndDeployVersion since it's not mocked in this test
   });
 
-  it('should handle select a version and deploy it in staging environment', async () => {
-    vi.spyOn(Utils, 'checkIsLoginSuccess').mockResolvedValue(true);
+  it('should handle deploy with default parameters', async () => {
+    const mockProjectConfig = {
+      name: 'test-project',
+      entry: 'index.js',
+      assets: { directory: 'assets' }
+    };
 
-    vi.spyOn(DeployHelper, 'yesNoPromptAndExecute').mockResolvedValue(true);
-    vi.spyOn(DeployHelper, 'promptSelectVersion').mockResolvedValue('v1');
-    vi.spyOn(DeployHelper, 'displaySelectDeployType').mockResolvedValue(
-      PublishType.Staging
-    );
+    vi.spyOn(routineUtils, 'validateAndInitializeProject').mockResolvedValue({
+      projectConfig: mockProjectConfig,
+      projectName: 'test-project'
+    });
+
+    vi.spyOn(routineUtils, 'commitAndDeployVersion').mockResolvedValue(true);
+    vi.spyOn(routineUtils, 'displayDeploySuccess').mockResolvedValue();
 
     await handleDeploy({
       _: [],
       $0: ''
     });
 
-    expect(std.out).toBeCalledWith(
-      expect.stringContaining(`Your code has been successfully deployed`)
+    expect(routineUtils.validateAndInitializeProject).toHaveBeenCalledWith(
+      undefined
+    );
+    expect(routineUtils.commitAndDeployVersion).toHaveBeenCalledWith(
+      mockProjectConfig,
+      'index.js',
+      'assets',
+      '',
+      undefined,
+      undefined,
+      undefined,
+      undefined
+    );
+    expect(routineUtils.displayDeploySuccess).toHaveBeenCalledWith(
+      'test-project',
+      true,
+      false
     );
   });
 
-  it('should handle select a version and deploy it in production environment', async () => {
-    vi.spyOn(Utils, 'checkIsLoginSuccess').mockResolvedValue(true);
+  it('should handle deploy with custom entry file', async () => {
+    const mockProjectConfig = {
+      name: 'test-project',
+      entry: 'index.js',
+      assets: { directory: 'assets' }
+    };
 
-    vi.spyOn(DeployHelper, 'yesNoPromptAndExecute').mockResolvedValue(true);
-    vi.spyOn(DeployHelper, 'promptSelectVersion').mockResolvedValue('v1');
-    vi.spyOn(DeployHelper, 'displaySelectDeployType').mockResolvedValue(
-      PublishType.Production
+    vi.spyOn(routineUtils, 'validateAndInitializeProject').mockResolvedValue({
+      projectConfig: mockProjectConfig,
+      projectName: 'test-project'
+    });
+
+    vi.spyOn(routineUtils, 'commitAndDeployVersion').mockResolvedValue(true);
+    vi.spyOn(routineUtils, 'displayDeploySuccess').mockResolvedValue();
+
+    await handleDeploy({
+      entry: 'custom.js',
+      _: [],
+      $0: ''
+    });
+
+    expect(routineUtils.commitAndDeployVersion).toHaveBeenCalledWith(
+      mockProjectConfig,
+      'custom.js',
+      'assets',
+      '',
+      undefined,
+      undefined,
+      undefined,
+      undefined
     );
+  });
+
+  it('should handle deploy with custom project name', async () => {
+    const mockProjectConfig = {
+      name: 'test-project',
+      entry: 'index.js',
+      assets: { directory: 'assets' }
+    };
+
+    vi.spyOn(routineUtils, 'validateAndInitializeProject').mockResolvedValue({
+      projectConfig: mockProjectConfig,
+      projectName: 'custom-name'
+    });
+
+    vi.spyOn(routineUtils, 'commitAndDeployVersion').mockResolvedValue(true);
+    vi.spyOn(routineUtils, 'displayDeploySuccess').mockResolvedValue();
+
+    await handleDeploy({
+      name: 'custom-name',
+      _: [],
+      $0: ''
+    });
+
+    expect(routineUtils.validateAndInitializeProject).toHaveBeenCalledWith(
+      'custom-name'
+    );
+    expect(routineUtils.displayDeploySuccess).toHaveBeenCalledWith(
+      'custom-name',
+      true,
+      false
+    );
+  });
+
+  it('should handle deploy with assets option', async () => {
+    const mockProjectConfig = {
+      name: 'test-project',
+      entry: 'index.js',
+      assets: { directory: 'assets' }
+    };
+
+    vi.spyOn(routineUtils, 'validateAndInitializeProject').mockResolvedValue({
+      projectConfig: mockProjectConfig,
+      projectName: 'test-project'
+    });
+
+    vi.spyOn(routineUtils, 'commitAndDeployVersion').mockResolvedValue(true);
+    vi.spyOn(routineUtils, 'displayDeploySuccess').mockResolvedValue();
+
+    await handleDeploy({
+      assets: true,
+      _: [],
+      $0: ''
+    });
+
+    expect(routineUtils.commitAndDeployVersion).toHaveBeenCalledWith(
+      mockProjectConfig,
+      'index.js',
+      true,
+      '',
+      undefined,
+      undefined,
+      undefined,
+      undefined
+    );
+  });
+
+  it('should handle deploy with description', async () => {
+    const mockProjectConfig = {
+      name: 'test-project',
+      entry: 'index.js',
+      assets: { directory: 'assets' }
+    };
+
+    vi.spyOn(routineUtils, 'validateAndInitializeProject').mockResolvedValue({
+      projectConfig: mockProjectConfig,
+      projectName: 'test-project'
+    });
+
+    vi.spyOn(routineUtils, 'commitAndDeployVersion').mockResolvedValue(true);
+    vi.spyOn(routineUtils, 'displayDeploySuccess').mockResolvedValue();
+
+    await handleDeploy({
+      description: 'Test deployment',
+      _: [],
+      $0: ''
+    });
+
+    expect(routineUtils.commitAndDeployVersion).toHaveBeenCalledWith(
+      mockProjectConfig,
+      'index.js',
+      'assets',
+      'Test deployment',
+      undefined,
+      undefined,
+      undefined,
+      undefined
+    );
+  });
+
+  it('should handle deploy with environment option', async () => {
+    const mockProjectConfig = {
+      name: 'test-project',
+      entry: 'index.js',
+      assets: { directory: 'assets' }
+    };
+
+    vi.spyOn(routineUtils, 'validateAndInitializeProject').mockResolvedValue({
+      projectConfig: mockProjectConfig,
+      projectName: 'test-project'
+    });
+
+    vi.spyOn(routineUtils, 'commitAndDeployVersion').mockResolvedValue(true);
+    vi.spyOn(routineUtils, 'displayDeploySuccess').mockResolvedValue();
+
+    await handleDeploy({
+      environment: 'staging',
+      _: [],
+      $0: ''
+    });
+
+    expect(routineUtils.commitAndDeployVersion).toHaveBeenCalledWith(
+      mockProjectConfig,
+      'index.js',
+      'assets',
+      '',
+      undefined,
+      'staging',
+      undefined,
+      undefined
+    );
+  });
+
+  it('should handle deploy with minify option', async () => {
+    const mockProjectConfig = {
+      name: 'test-project',
+      entry: 'index.js',
+      assets: { directory: 'assets' }
+    };
+
+    vi.spyOn(routineUtils, 'validateAndInitializeProject').mockResolvedValue({
+      projectConfig: mockProjectConfig,
+      projectName: 'test-project'
+    });
+
+    vi.spyOn(routineUtils, 'commitAndDeployVersion').mockResolvedValue(true);
+    vi.spyOn(routineUtils, 'displayDeploySuccess').mockResolvedValue();
+
+    await handleDeploy({
+      minify: true,
+      _: [],
+      $0: ''
+    });
+
+    expect(routineUtils.commitAndDeployVersion).toHaveBeenCalledWith(
+      mockProjectConfig,
+      'index.js',
+      'assets',
+      '',
+      undefined,
+      undefined,
+      true,
+      undefined
+    );
+  });
+
+  it('should handle deploy with version option', async () => {
+    const mockProjectConfig = {
+      name: 'test-project',
+      entry: 'index.js',
+      assets: { directory: 'assets' }
+    };
+
+    vi.spyOn(routineUtils, 'validateAndInitializeProject').mockResolvedValue({
+      projectConfig: mockProjectConfig,
+      projectName: 'test-project'
+    });
+
+    vi.spyOn(routineUtils, 'commitAndDeployVersion').mockResolvedValue(true);
+    vi.spyOn(routineUtils, 'displayDeploySuccess').mockResolvedValue();
+
+    await handleDeploy({
+      version: 'v1.0.0',
+      _: [],
+      $0: ''
+    });
+
+    expect(routineUtils.commitAndDeployVersion).toHaveBeenCalledWith(
+      mockProjectConfig,
+      'index.js',
+      'assets',
+      '',
+      undefined,
+      undefined,
+      undefined,
+      'v1.0.0'
+    );
+  });
+
+  it('should handle deploy with all options', async () => {
+    const mockProjectConfig = {
+      name: 'test-project',
+      entry: 'index.js',
+      assets: { directory: 'assets' }
+    };
+
+    vi.spyOn(routineUtils, 'validateAndInitializeProject').mockResolvedValue({
+      projectConfig: mockProjectConfig,
+      projectName: 'test-project'
+    });
+
+    vi.spyOn(routineUtils, 'commitAndDeployVersion').mockResolvedValue(true);
+    vi.spyOn(routineUtils, 'displayDeploySuccess').mockResolvedValue();
+
+    await handleDeploy({
+      entry: 'custom.js',
+      name: 'custom-name',
+      assets: true,
+      description: 'Full deployment test',
+      environment: 'production',
+      minify: true,
+      version: 'v2.0.0',
+      _: [],
+      $0: ''
+    });
+
+    expect(routineUtils.validateAndInitializeProject).toHaveBeenCalledWith(
+      'custom-name'
+    );
+    expect(routineUtils.commitAndDeployVersion).toHaveBeenCalledWith(
+      mockProjectConfig,
+      'custom.js',
+      true,
+      'Full deployment test',
+      undefined,
+      'production',
+      true,
+      'v2.0.0'
+    );
+  });
+
+  it('should not display success message if deployment fails', async () => {
+    const mockProjectConfig = {
+      name: 'test-project',
+      entry: 'index.js',
+      assets: { directory: 'assets' }
+    };
+
+    vi.spyOn(routineUtils, 'validateAndInitializeProject').mockResolvedValue({
+      projectConfig: mockProjectConfig,
+      projectName: 'test-project'
+    });
+
+    vi.spyOn(routineUtils, 'commitAndDeployVersion').mockResolvedValue(false);
+    vi.spyOn(routineUtils, 'displayDeploySuccess').mockResolvedValue();
 
     await handleDeploy({
       _: [],
       $0: ''
     });
 
-    expect(std.out).toBeCalledWith(
-      expect.stringContaining(`Your code has been successfully deployed`)
+    expect(routineUtils.displayDeploySuccess).not.toHaveBeenCalled();
+  });
+
+  it('should handle deploy with custom assets directory', async () => {
+    const mockProjectConfig = {
+      name: 'test-project',
+      entry: 'index.js',
+      assets: { directory: 'assets' }
+    };
+
+    vi.spyOn(routineUtils, 'validateAndInitializeProject').mockResolvedValue({
+      projectConfig: mockProjectConfig,
+      projectName: 'test-project'
+    });
+
+    vi.spyOn(routineUtils, 'commitAndDeployVersion').mockResolvedValue(true);
+    vi.spyOn(routineUtils, 'displayDeploySuccess').mockResolvedValue();
+
+    await handleDeploy({
+      assets: 'custom-assets',
+      _: [],
+      $0: ''
+    });
+
+    expect(routineUtils.commitAndDeployVersion).toHaveBeenCalledWith(
+      mockProjectConfig,
+      'index.js',
+      'custom-assets',
+      '',
+      undefined,
+      undefined,
+      undefined,
+      undefined
     );
   });
 
-  it('create and deploy version', async () => {
-    DeployHelper.createAndDeployVersion({ name: 'test' });
-    vi.spyOn(descriptionInput, 'descriptionInput').mockResolvedValue(
-      'des test'
-    );
-    vi.spyOn(fileUtils, 'readEdgeRoutineFile').mockResolvedValue('test code');
-    vi.spyOn(HandleCommit, 'releaseOfficialVersion').mockResolvedValue(true);
-  });
+  it('should handle deploy with empty assets from config', async () => {
+    const mockProjectConfig = {
+      name: 'test-project',
+      entry: 'index.js',
+      assets: undefined
+    };
 
-  it('should handle no versions found, do not create unstable version', async () => {
-    vi.spyOn(Utils, 'checkIsLoginSuccess').mockResolvedValue(true);
+    vi.spyOn(routineUtils, 'validateAndInitializeProject').mockResolvedValue({
+      projectConfig: mockProjectConfig,
+      projectName: 'test-project'
+    });
 
-    vi.mocked((await ApiService.getInstance()).getRoutine).mockResolvedValue({
-      data: {
-        CodeVersions: [],
-        Envs: [
-          {
-            CodeVersion: 'staging',
-            Env: ''
-          },
-          {
-            CodeVersion: 'production',
-            Env: ''
-          }
-        ]
-      }
-    } as any);
+    vi.spyOn(routineUtils, 'commitAndDeployVersion').mockResolvedValue(true);
+    vi.spyOn(routineUtils, 'displayDeploySuccess').mockResolvedValue();
 
-    vi.mocked(api.listRoutineCodeVersions).mockResolvedValue({
-      data: {
-        RelatedRecords: []
-      }
-    } as any);
-
-    vi.spyOn(DeployHelper, 'yesNoPromptAndExecute').mockResolvedValue(false);
     await handleDeploy({
       _: [],
       $0: ''
     });
-    expect(std.out).toMatchInlineSnapshot(`
-      [MockFunction log] {
-        "calls": [
-          [
-            "No formal version found, you need to create a version first.",
-          ],
-        ],
-        "results": [
-          {
-            "type": "return",
-            "value": undefined,
-          },
-        ],
-      }
-    `);
-  });
 
-  it('should handle no versions found, do not create unstable version', async () => {
-    vi.spyOn(Utils, 'checkIsLoginSuccess').mockResolvedValue(true);
-
-    vi.mocked((await ApiService.getInstance()).getRoutine).mockResolvedValue({
-      data: {
-        CodeVersions: [],
-        Envs: [
-          {
-            CodeVersion: 'staging',
-            Env: ''
-          },
-          {
-            CodeVersion: 'production',
-            Env: ''
-          }
-        ]
-      }
-    } as any);
-
-    vi.mocked(api.listRoutineCodeVersions).mockResolvedValue({
-      data: {
-        RelatedRecords: []
-      }
-    } as any);
-    vi.spyOn(DeployHelper, 'yesNoPromptAndExecute').mockResolvedValue(false);
-    await handleDeploy({
-      _: [],
-      $0: ''
-    });
-    expect(std.out).toMatchInlineSnapshot(`
-      [MockFunction log] {
-        "calls": [
-          [
-            "No formal version found, you need to create a version first.",
-          ],
-        ],
-        "results": [
-          {
-            "type": "return",
-            "value": undefined,
-          },
-        ],
-      }
-    `);
+    expect(routineUtils.commitAndDeployVersion).toHaveBeenCalledWith(
+      mockProjectConfig,
+      'index.js',
+      undefined,
+      '',
+      undefined,
+      undefined,
+      undefined,
+      undefined
+    );
   });
 });

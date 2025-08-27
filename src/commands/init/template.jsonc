@@ -1,0 +1,34 @@
+{
+  "react": {
+    "label": "React",
+    "command": "npm create vite@latest",
+    "templates": {
+      "typescript": "-- --template react-ts",
+      "javascript": "-- --template react"
+    },
+    "assets": {
+      "directory": "./dist",
+      "notFoundStrategy": "singlePageApplication"
+    }
+  },
+  "vue": {
+    "label": "Vue",
+    "command": "npm create vite@latest",
+    "templates": {
+      "typescript": "-- --template vue-ts -- --use-npm",
+      "javascript": "-- --template vue"
+    },
+    "assets": {
+      "directory": "./dist",
+      "notFoundStrategy": "singlePageApplication"
+    }
+  },
+  "nextjs": {
+    "label": "Next.js",
+    "command": "npx create-next-app@latest",
+    "assets": {
+      "directory": "./out",
+      "notFoundStrategy": "singlePageApplication"
+    }
+  }
+}

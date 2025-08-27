@@ -96,6 +96,7 @@ describe('handleInit', () => {
     }));
     mockInquirerPrompt([
       { name: 'test-template-1' },
+      { configFormat: 'jsonc' },
       { initGit: 'Yes' },
       { deploy: 'Yes' }
     ]);
@@ -113,6 +114,11 @@ describe('handleInit', () => {
           [
             {
               "name": "test-template-1",
+            },
+          ],
+          [
+            {
+              "configFormat": "jsonc",
             },
           ],
           [
@@ -185,6 +191,7 @@ describe('handleInit', () => {
     }));
     mockInquirerPrompt([
       { name: 'test-template-1' },
+      { configFormat: 'jsonc' },
       { initGit: 'No' },
       { deploy: 'Yes' }
     ]);
@@ -202,6 +209,11 @@ describe('handleInit', () => {
           [
             {
               "name": "test-template-1",
+            },
+          ],
+          [
+            {
+              "configFormat": "jsonc",
             },
           ],
           [
@@ -273,6 +285,7 @@ describe('handleInit', () => {
     }));
     mockInquirerPrompt([
       { name: 'test-template-1' },
+      { configFormat: 'jsonc' },
       { initGit: 'Yes' },
       { deploy: 'No' }
     ]);
@@ -290,6 +303,11 @@ describe('handleInit', () => {
           [
             {
               "name": "test-template-1",
+            },
+          ],
+          [
+            {
+              "configFormat": "jsonc",
             },
           ],
           [
@@ -362,6 +380,7 @@ describe('handleInit', () => {
     }));
     mockInquirerPrompt([
       { name: 'test-template-1' },
+      { configFormat: 'jsonc' },
       { initGit: 'Yes' },
       { deploy: 'No' }
     ]);
@@ -380,6 +399,24 @@ describe('handleInit', () => {
           [
             {
               "name": "test-template-1",
+            },
+          ],
+          [
+            {
+              "configFormat": "jsonc",
+            },
+          ],
+          [
+            {
+              "initGit": "Yes",
+            },
+          ],
+          [
+            "Git has been installed successfully.",
+          ],
+          [
+            {
+              "deploy": "No",
             },
           ],
           [
@@ -484,7 +521,10 @@ describe('handleInit', () => {
     vi.mock('../../src/components/mutiLevelSelect.js', () => ({
       default: vi.fn().mockResolvedValue('/test/path/test-template-1')
     }));
-    mockInquirerPrompt([{ name: 'test-template-1' }]);
+    mockInquirerPrompt([
+      { name: 'test-template-1' },
+      { configFormat: 'jsonc' }
+    ]);
 
     await handleInit({
       _: [],
@@ -495,6 +535,16 @@ describe('handleInit', () => {
     expect(std.out).toMatchInlineSnapshot(`
       [MockFunction log] {
         "calls": [
+          [
+            {
+              "name": "test-template-1",
+            },
+          ],
+          [
+            {
+              "configFormat": "jsonc",
+            },
+          ],
           [
             "Enter your routine project folder: 💡 cd test-project",
           ],

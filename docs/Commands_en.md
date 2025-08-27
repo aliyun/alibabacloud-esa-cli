@@ -2,14 +2,24 @@
 
 ### init
 
-Initialize a routine with a template.
+Initialize a project using a framework or a template.
 
 ```bash
 $ esa init [OPTIONS]
 ```
 
+- -f, --framework `string` `optional`
+- Choose a frontend framework: `react` | `vue` | `next`.
+
+- -t, --template `string` `optional`
+- Use an ESA template by name.
+
 - -c, --config `boolean` `optional`
-- Generate a config file for your project.
+- Generate an `esa.toml` config file in your project.
+
+Notes:
+- If neither `--framework` nor `--template` is provided and `--yes` is not used, you will be prompted to choose between “Framework” or “Template”.
+- When a framework is chosen, the official scaffolding tool will be used to create the project, and `esa.toml` will be auto-generated in the project root. The entry file is auto-detected among: `src/index.js`, `src/index.jsx`, `src/index.tsx`, `src/main.js`, `src/main.ts`, `src/main.tsx`, `pages/index.js`, `pages/index.tsx`, `app/page.js`, `app/page.tsx`. The static assets directory is set to the framework’s common build output if available: CRA `build/`, Vite usually `dist/`, Next static export `out/`.
 
 ### routine [script]
 

@@ -82,10 +82,21 @@ export function readConfigFile(
   if (fs.existsSync(configPath)) {
     const configFileContent = fs.readFileSync(configPath, 'utf-8');
     try {
-      const config = toml.parse(configFileContent);
-      return config as CliConfig | ProjectConfig;
+      if (configPath.endsWith('.jsonc') || configPath.endsWith('.json')) {
+        // Remove comments for JSON parsing
+        const jsonContent = configFileContent.replace(
+          /\/\*[\s\S]*?\*\/|\/\/.*$/gm,
+          ''
+        );
+        const config = JSON.parse(jsonContent);
+        return config as CliConfig | ProjectConfig;
+      } else {
+        // TOML format
+        const config = toml.parse(configFileContent);
+        return config as CliConfig | ProjectConfig;
+      }
     } catch (error) {
-      logger.error(`Error parsing TOML file: ${error}`);
+      logger.error(`Error parsing config file: ${error}`);
       return null;
     }
   }
@@ -100,11 +111,18 @@ export function getCliConfig() {
 }
 
 export function getProjectConfig(filePath: string = root) {
-  const res = readConfigFile(path.join(filePath, projectConfigFile));
-  if (!res) {
-    return null;
+  // Try to find config file in order of preference: .jsonc, .toml
+  const configFormats = ['esa.jsonc', 'esa.toml'];
+
+  for (const format of configFormats) {
+    const configPath = path.join(filePath, format);
+    const config = readConfigFile(configPath);
+    if (config) {
+      return config as ProjectConfig;
+    }
   }
-  return res as ProjectConfig;
+
+  return null;
 }
 
 export function readEdgeRoutineFile(projectPath: string = root): string | null {
@@ -132,25 +150,71 @@ export function getConfigurations() {
 
 export async function generateConfigFile(
   projectName?: string,
-  initConfigs?: Partial<ProjectConfig>
+  initConfigs?: Partial<ProjectConfig>,
+  targetDir?: string,
+  configFormat: 'toml' | 'jsonc' = 'toml',
+  isSinglePageApplication = false
 ) {
-  const newFilePath = path.join(process.cwd(), 'esa.toml');
-  const currentDirName = path.basename(process.cwd());
-  const entry = initConfigs?.dev?.entry || 'src/index.js';
+  const outputDir = targetDir ?? process.cwd();
+  const currentDirName = path.basename(outputDir);
+  const entry = initConfigs?.dev?.entry;
   const port = initConfigs?.port || 18080;
   const name = projectName || currentDirName;
+  const assetsDirectory = initConfigs?.assets?.directory;
 
-  if (fs.existsSync(newFilePath)) {
-    logger.error(t('generate_config_error').d('esa.toml already exists'));
-    return;
+  let newFilePath: string;
+  let genConfig: string;
+
+  if (configFormat === 'jsonc') {
+    newFilePath = path.join(outputDir, 'esa.jsonc');
+    const assetsBlock = assetsDirectory
+      ? `,
+  "assets": {
+    "directory": "${assetsDirectory}"
+    ${
+      isSinglePageApplication
+        ? `,
+  "notFoundStrategy": "singlePageApplication"`
+        : ''
+    }
+  }`
+      : '';
+    const entryBlock = entry
+      ? `,
+  "entry": "${entry}"`
+      : '';
+    genConfig = `{
+  "name": "${name}"${entryBlock}${assetsBlock},
+  "dev": {
+    "port": ${port}
+  }
+}`;
   } else {
-    const genConfig = `name = "${name}"
+    // Default to TOML format
+    newFilePath = path.join(outputDir, 'esa.toml');
+    const assetsBlock = assetsDirectory
+      ? `
+[assets]
+directory = "${assetsDirectory}"
+`
+      : '';
+    genConfig = `name = "${name}"
 entry = "${entry}"
+${assetsBlock}${isSinglePageApplication ? 'notFoundStrategy = "singlePageApplication"' : ''}
 [dev]
 port = ${port}
   `;
+  }
+
+  if (fs.existsSync(newFilePath)) {
+    logger.error(
+      t('generate_config_error').d(
+        `${path.basename(newFilePath)} already exists`
+      )
+    );
+    return;
+  } else {
     await fsPromises.writeFile(newFilePath, genConfig, 'utf-8');
-    logger.success(t('generate_config_success').d('Generated esa.toml'));
   }
 }
 

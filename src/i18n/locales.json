@@ -281,7 +281,7 @@
   },
   "init_input_name": {
     "en": "Enter the name of edgeRoutine:",
-    "zh_CN": "输入 edgeRoutine 的名称："
+    "zh_CN": "输入 edgeRoutine 的名称"
   },
   "init_skip_git": {
     "en": "Git installation was skipped.",
@@ -517,7 +517,35 @@
   },
   "init_config_file": {
     "en": "Generate a config file for your project",
-    "zh_CN": "在您的项目中生成一个esa.toml配置文件"
+    "zh_CN": "在您的项目中生成一个配置文件"
+  },
+  "init_config_format_select": {
+    "en": "Select configuration file format:",
+    "zh_CN": "选择配置文件格式："
+  },
+  "init_config_format_jsonc": {
+    "en": "JSONC (.jsonc) - JSON with comments, recommended",
+    "zh_CN": "JSONC (.jsonc) - 带注释的JSON，推荐"
+  },
+  "init_config_format_toml": {
+    "en": "TOML (.toml) - Traditional format",
+    "zh_CN": "TOML (.toml) - 传统格式"
+  },
+  "init_language_select": {
+    "en": "Select programming language:",
+    "zh_CN": "选择编程语言："
+  },
+  "init_language_typescript": {
+    "en": "TypeScript (.ts) - Type-safe JavaScript, recommended",
+    "zh_CN": "TypeScript (.ts) - 类型安全的JavaScript，推荐"
+  },
+  "init_language_javascript": {
+    "en": "JavaScript (.js) - Traditional JavaScript",
+    "zh_CN": "JavaScript (.js) - 传统JavaScript"
+  },
+  "init_language_selected": {
+    "en": "Language",
+    "zh_CN": "语言"
   },
   "init_project_name": {
     "en": "Project name",
@@ -532,12 +560,12 @@
     "zh_CN": "未找到模板 \"${templateName}\"。请检查模板名称并重试。"
   },
   "generate_config_error": {
-    "en": "esa.toml already exists",
-    "zh_CN": "esa.toml 文件已经存在"
+    "en": "${path.basename(newFilePath)} already exists",
+    "zh_CN": "配置文件已经存在"
   },
   "generate_config_success": {
-    "en": "Generated esa.toml",
-    "zh_CN": "生成esa.toml成功"
+    "en": "Generated ${path.basename(newFilePath)}",
+    "zh_CN": "配置文件生成成功"
   },
   "commit_option_minify": {
     "en": "Minify code before committing",
@@ -1125,6 +1153,30 @@
   },
   "deploy_option_minify": {
     "en": "Minify the code",
+    "zh_CN": ""
+  },
+  "error_reading_project_config_file": {
+    "en": "Error reading project configuration file.",
+    "zh_CN": "读取项目配置文件错误"
+  },
+  "checking_template_update": {
+    "en": "Checking esa-template updates...",
+    "zh_CN": ""
+  },
+  "template_updating": {
+    "en": "Updating templates to latest...",
+    "zh_CN": ""
+  },
+  "template_updated_to_latest": {
+    "en": "Templates updated to latest.",
+    "zh_CN": ""
+  },
+  "checking_esa_template_finished": {
+    "en": "Checking esa-template finished.",
+    "zh_CN": ""
+  },
+  "git_installed_success": {
+    "en": "Git has been installed successfully.",
     "zh_CN": ""
   }
 }

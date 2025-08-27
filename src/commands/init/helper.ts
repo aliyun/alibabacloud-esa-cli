@@ -1,8 +1,5 @@
-
-
 import { execSync } from 'child_process';
 import path from 'path';
-
 
 import chalk from 'chalk';
 import fs from 'fs-extra';
@@ -13,7 +10,11 @@ import t from '../../i18n/index.js';
 import logger from '../../libs/logger.js';
 import Template from '../../libs/templates/index.js';
 import { getDirName } from '../../utils/fileUtils/base.js';
-import { getProjectConfig, TemplateItem } from '../../utils/fileUtils/index.js';
+import {
+  getProjectConfig,
+  templateHubPath,
+  TemplateItem
+} from '../../utils/fileUtils/index.js';
 
 export const getTemplateInstances = (templateHubPath: string) => {
   return fs
@@ -84,6 +85,32 @@ export const preInstallDependencies = async (targetPath: string) => {
         )
       );
     }
+    // After build, try to infer assets directory if not explicitly known
+    try {
+      const candidates = ['dist', 'build', 'out'];
+      for (const dir of candidates) {
+        const abs = path.join(targetPath, dir);
+        if (fs.existsSync(abs) && fs.statSync(abs).isDirectory()) {
+          // Update config file if present and assets not set
+          const projectConfig = getProjectConfig(targetPath);
+          if (projectConfig) {
+            const { updateProjectConfigFile } = await import(
+              '../../utils/fileUtils/index.js'
+            );
+            if (!projectConfig.assets || !projectConfig.assets.directory) {
+              await updateProjectConfigFile(
+                { assets: { directory: dir } },
+                targetPath
+              );
+              logger.success(
+                `Detected build output "${dir}" and updated assets.directory`
+              );
+            }
+          }
+          break;
+        }
+      }
+    } catch {}
   }
 };
 
@@ -91,6 +118,11 @@ export async function checkAndUpdatePackage(
   packageName: string
 ): Promise<void> {
   try {
+    const spinner = logger.ora;
+    spinner.text = t('checking_template_update').d(
+      'Checking esa-template updates...'
+    );
+    spinner.start();
     // 获取当前安装的版本
     const __dirname = getDirName(import.meta.url);
     const packageJsonPath = path.join(__dirname, '../../../');
@@ -100,6 +132,9 @@ export async function checkAndUpdatePackage(
         cwd: packageJsonPath
       }).toString();
     } catch (e) {
+      spinner.text = t('template_updating').d(
+        'Updating templates to latest...'
+      );
       execSync(`rm -rf node_modules/${packageName}`, {
         cwd: packageJsonPath
       });
@@ -107,6 +142,10 @@ export async function checkAndUpdatePackage(
         cwd: packageJsonPath,
         stdio: 'inherit'
       });
+      spinner.stop();
+      logger.log(
+        `├ ${t('template_updated_to_latest').d('Templates updated to latest.')}`
+      );
       return;
     }
 
@@ -121,6 +160,7 @@ export async function checkAndUpdatePackage(
       .trim();
 
     if (currentVersion !== latestVersion) {
+      spinner.stop();
       logger.log(
         t('display_current_esa_template_version').d(
           `Current esa-template version:`
@@ -141,6 +181,9 @@ export async function checkAndUpdatePackage(
         )
       });
       if (isUpdate) {
+        spinner.start(
+          t('template_updating').d('Updating templates to latest...')
+        );
         execSync(`rm -rf node_modules/${packageName}`, {
           cwd: packageJsonPath
         });
@@ -151,23 +194,30 @@ export async function checkAndUpdatePackage(
           cwd: packageJsonPath,
           stdio: 'inherit'
         });
+        spinner.stop();
         logger.log(
-          t('updated_esa_template_to_latest_version', { packageName }).d(
+          `├ ${t('updated_esa_template_to_latest_version', { packageName }).d(
             `${packageName} updated successfully`
-          )
+          )}`
         );
       }
     } else {
+      spinner.stop();
       logger.log(
-        t('esa_template_is_latest_version', { packageName }).d(
-          `${packageName} is latest.`
-        )
+        ` ${t('checking_esa_template_finished').d(
+          `Checking esa-template finished.`
+        )}`
       );
+
+      t('esa_template_is_latest_version', { packageName }).d(
+        `${packageName} is latest.`
+      );
+      logger.divider();
     }
   } catch (error) {
     console.log(error);
     if (error instanceof Error) {
-      logger.error(
+      logger.ora.fail(
         t('check_and_update_package_error').d(
           'Error: An error occurred while checking and updating the package, skipping template update'
         )
@@ -175,3 +225,43 @@ export async function checkAndUpdatePackage(
     }
   }
 }
+
+/**
+ * 获取template.jsonc配置
+ * @param framework 框架名称
+ * @returns 框架配置
+ */
+
+export type FrameworkConfig = {
+  label: string;
+  command: string;
+  templates?: {
+    typescript?: string;
+    javascript?: string;
+    [key: string]: string | undefined;
+  };
+  assets?: {
+    directory: string;
+    notFoundStrategy: string;
+  };
+};
+
+export const getFrameworkConfig = (framework: string): FrameworkConfig => {
+  // 从init目录读取template.jsonc
+  const templatePath = path.join(getDirName(import.meta.url), 'template.jsonc');
+  const jsonc = fs.readFileSync(templatePath, 'utf-8');
+  const json = JSON.parse(jsonc);
+  return json[framework];
+};
+
+/**
+ * 获取框架全部配置
+ * @returns 框架全部配置
+ */
+export const getAllFrameworkConfig = () => {
+  // 从init目录读取template.jsonc
+  const templatePath = path.join(getDirName(import.meta.url), 'template.jsonc');
+  const jsonc = fs.readFileSync(templatePath, 'utf-8');
+  const json = JSON.parse(jsonc);
+  return json;
+};

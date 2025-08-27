@@ -1,6 +1,7 @@
 import { execSync } from 'child_process';
 import { exit } from 'process';
 
+import t from '../../i18n/index.js';
 import logger from '../../libs/logger.js';
 
 export function isInstalledGit(): boolean {
@@ -32,10 +33,13 @@ export async function cloneRepository(url: string, path?: string) {
   }
 }
 
-export function installGit(path: string) {
+export function installGit(path: string, debug = false) {
   try {
-    execSync('git init', { stdio: 'inherit', cwd: path });
-    logger.log('Git has been installed successfully.');
+    execSync('git init', { stdio: 'ignore', cwd: path });
+    if (debug) {
+      logger.log('Git has been installed successfully.');
+    }
+    return true;
   } catch (error) {
     console.error('Error occurred during Git installation:', error);
     exit(0);

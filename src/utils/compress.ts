@@ -41,7 +41,7 @@ const compress = async (
 
   // 参数优先：如果有参数则使用参数，否则使用配置文件中的值
   const entry = scriptEntry || projectConfig?.entry;
-  const assetsDirectory = assetsDir || projectConfig?.assets?.directory;
+  let assetsDirectory = assetsDir || projectConfig?.assets?.directory;
 
   if (routineType === EDGE_ROUTINE_TYPE.NOT_EXIST) {
     throw new Error('Entry file not found in project config');
@@ -56,6 +56,8 @@ const compress = async (
     code = readEdgeRoutineFile(projectPath);
     zip.addFile(`routine/index.js`, Buffer.from(code || ''));
   }
+  assetsDirectory = path.resolve(projectPath ?? '', assetsDirectory ?? '');
+
   // Add all files in the assets directory to the /assets directory
   if (
     (routineType === EDGE_ROUTINE_TYPE.JS_AND_ASSETS ||
@@ -81,6 +83,8 @@ const compress = async (
     };
     addDirectoryToZip(assetsDirectory, 'assets');
   }
+  //输出zip
+  zip.writeZip('testassets.zip');
   return zip;
 };
 

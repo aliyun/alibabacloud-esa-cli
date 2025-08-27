@@ -21,4 +21,8 @@ fs.copySync('src/commands/dev/ew2/mock', 'dist/commands/dev/ew2/mock');
 fs.copySync('src/cliconfig.toml', 'dist/cliconfig.toml');
 fs.copySync('src/utils/install', 'dist/utils/install');
 fs.copySync('src/i18n/locales.json', 'dist/i18n/locales.json');
+fs.copySync(
+  'src/commands/init/template.jsonc',
+  'dist/commands/init/template.jsonc'
+);
 console.log('copy success');

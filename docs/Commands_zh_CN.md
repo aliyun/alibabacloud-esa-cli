@@ -2,14 +2,24 @@
 
 ### init
 
-选择模版初始化项目。
+选择框架或模版初始化项目。
 
 ```bash
 $ esa init [OPTIONS]
 ```
 
+- -f, --framework `string` `optional`
+- 选择前端框架初始化项目，支持：`react` | `vue` | `next`。
+
+- -t, --template `string` `optional`
+- 指定 ESA 模版名称初始化项目。
+
 - -c, --config `boolean` `optional`
-- 在您的项目中生成一个esa.toml配置文件。
+- 在您的项目中生成一个 `esa.toml` 配置文件。
+
+说明：
+- 未指定 `--framework` 与 `--template` 且未使用 `--yes` 时，会先询问选择“框架初始化”或“模版初始化”。
+- 选择框架后将调用对应官方脚手架创建项目，并在新项目根目录自动生成 `esa.toml`。入口文件会自动探测，候选包括：`src/index.js`、`src/index.jsx`、`src/index.tsx`、`src/main.js`、`src/main.ts`、`src/main.tsx`、`pages/index.js`、`pages/index.tsx`、`app/page.js`、`app/page.tsx`。静态资源目录会根据框架常规构建输出自动设置，例如 CRA 为 `build/`、Vite 通常为 `dist/`（若存在），Next 静态导出使用 `out/`（若存在）。
 
 ### routine [script]
 

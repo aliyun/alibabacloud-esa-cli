@@ -1,4 +1,5 @@
 import chalk from 'chalk';
+import { spinners } from 'ora';
 
 import t from '../../i18n/index.js';
 import { ApiService } from '../../libs/apiService.js';
@@ -50,17 +51,23 @@ export async function commitRoutineWithAssets(
       };
     }
 
-    const uploadSuccess = await server.uploadToOss(
-      {
-        OSSAccessKeyId: ossConfig.OSSAccessKeyId,
-        Signature: ossConfig.Signature,
-        Url: ossConfig.Url,
-        Key: ossConfig.Key,
-        Policy: ossConfig.Policy,
-        XOssSecurityToken: ossConfig.XOssSecurityToken || ''
-      },
-      zipBuffer
-    );
+    let uploadSuccess = false;
+    for (let i = 0; i < 3; i++) {
+      uploadSuccess = await server.uploadToOss(
+        {
+          OSSAccessKeyId: ossConfig.OSSAccessKeyId,
+          Signature: ossConfig.Signature,
+          Url: ossConfig.Url,
+          Key: ossConfig.Key,
+          Policy: ossConfig.Policy,
+          XOssSecurityToken: ossConfig.XOssSecurityToken || ''
+        },
+        zipBuffer
+      );
+      if (uploadSuccess) {
+        break;
+      }
+    }
 
     return {
       isSuccess: uploadSuccess,
@@ -148,6 +155,30 @@ export async function generateCodeVersion(
 }
 
 /**
+ * 根据 env 在一个或多个环境部署
+ */
+export async function deployToEnvironments(
+  name: string,
+  codeVersion: string,
+  env: 'staging' | 'production' | 'all'
+): Promise<boolean> {
+  if (env === 'all') {
+    const isStagingSuccess = await deployCodeVersion(
+      name,
+      codeVersion,
+      'staging'
+    );
+    const isProdSuccess = await deployCodeVersion(
+      name,
+      codeVersion,
+      'production'
+    );
+    return isStagingSuccess && isProdSuccess;
+  }
+  return await deployCodeVersion(name, codeVersion, env);
+}
+
+/**
  * 通用的快速部署函数
  * 结合了压缩、提交和部署的完整流程
  */
@@ -157,17 +188,12 @@ export async function commitAndDeployVersion(
   assets?: string,
   description = '',
   projectPath?: string,
-  env: 'staging' | 'production' = 'production',
+  env: 'staging' | 'production' | 'all' = 'production',
   minify = false,
   version?: string
 ): Promise<boolean> {
   if (version) {
-    const isDeploySuccess = await deployCodeVersion(
-      projectConfig.name,
-      version,
-      env
-    );
-    return isDeploySuccess;
+    return await deployToEnvironments(projectConfig.name, version, env);
   } else {
     const res = await generateCodeVersion(
       projectConfig.name,
@@ -180,13 +206,11 @@ export async function commitAndDeployVersion(
     const isCommitSuccess = res?.isSuccess;
     if (isCommitSuccess) {
       const codeVersion = res?.res?.data?.CodeVersion;
-      const isDeploySuccess = await deployCodeVersion(
-        projectConfig.name,
-        codeVersion || '',
-        env
-      );
-
-      return isDeploySuccess;
+      if (!codeVersion) {
+        logger.error('Failed to read CodeVersion from response.');
+        return false;
+      }
+      return await deployToEnvironments(projectConfig.name, codeVersion, env);
     } else {
       return false;
     }
@@ -256,11 +280,11 @@ export async function waitForCodeVersionReady(
         await sleep(intervalMs);
         continue;
       } else if (status === 'available') {
-        logger.success(`✅ Code version ${chalk.cyan(codeVersion)} is ready.`);
+        logger.log(`✅ Code version ${chalk.cyan(codeVersion)} is ready.`);
         return true;
       } else {
         logger.error(
-          `❌ Code version ${chalk.cyan(codeVersion)} build ${status}.`
+          `Code version ${chalk.cyan(codeVersion)} build ${status}.`
         );
         return false;
       }
@@ -335,17 +359,18 @@ export async function quickDeployForInit(
 
   await ensureRoutineExists(projectConfig.name);
 
-  const success = await commitAndDeployVersion(
+  const isProdSuccess = await commitAndDeployVersion(
     projectConfig,
     projectConfig?.entry,
     projectConfig?.assets?.directory,
     description,
-    targetPath
+    targetPath,
+    'all'
   );
 
-  if (success) {
+  if (isProdSuccess) {
     await displayDeploySuccess(projectConfig?.name ?? '');
   }
 
-  return success;
+  return isProdSuccess;
 }

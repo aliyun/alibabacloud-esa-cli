@@ -7,7 +7,6 @@ import ora, { Ora } from 'ora';
 import { format, createLogger, Logger as WinstonLogger } from 'winston';
 import DailyRotateFile from 'winston-daily-rotate-file';
 
-
 import t from '../i18n/index.js';
 import { getProjectConfig } from '../utils/fileUtils/index.js';
 
@@ -106,7 +105,7 @@ class Logger {
   }
 
   success(message: string) {
-    console.log(`\n🎉 ${chalk.bgGreen(' SUCCESS ')} ${chalk.green(message)}`);
+    console.log(`🎉 ${chalk.bgGreen(' SUCCESS ')} ${chalk.green(message)}`);
   }
 
   debug(message: string) {
@@ -207,14 +206,78 @@ class Logger {
   tree(messages: string[]): void {
     if (messages.length === 0) return;
     const lines = [];
-    lines.push(`╭─ ${messages[0]}`);
+    lines.push(`╭ ${messages[0]}`);
     for (let i = 1; i < messages.length - 1; i++) {
       lines.push(`│ ${messages[i]}`);
     }
     if (messages.length > 1) {
-      lines.push(`╰─ ${messages[messages.length - 1]}`);
+      lines.push(`╰ ${messages[messages.length - 1]}`);
     }
     console.log(lines.join('\n'));
+  }
+
+  // Cloudflare-like step rendering helpers
+  cfStepHeader(title: string, step: number, total: number): void {
+    console.log(`\n╭ ${title} ${chalk.green(`Step ${step} of ${total}`)}`);
+    console.log('│');
+  }
+
+  cfStepItem(prompt: string): void {
+    console.log(`├ ${prompt}`);
+  }
+
+  cfStepKV(key: string, value: string): void {
+    const orange = chalk.hex('#FFA500');
+    console.log(`│ ${orange(key)} ${value}`);
+  }
+
+  cfStepSpacer(): void {
+    console.log('│');
+  }
+
+  cfStepEnd(str?: string): void {
+    console.log(`╰ ${str || ''}`);
+  }
+
+  cfStepEndInline(): void {
+    try {
+      process.stdout.write('╰ ');
+    } catch {
+      console.log('╰');
+    }
+  }
+
+  divider(): void {
+    console.log(
+      chalk.yellow('--------------------------------------------------------')
+    );
+  }
+
+  // Replace the previous single terminal line with new content
+  replacePrevLine(content: string): void {
+    try {
+      // Move cursor up 1 line, clear it, carriage return, print new content
+      process.stdout.write('\x1b[1A');
+      process.stdout.write('\x1b[2K');
+      process.stdout.write('\r');
+      console.log(content);
+    } catch {
+      console.log(content);
+    }
+  }
+
+  // Replace multiple previous lines with one consolidated line
+  replacePrevLines(linesToReplace: number, content: string): void {
+    try {
+      for (let i = 0; i < linesToReplace; i++) {
+        process.stdout.write('\x1b[1A'); // move up
+        process.stdout.write('\x1b[2K'); // clear line
+      }
+      process.stdout.write('\r');
+      console.log(content);
+    } catch {
+      console.log(content);
+    }
   }
 }
 

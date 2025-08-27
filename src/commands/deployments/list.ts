@@ -12,11 +12,7 @@ import logger from '../../libs/logger.js';
 import { validRoutine } from '../../utils/checkIsRoutineCreated.js';
 import { getProjectConfig } from '../../utils/fileUtils/index.js';
 import { displayVersionList } from '../deploy/helper.js';
-import {
-  checkDirectory,
-  checkIsLoginSuccess,
-  getRoutineCodeVersions
-} from '../utils.js';
+import { checkIsLoginSuccess, getRoutineCodeVersions } from '../utils.js';
 
 const deploymentsList: CommandModule = {
   command: 'list',
@@ -29,10 +25,8 @@ const deploymentsList: CommandModule = {
 export default deploymentsList;
 
 export async function handleListDeployments() {
-  if (!checkDirectory()) {
-    return;
-  }
   const projectConfig = getProjectConfig();
+
   if (!projectConfig) return logger.notInProject();
 
   const isSuccess = await checkIsLoginSuccess();

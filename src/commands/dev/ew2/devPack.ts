@@ -153,12 +153,22 @@ const devPack = async () => {
   logger.ora.start('Processing...\n');
 
   const userRoot = getRoot();
-  const configPath = path.resolve(userRoot, 'esa.toml');
+  // Try to find config file in order of preference: .jsonc, .toml
+  const configFormats = ['esa.jsonc', 'esa.toml'];
+  let configPath: string | null = null;
+
+  for (const format of configFormats) {
+    const testPath = path.resolve(userRoot, format);
+    if (fs.existsSync(testPath)) {
+      configPath = testPath;
+      break;
+    }
+  }
 
   let port: number, minify: boolean, localUpstream: string, entry: string;
   let projectEntry = path.resolve(userRoot, 'src/index.js');
 
-  if (fs.existsSync(configPath)) {
+  if (configPath) {
     port = getDevConf('port', 'dev', 18080);
     minify = getDevConf('minify', 'dev', false);
     localUpstream = getDevConf('localUpstream', 'dev', '');

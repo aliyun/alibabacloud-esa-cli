@@ -216,30 +216,29 @@ class Logger {
     console.log(lines.join('\n'));
   }
 
-  // Cloudflare-like step rendering helpers
-  cfStepHeader(title: string, step: number, total: number): void {
+  StepHeader(title: string, step: number, total: number): void {
     console.log(`\n╭ ${title} ${chalk.green(`Step ${step} of ${total}`)}`);
     console.log('│');
   }
 
-  cfStepItem(prompt: string): void {
+  StepItem(prompt: string): void {
     console.log(`├ ${prompt}`);
   }
 
-  cfStepKV(key: string, value: string): void {
+  StepKV(key: string, value: string): void {
     const orange = chalk.hex('#FFA500');
     console.log(`│ ${orange(key)} ${value}`);
   }
 
-  cfStepSpacer(): void {
+  StepSpacer(): void {
     console.log('│');
   }
 
-  cfStepEnd(str?: string): void {
+  StepEnd(str?: string): void {
     console.log(`╰ ${str || ''}`);
   }
 
-  cfStepEndInline(): void {
+  StepEndInline(): void {
     try {
       process.stdout.write('╰ ');
     } catch {

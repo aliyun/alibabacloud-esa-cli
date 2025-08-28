@@ -1,7 +1,8 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import fs from 'fs-extra';
-import path from 'path';
 import os from 'os';
+import path from 'path';
+
+import fs from 'fs-extra';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
 // Mock the logger to avoid console output during tests
 vi.mock('../../../../src/libs/logger.js', () => ({
@@ -9,8 +10,8 @@ vi.mock('../../../../src/libs/logger.js', () => ({
     success: vi.fn(),
     error: vi.fn(),
     log: vi.fn(),
-    cfStepItem: vi.fn(),
-    cfStepSpacer: vi.fn()
+    StepItem: vi.fn(),
+    StepSpacer: vi.fn()
   }
 }));
 
@@ -24,15 +25,17 @@ describe('Next.js Static Export Configuration', () => {
 
   afterEach(async () => {
     // Clean up temporary directory
-    if (tempDir && await fs.pathExists(tempDir)) {
+    if (tempDir && (await fs.pathExists(tempDir))) {
       await fs.remove(tempDir);
     }
   });
 
   it('should create next.config.ts with static export config when no config exists', async () => {
     // Import the function dynamically to avoid module loading issues
-    const { configureNextJsForStaticExport } = await import('../../../src/commands/init/index.js');
-    
+    const { configureNextJsForStaticExport } = await import(
+      '../../../src/commands/init/index.js'
+    );
+
     await configureNextJsForStaticExport(tempDir);
 
     const configPath = path.join(tempDir, 'next.config.ts');
@@ -58,8 +61,10 @@ module.exports = nextConfig`;
     await fs.writeFile(configPath, existingConfig, 'utf-8');
 
     // Import the function dynamically
-    const { configureNextJsForStaticExport } = await import('../../../src/commands/init/index.js');
-    
+    const { configureNextJsForStaticExport } = await import(
+      '../../../src/commands/init/index.js'
+    );
+
     await configureNextJsForStaticExport(tempDir);
 
     const modifiedContent = await fs.readFile(configPath, 'utf-8');
@@ -83,8 +88,10 @@ export default nextConfig`;
     await fs.writeFile(configPath, existingConfig, 'utf-8');
 
     // Import the function dynamically
-    const { configureNextJsForStaticExport } = await import('../../../src/commands/init/index.js');
-    
+    const { configureNextJsForStaticExport } = await import(
+      '../../../src/commands/init/index.js'
+    );
+
     await configureNextJsForStaticExport(tempDir);
 
     const modifiedContent = await fs.readFile(configPath, 'utf-8');
@@ -105,8 +112,10 @@ module.exports = nextConfig`;
     await fs.writeFile(configPath, existingConfig, 'utf-8');
 
     // Import the function dynamically
-    const { configureNextJsForStaticExport } = await import('../../../src/commands/init/index.js');
-    
+    const { configureNextJsForStaticExport } = await import(
+      '../../../src/commands/init/index.js'
+    );
+
     await configureNextJsForStaticExport(tempDir);
 
     const modifiedContent = await fs.readFile(configPath, 'utf-8');
@@ -128,8 +137,10 @@ module.exports = nextConfig`;
     await fs.writeFile(configPath, existingConfig, 'utf-8');
 
     // Import the function dynamically
-    const { configureNextJsForStaticExport } = await import('../../../src/commands/init/index.js');
-    
+    const { configureNextJsForStaticExport } = await import(
+      '../../../src/commands/init/index.js'
+    );
+
     await configureNextJsForStaticExport(tempDir);
 
     const modifiedContent = await fs.readFile(configPath, 'utf-8');
@@ -150,8 +161,10 @@ export default nextConfig`;
     await fs.writeFile(configPath, existingConfig, 'utf-8');
 
     // Import the function dynamically
-    const { configureNextJsForStaticExport } = await import('../../../src/commands/init/index.js');
-    
+    const { configureNextJsForStaticExport } = await import(
+      '../../../src/commands/init/index.js'
+    );
+
     await configureNextJsForStaticExport(tempDir);
 
     const modifiedContent = await fs.readFile(configPath, 'utf-8');

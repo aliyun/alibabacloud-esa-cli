@@ -43,7 +43,8 @@ export async function ensureRoutineExists(name: string) {
     const server = await ApiService.getInstance();
     const createRes = await server.createRoutine({
       name: name,
-      description: ''
+      description: '',
+      hasAssets: true
     });
     const isSuccess = createRes?.data.Status === 'OK';
     if (isSuccess) {

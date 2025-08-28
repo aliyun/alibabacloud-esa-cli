@@ -27,8 +27,13 @@
     "label": "Next.js",
     "command": "npx create-next-app@latest",
     "assets": {
-      "directory": "./out",
-      "notFoundStrategy": "singlePageApplication"
-    }
+      "directory": "./out"
+    },
+    "config": [
+      {
+        "path": "next.config.js",
+        "content": ""
+      }
+    ]
   }
 }

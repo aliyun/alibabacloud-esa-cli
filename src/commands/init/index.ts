@@ -129,8 +129,8 @@ export async function promptProjectName(yes = false): Promise<string> {
       2,
       `├ ${t('init_input_name').d('Enter the name of edgeRoutine')}`
     );
-    logger.cfStepKV('name', defaultName);
-    logger.cfStepSpacer();
+    logger.StepKV('name', defaultName);
+    logger.StepSpacer();
     return defaultName;
   }
 
@@ -155,8 +155,8 @@ export async function promptProjectName(yes = false): Promise<string> {
     2,
     `├ ${t('init_input_name').d('Enter the name of edgeRoutine:')}`
   );
-  logger.cfStepKV('ER Name', name);
-  logger.cfStepSpacer();
+  logger.StepKV('ER Name', name);
+  logger.StepSpacer();
   return name;
 }
 
@@ -192,7 +192,7 @@ export async function selectTemplate(
     }
   }
 
-  logger.cfStepEnd();
+  logger.StepEnd();
   const selectedTemplatePath = await multiLevelSelect(
     items,
     'Select a template:'
@@ -259,18 +259,15 @@ export async function handleGitInitialization(
   if (initGit === 'Yes') {
     const success = installGit(targetPath);
     if (success) {
-      logger.cfStepKV(
+      logger.StepKV(
         'git',
         t('git_installed_success').d('Git has been installed successfully.')
       );
-      logger.cfStepSpacer();
+      logger.StepSpacer();
     }
   } else {
-    logger.cfStepKV(
-      'git',
-      t('init_skip_git').d('Git installation was skipped.')
-    );
-    logger.cfStepSpacer();
+    logger.StepKV('git', t('init_skip_git').d('Git installation was skipped.'));
+    logger.StepSpacer();
   }
 }
 
@@ -291,7 +288,7 @@ export async function handleGitInitialization(
 export async function handleInit(argv: ArgumentsCamelCase) {
   await checkAndUpdatePackage('esa-template');
   // Step 1 of 3: Planning selections (Cloudflare-like)
-  logger.cfStepHeader('Create an ESA application', 1, 3);
+  logger.StepHeader('Create an ESA application', 1, 3);
 
   if (argv.config) {
     const configFormat = await promptConfigFormat(argv.yes as boolean);
@@ -328,11 +325,9 @@ export async function handleInit(argv: ArgumentsCamelCase) {
   }
 
   // Show chosen directory
-  logger.cfStepItem(
-    'In which directory do you want to create your application?'
-  );
-  logger.cfStepKV('dir', `./${name}`);
-  logger.cfStepSpacer();
+  logger.StepItem('In which directory do you want to create your application?');
+  logger.StepKV('dir', `./${name}`);
+  logger.StepSpacer();
 
   // Decide between framework or template if neither provided and not --yes
   let framework = argv.framework as 'react' | 'vue' | 'nextjs' | undefined;
@@ -357,11 +352,11 @@ export async function handleInit(argv: ArgumentsCamelCase) {
     ]);
 
     logger.replacePrevLine('├ How would you like to initialize the project?');
-    logger.cfStepKV(
+    logger.StepKV(
       'category',
       initMode === 'framework' ? 'Framework Starter' : 'ESA Template'
     );
-    logger.cfStepSpacer();
+    logger.StepSpacer();
     if (initMode === 'framework') {
       const { fw } = await inquirer.prompt([
         {
@@ -377,17 +372,17 @@ export async function handleInit(argv: ArgumentsCamelCase) {
       ]);
       logger.replacePrevLine('├ Select a framework');
       framework = fw;
-      logger.cfStepKV('framework', String(framework));
+      logger.StepKV('framework', String(framework));
       const frameworkConfig = getFrameworkConfig(framework as string);
 
       if (frameworkConfig.templates) {
         if (!language) {
           language = await promptLanguage(argv.yes as boolean);
         }
-        logger.cfStepKV(t('init_language_selected').d('Language'), language);
+        logger.StepKV(t('init_language_selected').d('Language'), language);
       }
 
-      logger.cfStepEnd('Configuration collected');
+      logger.StepEnd('Configuration collected');
     } else if (initMode === 'template') {
       // Use ESA Template creation method
       const templateItems = prepareTemplateItems();
@@ -399,10 +394,10 @@ export async function handleInit(argv: ArgumentsCamelCase) {
         return;
       }
 
-      logger.cfStepEnd('Template selected');
+      logger.StepEnd('Template selected');
 
       // Step 2 of 3: Scaffold project
-      logger.cfStepHeader('Scaffold project', 2, 3);
+      logger.StepHeader('Scaffold project', 2, 3);
 
       const { template, targetPath } =
         (await initializeProject(selectedTemplatePath, name)) || {};
@@ -410,11 +405,11 @@ export async function handleInit(argv: ArgumentsCamelCase) {
         return;
       }
 
-      logger.cfStepSpacer();
-      logger.cfStepEnd('Project initialized');
+      logger.StepSpacer();
+      logger.StepEnd('Project initialized');
 
       // Step 3 of 3: Configure and finalize
-      logger.cfStepHeader('Configure and finalize', 3, 3);
+      logger.StepHeader('Configure and finalize', 3, 3);
 
       if (!argv.skip) {
         await handleGitInitialization(targetPath, argv.yes as boolean);
@@ -451,16 +446,16 @@ export async function handleInit(argv: ArgumentsCamelCase) {
     }
 
     // Step 2 of 3: Scaffold project
-    logger.cfStepHeader('Scaffold project', 2, 3);
+    logger.StepHeader('Scaffold project', 2, 3);
 
     const command = frameworkConfig.command;
     const templateFlag =
       frameworkConfig.templates?.[language || 'typescript'] || '';
     const fullCommand = `${command} ${name} ${templateFlag}`;
 
-    logger.cfStepItem(`Continue with ${framework} via \`${fullCommand}\``);
-    logger.cfStepKV('dir', `./${name}`);
-    logger.cfStepSpacer();
+    logger.StepItem(`Continue with ${framework} via \`${fullCommand}\``);
+    logger.StepKV('dir', `./${name}`);
+    logger.StepSpacer();
     logger.log(`Creating ${framework} app in ${targetPath} ...`);
 
     // Execute the command with proper arguments
@@ -475,31 +470,31 @@ export async function handleInit(argv: ArgumentsCamelCase) {
         cwd: process.cwd()
       });
     }
-    logger.cfStepSpacer();
+    logger.StepSpacer();
 
     // install dependencies
-    logger.cfStepItem('Install dependencies');
+    logger.StepItem('Install dependencies');
     execSync('npm install', {
       stdio: 'inherit',
       cwd: targetPath
     });
-    logger.cfStepSpacer();
+    logger.StepSpacer();
     // Post-process nextjs configuration for static export
     if (framework === 'nextjs') {
-      logger.cfStepItem('Configuring Next.js for static export');
+      logger.StepItem('Configuring Next.js for static export');
       await configureNextJsForStaticExport(targetPath);
-      logger.cfStepSpacer();
+      logger.StepSpacer();
     }
 
-    logger.cfStepEnd('Project initialized');
+    logger.StepEnd('Project initialized');
 
     const assetsDirectory = frameworkConfig.assets?.directory;
     // Step 3 of 3: Configure and finalize
-    logger.cfStepHeader('Configure and finalize', 3, 3);
+    logger.StepHeader('Configure and finalize', 3, 3);
     const configFormat = await promptConfigFormat(argv.yes as boolean);
-    // logger.cfStepItem('Generate config file');
-    logger.cfStepKV('format', configFormat);
-    logger.cfStepSpacer();
+
+    logger.StepKV('format', configFormat);
+    logger.StepSpacer();
     await generateConfigFile(
       name,
       {
@@ -638,18 +633,14 @@ export async function configureNextJsForStaticExport(
   const nextConfigMjsPath = path.join(targetPath, 'next.config.mjs');
 
   let configPath: string | null = null;
-  let configContent: string = '';
 
   // Check which config file exists
   if (fs.existsSync(nextConfigTsPath)) {
     configPath = nextConfigTsPath;
-    configContent = fs.readFileSync(nextConfigTsPath, 'utf-8');
   } else if (fs.existsSync(nextConfigJsPath)) {
     configPath = nextConfigJsPath;
-    configContent = fs.readFileSync(nextConfigJsPath, 'utf-8');
   } else if (fs.existsSync(nextConfigMjsPath)) {
     configPath = nextConfigMjsPath;
-    configContent = fs.readFileSync(nextConfigMjsPath, 'utf-8');
   }
 
   if (!configPath) {
@@ -658,6 +649,7 @@ export async function configureNextJsForStaticExport(
     const newConfig = `import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  /* config options here */
   output: "export",
   trailingSlash: true,
   images: {
@@ -666,78 +658,30 @@ const nextConfig: NextConfig = {
 };
 
 export default nextConfig;`;
-    
+
     fs.writeFileSync(configPath, newConfig, 'utf-8');
     logger.success('Created next.config.ts with static export configuration');
     return;
   }
 
-  // Check if output: 'export' is already configured
-  if (configContent.includes('output: "export"') || configContent.includes("output: 'export'")) {
-    logger.success('Next.js is already configured for static export');
-    return;
-  }
+  // Always overwrite the config file with our static export configuration
+  const newConfig = `import type { NextConfig } from "next";
 
-  // Modify existing config to add output: 'export'
-  let modifiedContent = configContent;
-  
-  // Handle different config formats
-  if (configPath.endsWith('.ts')) {
-    // TypeScript config
-    if (configContent.includes('const nextConfig = {')) {
-      // Add output: 'export' after the opening brace
-      modifiedContent = configContent.replace(
-        /(const nextConfig\s*=\s*\{)/,
-        `$1
-  output: "export",`
-      );
-    } else if (configContent.includes('export default {')) {
-      // Add output: 'export' after the opening brace
-      modifiedContent = configContent.replace(
-        /(export default\s*\{)/,
-        `$1
-  output: "export",`
-      );
-    }
-  } else {
-    // JavaScript config
-    if (configContent.includes('const nextConfig = {')) {
-      // Add output: 'export' after the opening brace
-      modifiedContent = configContent.replace(
-        /(const nextConfig\s*=\s*\{)/,
-        `$1
-  output: "export",`
-      );
-    } else if (configContent.includes('module.exports = {')) {
-      // Add output: 'export' after the opening brace
-      modifiedContent = configContent.replace(
-        /(module\.exports\s*=\s*\{)/,
-        `$1
-  output: "export",`
-      );
-    }
-  }
-
-  // Add trailingSlash and images configuration if not present
-  if (!modifiedContent.includes('trailingSlash')) {
-    modifiedContent = modifiedContent.replace(
-      /(output: "export",)/,
-      `$1
-  trailingSlash: true,`
-    );
-  }
-
-  if (!modifiedContent.includes('images')) {
-    modifiedContent = modifiedContent.replace(
-      /(trailingSlash: true,)/,
-      `$1
+const nextConfig: NextConfig = {
+  /* config options here */
+  output: "export",
+  trailingSlash: true,
   images: {
     unoptimized: true
-  }`
-    );
   }
+};
 
-  // Write the modified config back to file
-  fs.writeFileSync(configPath, modifiedContent, 'utf-8');
-  logger.success('Next.js configured for static export successfully');
+export default nextConfig;`;
+
+  // Write the new config to file, overwriting existing content
+  fs.writeFileSync(configPath, newConfig, 'utf-8');
+
+  logger.success(
+    'Next.js config file overwritten with static export configuration'
+  );
 }

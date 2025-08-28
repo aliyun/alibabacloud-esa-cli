@@ -26,6 +26,7 @@ export interface EdgeRoutineProps {
 export interface CreateRoutineReq {
   name: string;
   description?: string;
+  hasAssets?: boolean;
 }
 
 export interface CreateRoutineRes {

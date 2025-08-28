@@ -42,6 +42,5 @@ export function installGit(path: string, debug = false) {
     return true;
   } catch (error) {
     console.error('Error occurred during Git installation:', error);
-    exit(0);
   }
 }

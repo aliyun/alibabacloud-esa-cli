@@ -25,4 +25,5 @@ fs.copySync(
   'src/commands/init/template.jsonc',
   'dist/commands/init/template.jsonc'
 );
+fs.copySync('src/commands/init/snippets', 'dist/commands/init/snippets');
 console.log('copy success');

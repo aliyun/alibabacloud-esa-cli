@@ -7,7 +7,7 @@ import t from '../../i18n/index.js';
 import {
   validateAndInitializeProject,
   generateCodeVersion
-} from '../common/routineUtils.js';
+} from '../common/utils.js';
 
 const commit: CommandModule = {
   command: 'commit [entry]',

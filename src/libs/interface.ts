@@ -26,7 +26,7 @@ export interface EdgeRoutineProps {
 export interface CreateRoutineReq {
   name: string;
   description?: string;
-  hasAssets?: boolean;
+  hasAssets: boolean;
 }
 
 export interface CreateRoutineRes {
@@ -346,6 +346,9 @@ export interface CreateRoutineWithAssetsCodeVersionReq {
   Name: string;
   CodeDescription?: string;
   BuildId?: string;
+  ConfOptions?: {
+    NotFoundStrategy: string;
+  };
 }
 export interface CreateRoutineWithAssetsCodeVersionRes {
   code: string;

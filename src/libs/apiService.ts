@@ -626,7 +626,8 @@ export class ApiService {
     let request = new $OpenApi.OpenApiRequest({
       query: {
         Name: edgeRoutine.name,
-        Description: edgeRoutine.description
+        Description: edgeRoutine.description,
+        HasAssets: edgeRoutine.hasAssets
       }
     });
     let runtime = {
@@ -991,10 +992,12 @@ export class ApiService {
       };
 
       let request = new $OpenApi.OpenApiRequest({
-        query: {
+        body: {
           Name: requestParams.Name,
           CodeDescription: requestParams.CodeDescription,
-          BuildId: requestParams.BuildId
+          ConfOptions: {
+            NotFoundStrategy: requestParams.ConfOptions?.NotFoundStrategy
+          }
         }
       });
       let runtime = {

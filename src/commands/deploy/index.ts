@@ -3,11 +3,12 @@ import { exit } from 'process';
 import { CommandModule, ArgumentsCamelCase, Argv } from 'yargs';
 
 import t from '../../i18n/index.js';
+import { getDirName, getRoot } from '../../utils/fileUtils/base.js';
 import {
   validateAndInitializeProject,
   commitAndDeployVersion,
   displayDeploySuccess
-} from '../common/routineUtils.js';
+} from '../common/utils.js';
 
 const deploy: CommandModule = {
   command: 'deploy [entry]',
@@ -80,7 +81,7 @@ export async function handleDeploy(argv: ArgumentsCamelCase) {
     entry,
     assets,
     (argv.description as string) || '',
-    undefined,
+    getRoot(),
     argv.environment as 'staging' | 'production',
     argv.minify as boolean,
     argv.version as string
@@ -88,54 +89,6 @@ export async function handleDeploy(argv: ArgumentsCamelCase) {
   if (success) {
     await displayDeploySuccess(projectName, true, false);
   }
-
-  // if (allVersions.length === 0) {
-  //   logger.log(
-  //     t('no_formal_version_found').d(
-  //       'No formal version found, you need to create a version first.'
-  //     )
-  //   );
-  //   const commitRes = await generateCodeVersion(projectName, '', entry, assets);
-
-  //   if (!commitRes?.isSuccess) {
-  //     exit(0);
-  //   }
-  // }
-
-  // const {
-  //   allVersions: committedVersionList,
-  //   stagingVersions,
-  //   productionVersions
-  // } = await getRoutineCodeVersions(projectName);
-
-  // await displayVersionList(
-  //   committedVersionList,
-  //   stagingVersions,
-  //   productionVersions
-  // );
-
-  // const selectedVersion =
-  //   (argv.version as string) ||
-  //   (await promptSelectVersion(committedVersionList));
-  // const selectedEnvironment =
-  //   (argv.environment as string) || (await displaySelectDeployEnv());
-  // if (
-  //   selectedEnvironment !== PublishType.Staging &&
-  //   selectedEnvironment !== PublishType.Production
-  // ) {
-  //   logger.error(t('deploy_invalid_environment').d('Invalid environment'));
-  //   exit(0);
-  // }
-
-  // const success = await deployCodeVersion(
-  //   projectName,
-  //   selectedVersion,
-  //   selectedEnvironment as PublishType
-  // );
-
-  // if (success) {
-  //   await displayDeploySuccess(projectName, true, true);
-  // }
 }
 
 export default deploy;

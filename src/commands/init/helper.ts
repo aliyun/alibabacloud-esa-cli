@@ -10,11 +10,7 @@ import t from '../../i18n/index.js';
 import logger from '../../libs/logger.js';
 import Template from '../../libs/templates/index.js';
 import { getDirName } from '../../utils/fileUtils/base.js';
-import {
-  getProjectConfig,
-  templateHubPath,
-  TemplateItem
-} from '../../utils/fileUtils/index.js';
+import { getProjectConfig, TemplateItem } from '../../utils/fileUtils/index.js';
 
 export const getTemplateInstances = (templateHubPath: string) => {
   return fs
@@ -235,6 +231,10 @@ export async function checkAndUpdatePackage(
 export type FrameworkConfig = {
   label: string;
   command: string;
+  /**
+   * Extra params appended after project name, e.g. "--no-install"
+   */
+  params?: string;
   templates?: {
     typescript?: string;
     javascript?: string;
@@ -243,6 +243,43 @@ export type FrameworkConfig = {
   assets?: {
     directory: string;
     notFoundStrategy: string;
+  };
+  /**
+   * Post-scaffold file operations
+   */
+  fileEdits?: FileEdit[];
+};
+
+export type FileEdit = {
+  /**
+   * Target path matcher relative to project root, e.g. "next.config.{ts,js,mjs}"
+   */
+  match: string;
+  /**
+   * Matcher type
+   */
+  matchType: 'exact' | 'glob' | 'regex';
+  /**
+   * Operation type. Currently only 'overwrite' is supported for 方式1
+   */
+  action: 'overwrite';
+  /**
+   * Inline content to write. If both provided, fromFile takes precedence
+   */
+  content?: string;
+  /**
+   * Source file relative to init module directory (src/commands/init)
+   */
+  fromFile?: string;
+  /**
+   * Create file if missing. Default: true
+   */
+  createIfMissing?: boolean;
+  /**
+   * Conditional execution
+   */
+  when?: {
+    language?: 'typescript' | 'javascript';
   };
 };
 
@@ -264,4 +301,97 @@ export const getAllFrameworkConfig = () => {
   const jsonc = fs.readFileSync(templatePath, 'utf-8');
   const json = JSON.parse(jsonc);
   return json;
+};
+
+/**
+ * Apply configured file edits (方式1: overwrite) after project scaffold
+ */
+export const applyFileEdits = async (
+  targetPath: string,
+  frameworkConfig: FrameworkConfig,
+  options?: { language?: 'typescript' | 'javascript' }
+) => {
+  const edits = frameworkConfig.fileEdits || [];
+  console.log('edits', edits);
+  console.log('targetPath', targetPath);
+  console.log('frameworkConfig', frameworkConfig);
+  console.log('options', options);
+  if (!edits.length) return;
+
+  const __dirname = getDirName(import.meta.url);
+
+  const toRegexFromGlob = (pattern: string): RegExp => {
+    // Very small glob subset: *, ?, {a,b,c}
+    let escaped = pattern
+      .replace(/[-/\\^$+?.()|[\]{}]/g, '\\$&') // escape regex specials first
+      .replace(/\\\*/g, '.*')
+      .replace(/\\\?/g, '.');
+    // restore and convert {a,b} to (a|b)
+    escaped = escaped.replace(/\\\{([^}]+)\\\}/g, (_, inner) => {
+      const parts = inner.split(',').map((s: string) => s.trim());
+      return `(${parts.join('|')})`;
+    });
+    return new RegExp('^' + escaped + '$');
+  };
+
+  const listRootFiles = (): string[] => {
+    try {
+      return fs.readdirSync(targetPath);
+    } catch {
+      return [];
+    }
+  };
+
+  for (const edit of edits) {
+    // when filter
+    if (edit.when?.language && options?.language) {
+      if (edit.when.language !== options.language) continue;
+    }
+
+    const createIfMissing = edit.createIfMissing !== false;
+
+    let matchedFiles: string[] = [];
+    if (edit.matchType === 'exact') {
+      matchedFiles = [edit.match];
+    } else if (edit.matchType === 'glob') {
+      const regex = toRegexFromGlob(edit.match);
+      matchedFiles = listRootFiles().filter((name) => regex.test(name));
+    } else if (edit.matchType === 'regex') {
+      const regex = new RegExp(edit.match);
+      matchedFiles = listRootFiles().filter((name) => regex.test(name));
+    }
+
+    // if no matched files and allowed to create, provide a reasonable default for common patterns
+    if (!matchedFiles.length && createIfMissing) {
+      if (edit.matchType === 'exact') {
+        matchedFiles = [edit.match];
+      } else if (
+        edit.matchType === 'glob' &&
+        /next\.config\.\{.*\}/.test(edit.match)
+      ) {
+        matchedFiles = ['next.config.ts'];
+      }
+    }
+
+    if (!matchedFiles.length) continue;
+
+    // resolve content
+    let payload: string | null = null;
+    if (edit.fromFile) {
+      const absFrom = path.isAbsolute(edit.fromFile)
+        ? edit.fromFile
+        : path.join(__dirname, edit.fromFile);
+      payload = fs.readFileSync(absFrom, 'utf-8');
+    } else if (typeof edit.content === 'string') {
+      payload = edit.content;
+    }
+
+    for (const rel of matchedFiles) {
+      const abs = path.join(targetPath, rel);
+      if (payload == null) continue;
+      fs.ensureDirSync(path.dirname(abs));
+      fs.writeFileSync(abs, payload, 'utf-8');
+      logger.success(`Applied file edit: ${rel}`);
+    }
+  }
 };

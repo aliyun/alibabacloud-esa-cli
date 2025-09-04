@@ -29,11 +29,22 @@
     "assets": {
       "directory": "./out"
     },
-    "config": [
+    "fileEdits": [
       {
-        "path": "next.config.js",
-        "content": ""
+        "match": "next.config.{ts,js,mjs}",
+        "matchType": "glob",
+        "action": "overwrite",
+        "fromFile": "snippets/next.config.txt",
+        "createIfMissing": true
       }
     ]
+  },
+  "astro": {
+    "label": "Astro",
+    "command": "npm create astro@latest",
+    "params": "--no-install",
+    "assets": {
+      "directory": "./dist"
+    }
   }
 }

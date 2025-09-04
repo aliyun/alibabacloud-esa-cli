@@ -153,7 +153,7 @@ export async function generateConfigFile(
   initConfigs?: Partial<ProjectConfig>,
   targetDir?: string,
   configFormat: 'toml' | 'jsonc' = 'toml',
-  isSinglePageApplication = false
+  notFoundStrategy?: string
 ) {
   const outputDir = targetDir ?? process.cwd();
   const currentDirName = path.basename(outputDir);
@@ -172,9 +172,9 @@ export async function generateConfigFile(
   "assets": {
     "directory": "${assetsDirectory}"
     ${
-      isSinglePageApplication
+      notFoundStrategy
         ? `,
-  "notFoundStrategy": "singlePageApplication"`
+  "notFoundStrategy": "${notFoundStrategy}"`
         : ''
     }
   }`
@@ -200,7 +200,7 @@ directory = "${assetsDirectory}"
       : '';
     genConfig = `name = "${name}"
 entry = "${entry}"
-${assetsBlock}${isSinglePageApplication ? 'notFoundStrategy = "singlePageApplication"' : ''}
+${assetsBlock}${notFoundStrategy ? `notFoundStrategy = "${notFoundStrategy}"` : ''}
 [dev]
 port = ${port}
   `;

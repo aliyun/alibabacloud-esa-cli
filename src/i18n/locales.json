@@ -1109,51 +1109,51 @@
   },
   "commit_assets_exist": {
     "en": "This is a routine with assets project",
-    "zh_CN": ""
+    "zh_CN": "这是一个带静态资源的边缘函数项目"
   },
   "commit_routine_with_assets_success": {
     "en": "Routine with assets code version committed successfully.",
-    "zh_CN": ""
+    "zh_CN": "带静态资源的边缘函数代码版本提交成功。"
   },
   "commit_routine_with_assets_fail": {
     "en": "An error occurred while trying to commit your routine with assets.",
-    "zh_CN": ""
+    "zh_CN": "提交带静态资源的边缘函数时发生错误。"
   },
   "commit_option_assets": {
     "en": "Assets directory",
-    "zh_CN": ""
+    "zh_CN": "静态资源目录"
   },
   "commit_option_name": {
     "en": "Edge Routine name",
-    "zh_CN": ""
+    "zh_CN": "边缘函数名称"
   },
   "deploy_option_name": {
     "en": "Name of the routine",
-    "zh_CN": ""
+    "zh_CN": "边缘函数名称"
   },
   "deploy_option_assets": {
     "en": "Deploy assets",
-    "zh_CN": ""
+    "zh_CN": "部署静态资源"
   },
   "deploy_invalid_environment": {
     "en": "Invalid environment",
-    "zh_CN": ""
+    "zh_CN": "无效的环境"
   },
   "deploy_success_guide_2": {
     "en": "Run this command to add routes",
-    "zh_CN": ""
+    "zh_CN": "运行此命令以添加路由"
   },
   "login_get_from_env": {
     "en": "Get AccessKey ID and AccessKey Secret from environment variables.",
-    "zh_CN": ""
+    "zh_CN": "从环境变量中获取 AccessKey ID 和 AccessKey Secret。"
   },
   "deploy_option_description": {
     "en": "Description of the version",
-    "zh_CN": ""
+    "zh_CN": "版本描述"
   },
   "deploy_option_minify": {
     "en": "Minify the code",
-    "zh_CN": ""
+    "zh_CN": "压缩代码"
   },
   "error_reading_project_config_file": {
     "en": "Error reading project configuration file.",
@@ -1161,22 +1161,38 @@
   },
   "checking_template_update": {
     "en": "Checking esa-template updates...",
-    "zh_CN": ""
+    "zh_CN": "检查 esa-template 更新..."
   },
   "template_updating": {
     "en": "Updating templates to latest...",
-    "zh_CN": ""
+    "zh_CN": "正在更新模板到最新版本..."
   },
   "template_updated_to_latest": {
     "en": "Templates updated to latest.",
-    "zh_CN": ""
+    "zh_CN": "模板已更新到最新版本。"
   },
   "checking_esa_template_finished": {
     "en": "Checking esa-template finished.",
-    "zh_CN": ""
+    "zh_CN": "检查 esa-template 完成。"
   },
   "git_installed_success": {
     "en": "Git has been installed successfully.",
-    "zh_CN": ""
+    "zh_CN": "Git 已成功安装。"
+  },
+  "compress_not_specified": {
+    "en": "Not specified",
+    "zh_CN": "未指定"
+  },
+  "compress_not_configured": {
+    "en": "Not configured",
+    "zh_CN": "未配置"
+  },
+  "compress_check_file_exists": {
+    "en": "(Check if file exists)",
+    "zh_CN": "（检查文件是否存在）"
+  },
+  "compress_check_directory_exists": {
+    "en": "(Check if directory exists)",
+    "zh_CN": "（检查目录是否存在）"
   }
 }

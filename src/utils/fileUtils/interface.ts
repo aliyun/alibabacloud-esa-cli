@@ -10,7 +10,7 @@ export interface ProjectConfig {
   entry?: string;
   assets?: {
     directory: string;
-    not_found_strategy: 'singlePageApplication';
+    notFoundStrategy?: string;
   };
   dev?: DevToolProps;
   [key: string]: any;

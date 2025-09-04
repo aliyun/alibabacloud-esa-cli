@@ -18,7 +18,7 @@ import logger from '../libs/logger.js';
 import { getRoot } from '../utils/fileUtils/base.js';
 import { getCliConfig, projectConfigPath } from '../utils/fileUtils/index.js';
 
-import { getRoutineDetails } from './common/routineUtils.js';
+import { getRoutineDetails } from './common/utils.js';
 
 export const checkDirectory = (isCheckGit = false): boolean => {
   const root = getRoot();

@@ -1,5 +1,4 @@
 import chalk from 'chalk';
-import { spinners } from 'ora';
 
 import t from '../../i18n/index.js';
 import { ApiService } from '../../libs/apiService.js';
@@ -15,6 +14,15 @@ import { getProjectConfig } from '../../utils/fileUtils/index.js';
 import { ProjectConfig } from '../../utils/fileUtils/interface.js';
 import sleep from '../../utils/sleep.js';
 import { checkIsLoginSuccess } from '../utils.js';
+
+function normalizeNotFoundStrategy(value?: string): string | undefined {
+  if (!value) return undefined;
+  const lower = value.toLowerCase();
+  if (lower === 'singlepageapplication') {
+    return 'SinglePageApplication';
+  }
+  return value;
+}
 
 export async function commitRoutineWithAssets(
   requestParams: CreateRoutineWithAssetsCodeVersionReq,
@@ -131,11 +139,25 @@ export async function generateCodeVersion(
   res: CreateRoutineWithAssetsCodeVersionRes | null;
 } | null> {
   const zip = await compress(entry, assets, minify, projectPath);
+
+  const projectConfig = getProjectConfig(projectPath);
+  const notFoundStrategy = normalizeNotFoundStrategy(
+    projectConfig?.assets?.notFoundStrategy
+  );
+
+  const requestParams: CreateRoutineWithAssetsCodeVersionReq = {
+    Name: projectName,
+    CodeDescription: description
+  };
+
+  if (notFoundStrategy) {
+    requestParams.ConfOptions = {
+      NotFoundStrategy: notFoundStrategy
+    };
+  }
+
   const res = await commitRoutineWithAssets(
-    {
-      Name: projectName,
-      CodeDescription: description
-    },
+    requestParams,
     zip?.toBuffer() as Buffer
   );
 
@@ -290,7 +312,6 @@ export async function waitForCodeVersionReady(
       }
     } catch (e) {
       // swallow and retry until timeout
-      console.log(e);
     }
   }
   logger.error(
@@ -311,7 +332,7 @@ export async function displayDeploySuccess(
   const service = await ApiService.getInstance();
   const res = await service.getRoutine({ Name: projectName });
   const defaultUrl = res?.data?.DefaultRelatedRecord;
-  const visitUrl = defaultUrl ? 'http://' + defaultUrl : '';
+  const visitUrl = defaultUrl ? 'https://' + defaultUrl : '';
 
   if (showDomainGuide) {
     logger.log(

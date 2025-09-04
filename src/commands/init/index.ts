@@ -20,7 +20,7 @@ import {
   updateProjectConfigFile
 } from '../../utils/fileUtils/index.js';
 import { ProjectConfig } from '../../utils/fileUtils/interface.js';
-import { quickDeployForInit } from '../common/routineUtils.js';
+import { quickDeployForInit } from '../common/utils.js';
 
 import {
   checkAndUpdatePackage,
@@ -28,7 +28,8 @@ import {
   getFrameworkConfig,
   getTemplateInstances,
   preInstallDependencies,
-  transferTemplatesToSelectItem
+  transferTemplatesToSelectItem,
+  applyFileEdits
 } from './helper.js';
 
 const init: CommandModule = {
@@ -241,7 +242,14 @@ export async function handleGitInitialization(
     logger.log(
       `${t('init_git').d('Do you want to init git in your project?')} Yes`
     );
-    installGit(targetPath);
+    const success = installGit(targetPath, false, false);
+    if (success) {
+      logger.StepKV(
+        'git',
+        t('git_installed_success').d('Git has been installed successfully.')
+      );
+      logger.StepSpacer();
+    }
     return;
   }
 
@@ -257,7 +265,7 @@ export async function handleGitInitialization(
   logger.replacePrevLine('├ Do you want to init git in your project?');
 
   if (initGit === 'Yes') {
-    const success = installGit(targetPath);
+    const success = installGit(targetPath, false, false); // Enable auto-install
     if (success) {
       logger.StepKV(
         'git',
@@ -451,7 +459,9 @@ export async function handleInit(argv: ArgumentsCamelCase) {
     const command = frameworkConfig.command;
     const templateFlag =
       frameworkConfig.templates?.[language || 'typescript'] || '';
-    const fullCommand = `${command} ${name} ${templateFlag}`;
+    const extraParams = frameworkConfig.params || '';
+    const fullCommand =
+      `${command} ${name} ${templateFlag} ${extraParams}`.trim();
 
     logger.StepItem(`Continue with ${framework} via \`${fullCommand}\``);
     logger.StepKV('dir', `./${name}`);
@@ -459,8 +469,8 @@ export async function handleInit(argv: ArgumentsCamelCase) {
     logger.log(`Creating ${framework} app in ${targetPath} ...`);
 
     // Execute the command with proper arguments
-    if (templateFlag) {
-      execSync(`${command} ${name} ${templateFlag}`, {
+    if (templateFlag || extraParams) {
+      execSync(`${command} ${name} ${templateFlag} ${extraParams}`.trim(), {
         stdio: 'inherit',
         cwd: process.cwd()
       });
@@ -479,16 +489,13 @@ export async function handleInit(argv: ArgumentsCamelCase) {
       cwd: targetPath
     });
     logger.StepSpacer();
-    // Post-process nextjs configuration for static export
-    if (framework === 'nextjs') {
-      logger.StepItem('Configuring Next.js for static export');
-      await configureNextJsForStaticExport(targetPath);
-      logger.StepSpacer();
-    }
+    // Apply post-scaffold file edits if configured (方式1)
 
+    await applyFileEdits(targetPath, frameworkConfig, { language });
     logger.StepEnd('Project initialized');
 
     const assetsDirectory = frameworkConfig.assets?.directory;
+    const notFoundStrategy = frameworkConfig.assets?.notFoundStrategy;
     // Step 3 of 3: Configure and finalize
     logger.StepHeader('Configure and finalize', 3, 3);
     const configFormat = await promptConfigFormat(argv.yes as boolean);
@@ -501,7 +508,8 @@ export async function handleInit(argv: ArgumentsCamelCase) {
         assets: assetsDirectory ? { directory: assetsDirectory } : undefined
       } as any,
       targetPath,
-      configFormat
+      configFormat,
+      notFoundStrategy
     );
 
     if (!argv.skip) {
@@ -532,7 +540,6 @@ export async function initDeployment(
     await quickDeployForInit(targetPath, projectConfig);
     return;
   }
-
   const { deploy } = await inquirer.prompt([
     {
       type: 'list',
@@ -650,11 +657,7 @@ export async function configureNextJsForStaticExport(
 
 const nextConfig: NextConfig = {
   /* config options here */
-  output: "export",
-  trailingSlash: true,
-  images: {
-    unoptimized: true
-  }
+  output: "export"
 };
 
 export default nextConfig;`;
@@ -664,16 +667,11 @@ export default nextConfig;`;
     return;
   }
 
-  // Always overwrite the config file with our static export configuration
   const newConfig = `import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   /* config options here */
-  output: "export",
-  trailingSlash: true,
-  images: {
-    unoptimized: true
-  }
+  output: "export"
 };
 
 export default nextConfig;`;

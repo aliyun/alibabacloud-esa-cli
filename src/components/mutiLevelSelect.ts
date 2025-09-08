@@ -1,4 +1,4 @@
-import inquirer from 'inquirer';
+import { isCancel, select as clackSelect } from '@clack/prompts';
 
 import logger from '../libs/logger.js';
 
@@ -24,38 +24,35 @@ export default async function multiLevelSelect(
   let selectedPath: string | null = null;
 
   while (selectedPath === null) {
-    const { choice } = await inquirer.prompt([
-      {
-        type: 'list',
-        name: 'choice',
-        message,
-        pageSize: 10,
-        choices: [
-          ...currentItems.map((item) => ({ name: item.label, value: item })),
-          ...(stack.length > 0 ? [{ name: 'Back', value: 'back' }] : []), // Show "Back" if there’s a previous level
-          { name: 'Exit', value: 'exit' }
-        ]
-      }
-    ]);
-
-    if (choice === 'exit') {
+    const choice = (await clackSelect({
+      message,
+      options: [
+        ...currentItems.map((item) => ({
+          label: item.label,
+          value: item.value
+        })),
+        ...(stack.length > 0 ? [{ label: 'Back', value: '__back__' }] : [])
+      ]
+    })) as string;
+    if (isCancel(choice)) {
       logger.log('User canceled the operation.');
       return null;
     }
 
-    if (choice === 'back') {
+    if (choice === '__back__') {
       currentItems = stack.pop()!; // Return to the previous level
       continue;
     }
 
     // If a category with children is selected
-    if (choice.children && choice.children.length > 0) {
+    const selected = currentItems.find((i) => i.value === choice);
+    if (selected && selected.children && selected.children.length > 0) {
       stack.push(currentItems); // Save the current level
-      currentItems = choice.children; // Move to the next level
-      message = `Select a template under ${choice.label}:`;
+      currentItems = selected.children; // Move to the next level
+      message = `Select a template under ${selected.label}:`;
     } else {
       // A leaf node (no children) is selected, end the selection
-      selectedPath = choice.value;
+      selectedPath = choice;
     }
   }
 

@@ -6,6 +6,7 @@ import t from '../i18n/index.js';
 import { ApiService } from '../libs/apiService.js';
 import { GetRoutineReq } from '../libs/interface.js';
 import logger from '../libs/logger.js';
+import { log, taskLog } from '@clack/prompts';
 
 export async function isRoutineExist(name: string) {
   const server = await ApiService.getInstance();
@@ -35,11 +36,7 @@ export async function ensureRoutineExists(name: string) {
 
   // If routine does not exist, create a new routine
   if (!isExist) {
-    logger.log(
-      t('first_deploy').d(
-        'This is the first time to deploy, we will create a new routine for you.'
-      )
-    );
+    logger.startSubStep(`Creating routine ${chalk.gray(name)}`);
     const server = await ApiService.getInstance();
     const createRes = await server.createRoutine({
       name: name,
@@ -48,12 +45,19 @@ export async function ensureRoutineExists(name: string) {
     });
     const isSuccess = createRes?.data.Status === 'OK';
     if (isSuccess) {
-      logger.success(
-        t('routine_create_success').d('Routine created successfully.')
-      );
+      // logger.endSubStep(
+      //   t('routine_create_success').d('Routine created successfully.')
+      // );
+      logger.endSubStep('Routine created successfully');
+      // tlog.success(
+      //   t('routine_create_success').d('Routine created successfully.')
+      // );
     } else {
-      logger.error(t('routine_create_fail').d('Routine created failed.'));
+      logger.endSubStep('Routine created failed');
+      // tlog.error(t('routine_create_fail').d('Routine created failed.'));
       exit();
     }
+  } else {
+    log.step('Routine has already exists');
   }
 }

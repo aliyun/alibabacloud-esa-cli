@@ -995,6 +995,7 @@ export class ApiService {
         body: {
           Name: requestParams.Name,
           CodeDescription: requestParams.CodeDescription,
+          ExtraInfo: requestParams.ExtraInfo,
           ConfOptions: {
             NotFoundStrategy: requestParams.ConfOptions?.NotFoundStrategy
           }

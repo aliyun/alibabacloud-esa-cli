@@ -37,8 +37,10 @@ class Logger {
   private static instance: Logger;
   private logger: WinstonLogger;
   private spinner: Ora;
+  private spinnerText: string;
 
   private constructor() {
+    this.spinnerText = '';
     const { combine, timestamp, label, printf } = format;
     const customFormat = printf(
       ({ level, message, label: printLabel, timestamp: printTimestamp }) => {
@@ -94,6 +96,63 @@ class Logger {
 
   setLogLevel(level: LogLevel) {
     this.logger.level = level;
+  }
+
+  /**
+   * Start a sub-step: show a spinner with the provided message.
+   * If a spinner is already running, just update its text.
+   */
+  startSubStep(message: string): void {
+    this.spinnerText = message;
+    this.spinner.text = message;
+    if (!this.spinner.isSpinning) {
+      this.spinner.start();
+    }
+  }
+
+  /**
+   * End a sub-step: stop loading and replace spinner with `├` and final message.
+   * This overwrites the previous spinner line with the provided message.
+   */
+  endSubStep(message: string): void {
+    // console.log(chalk.gray('├') + ' ' + this.spinnerText);
+    try {
+      if (this.spinner && this.spinner.isSpinning) {
+        this.spinner.stop();
+      }
+    } catch {}
+    console.log(chalk.gray(`│ `));
+    console.log(chalk.gray('├  ') + this.spinnerText);
+    console.log(chalk.gray(`│  ${message}`));
+  }
+
+  stopSpinner(): void {
+    try {
+      if (this.spinner && this.spinner.isSpinning) {
+        this.spinner.stop();
+      }
+    } catch {}
+  }
+
+  /**
+   * Prepare terminal output just before showing an interactive prompt.
+   * - Stops any active spinner
+   * - Replaces the previous line with a clean `╰ <text>` indicator
+   */
+  prepareForPrompt(text?: string): void {
+    this.stopSpinner();
+    const content = `╰ ${text || ''}`;
+    this.replacePrevLine(content);
+  }
+
+  /**
+   * Consolidate interactive prompt output after completion by replacing
+   * the previous N lines with a concise summary line.
+   * Defaults to 2 lines (prompt + answer line in most cases).
+   */
+  consolidateAfterPrompt(summary: string, linesToReplace = 2): void {
+    const content = `├ ${summary}`;
+    this.replacePrevLines(linesToReplace, content);
   }
 
   log(message: string) {
@@ -223,6 +282,10 @@ class Logger {
 
   StepItem(prompt: string): void {
     console.log(`├ ${prompt}`);
+  }
+
+  StepStart(prompt: string): void {
+    console.log(`╭ ${prompt}`);
   }
 
   StepKV(key: string, value: string): void {

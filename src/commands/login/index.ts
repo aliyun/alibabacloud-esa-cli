@@ -1,5 +1,9 @@
+import {
+  isCancel,
+  select as clackSelect,
+  text as clackText
+} from '@clack/prompts';
 import chalk from 'chalk';
-import inquirer from 'inquirer';
 import { CommandModule, ArgumentsCamelCase } from 'yargs';
 
 import t from '../../i18n/index.js';
@@ -69,22 +73,21 @@ export async function handleLogin(argv?: ArgumentsCamelCase): Promise<void> {
     const loginStatus = await service.checkLogin();
     if (loginStatus.success) {
       logger.warn(t('login_already').d('You are already logged in.'));
-      const action = await inquirer.prompt([
-        {
-          type: 'list',
-          name: 'action',
-          message: t('login_existing_credentials_message').d(
-            'Existing credentials found. What do you want to do?'
-          ),
-          choices: [
-            t('login_existing_credentials_action_overwrite').d(
+      const selected = (await clackSelect({
+        message: t('login_existing_credentials_message').d(
+          'Existing credentials found. What do you want to do?'
+        ),
+        options: [
+          {
+            label: t('login_existing_credentials_action_overwrite').d(
               'Overwrite existing credentials'
             ),
-            t('common_exit').d('Exit')
-          ]
-        }
-      ]);
-      if (action.action === t('common_exit').d('Exit')) {
+            value: 'overwrite'
+          },
+          { label: t('common_exit').d('Exit'), value: 'exit' }
+        ]
+      })) as 'overwrite' | 'exit';
+      if (isCancel(selected) || selected === 'exit') {
         return;
       }
       await getUserInputAuthInfo();
@@ -140,25 +143,16 @@ export async function getUserInputAuthInfo(): Promise<void> {
     `🔑 ${chalk.underline(t('login_get_ak_sk').d(`Please go to the following link to get your account's AccessKey ID and AccessKey Secret`))}`
   );
   logger.log(`👉 ${styledUrl}`);
-  const answers = await inquirer.prompt([
-    {
-      type: 'input',
-      name: 'accessKeyId',
-      message: 'AccessKey ID:'
-    },
-    {
-      type: 'password',
-      name: 'accessKeySecret',
-      message: 'AccessKey Secret:',
-      mask: '*'
-    }
-  ]);
+  const accessKeyId = (await clackText({ message: 'AccessKey ID:' })) as string;
+  const accessKeySecret = (await clackText({
+    message: 'AccessKey Secret:'
+  })) as string;
 
   let apiConfig = getApiConfig();
 
   apiConfig.auth = {
-    accessKeyId: answers.accessKeyId,
-    accessKeySecret: answers.accessKeySecret
+    accessKeyId,
+    accessKeySecret
   };
 
   try {

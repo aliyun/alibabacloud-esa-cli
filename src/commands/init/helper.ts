@@ -1,16 +1,31 @@
 import { execSync } from 'child_process';
 import path from 'path';
 
+import { confirm as clackConfirm, isCancel, log, outro } from '@clack/prompts';
 import chalk from 'chalk';
 import fs from 'fs-extra';
-import inquirer from 'inquirer';
 
 import { SelectItem } from '../../components/mutiLevelSelect.js';
 import t from '../../i18n/index.js';
 import logger from '../../libs/logger.js';
 import Template from '../../libs/templates/index.js';
 import { getDirName } from '../../utils/fileUtils/base.js';
-import { getProjectConfig, TemplateItem } from '../../utils/fileUtils/index.js';
+import {
+  generateConfigFile,
+  getCliConfig,
+  getProjectConfig,
+  getTemplatesConfig,
+  templateHubPath,
+  TemplateItem,
+  updateProjectConfigFile
+} from '../../utils/fileUtils/index.js';
+import { execCommand } from '../../utils/command.js';
+import { FrameworkConfig, InitArgv, initParams } from './types.js';
+import promptParameter from '../../utils/prompt.js';
+import { ArgumentsCamelCase } from 'yargs';
+import Haikunator from 'haikunator';
+import { commitAndDeployVersion } from '../common/utils.js';
+import { exit } from 'process';
 
 export const getTemplateInstances = (templateHubPath: string) => {
   return fs
@@ -169,14 +184,13 @@ export async function checkAndUpdatePackage(
           chalk.green(latestVersion)
       );
 
-      const { isUpdate } = await inquirer.prompt({
-        type: 'confirm',
-        name: 'isUpdate',
+      logger.stopSpinner();
+      const isUpdate = await clackConfirm({
         message: t('is_update_to_latest_version').d(
           'Do you want to update templates to latest version?'
         )
       });
-      if (isUpdate) {
+      if (!isCancel(isUpdate) && isUpdate) {
         spinner.start(
           t('template_updating').d('Updating templates to latest...')
         );
@@ -222,67 +236,6 @@ export async function checkAndUpdatePackage(
   }
 }
 
-/**
- * 获取template.jsonc配置
- * @param framework 框架名称
- * @returns 框架配置
- */
-
-export type FrameworkConfig = {
-  label: string;
-  command: string;
-  /**
-   * Extra params appended after project name, e.g. "--no-install"
-   */
-  params?: string;
-  templates?: {
-    typescript?: string;
-    javascript?: string;
-    [key: string]: string | undefined;
-  };
-  assets?: {
-    directory: string;
-    notFoundStrategy: string;
-  };
-  /**
-   * Post-scaffold file operations
-   */
-  fileEdits?: FileEdit[];
-};
-
-export type FileEdit = {
-  /**
-   * Target path matcher relative to project root, e.g. "next.config.{ts,js,mjs}"
-   */
-  match: string;
-  /**
-   * Matcher type
-   */
-  matchType: 'exact' | 'glob' | 'regex';
-  /**
-   * Operation type. Currently only 'overwrite' is supported for 方式1
-   */
-  action: 'overwrite';
-  /**
-   * Inline content to write. If both provided, fromFile takes precedence
-   */
-  content?: string;
-  /**
-   * Source file relative to init module directory (src/commands/init)
-   */
-  fromFile?: string;
-  /**
-   * Create file if missing. Default: true
-   */
-  createIfMissing?: boolean;
-  /**
-   * Conditional execution
-   */
-  when?: {
-    language?: 'typescript' | 'javascript';
-  };
-};
-
 export const getFrameworkConfig = (framework: string): FrameworkConfig => {
   // 从init目录读取template.jsonc
   const templatePath = path.join(getDirName(import.meta.url), 'template.jsonc');
@@ -303,95 +256,536 @@ export const getAllFrameworkConfig = () => {
   return json;
 };
 
+export function getInitParamsFromArgv(argv: ArgumentsCamelCase): initParams {
+  const a = argv as InitArgv;
+
+  const HaikunatorCtor = Haikunator as unknown as new () => {
+    haikunate: () => string;
+  };
+  const haikunator = new HaikunatorCtor();
+
+  const params: initParams = {
+    name: ''
+  };
+  if (a.yes) {
+    params.name = haikunator.haikunate();
+    params.git = true;
+    params.deploy = true;
+
+    params.template = 'Hello World';
+    params.framework = undefined;
+    params.language = undefined;
+    params.yes = true;
+  }
+
+  if (typeof a.name === 'string') params.name = a.name;
+  if (typeof a.template === 'string' && a.template) {
+    params.template = a.template;
+    params.framework = undefined;
+    params.language = undefined;
+  } else {
+    const fw = a.framework as initParams['framework'] | undefined;
+    const lang = a.language as initParams['language'] | undefined;
+    if (fw) {
+      params.framework = fw;
+    }
+    if (lang) {
+      params.language = lang;
+    }
+  }
+  if (typeof a.git === 'boolean') params.git = Boolean(a.git);
+  if (typeof a.deploy === 'boolean') params.deploy = Boolean(a.deploy);
+
+  return params;
+}
+
+// 配置项目名称
+export const configProjectName = async (initParams: initParams) => {
+  if (initParams.name) {
+    log.step(`Project name configured ${initParams.name}`);
+    return;
+  }
+  const name = (await promptParameter<string>({
+    type: 'text',
+    question: `${t('init_input_name').d('Enter the name of edgeRoutine:')}`,
+    label: 'Project name',
+    validate: (input: string) => {
+      const regex = /^[a-z0-9-]{2,}$/;
+      if (!regex.test(input)) {
+        return t('init_name_error').d(
+          'Error: The project name must be at least 2 characters long and can only contain lowercase letters, numbers, and hyphens.'
+        );
+      }
+      return true;
+    }
+  })) as string;
+  initParams.name = name;
+};
+
+export const configCategory = async (initParams: initParams) => {
+  if (initParams.category || initParams.framework || initParams.template) {
+    return;
+  }
+  const initMode = (await promptParameter<'framework' | 'template'>({
+    type: 'select',
+    question: 'How would you like to initialize the project?',
+    label: 'Init mode',
+    choices: [
+      { name: 'Framework Starter', value: 'framework' },
+      {
+        name: 'Function Template',
+        value: 'template'
+      }
+    ]
+  })) as 'framework' | 'template';
+  initParams.category = initMode;
+};
+
+/*
+选择模板
+如果选择的是framework，则选择具体的模版 vue /react等
+如果选择的是template，则选择具体的模版 esa template
+*/
+export const configTemplate = async (initParams: initParams) => {
+  if (initParams.template) {
+    log.step(`Template configured ${initParams.template}`);
+    return;
+  }
+  if (initParams.framework) {
+    log.step(`Framework configured ${initParams.framework}`);
+    return;
+  }
+
+  if (initParams.category === 'template') {
+    const templateItems = prepareTemplateItems();
+    const selectedTemplatePath = await promptParameter<string>({
+      type: 'multiLevelSelect',
+      question: 'Select a template:',
+      treeItems: templateItems
+    });
+    if (!selectedTemplatePath) return null;
+    // TODO
+    initParams.template = selectedTemplatePath as string;
+  } else {
+    const allFrameworkConfig = getAllFrameworkConfig();
+    const fw = (await promptParameter<
+      'react' | 'vue' | 'nextjs' | 'astro' | 'react-router'
+    >({
+      type: 'select',
+      question: 'Select a framework',
+      label: 'Framework',
+      choices: Object.keys(allFrameworkConfig).map((fw) => ({
+        name: allFrameworkConfig[fw].label,
+        value: fw as 'react' | 'vue' | 'nextjs' | 'astro' | 'react-router',
+        hint: allFrameworkConfig[fw]?.hint
+      }))
+    })) as 'react' | 'vue' | 'nextjs';
+    initParams.framework = fw;
+  }
+};
+
+export const configLanguage = async (initParams: initParams) => {
+  if (initParams.language) {
+    log.info(`Language configured ${initParams.language}`);
+    return;
+  }
+  const framework = initParams.framework;
+  if (!framework) {
+    log.info('Framework config not configured, language skipped');
+    return;
+  }
+  const frameworkConfig = getFrameworkConfig(framework);
+  if (frameworkConfig.language) {
+    const language = (await promptParameter<'typescript' | 'javascript'>({
+      type: 'select',
+      question: t('init_language_select').d('Select programming language:'),
+      label: 'Language',
+      choices: [
+        {
+          name: t('init_language_typescript').d(
+            'TypeScript (.ts) - Type-safe JavaScript, recommended'
+          ),
+          value: 'typescript'
+        },
+        {
+          name: t('init_language_javascript').d(
+            'JavaScript (.js) - Traditional JavaScript'
+          ),
+          value: 'javascript'
+        }
+      ],
+      defaultValue: 'typescript'
+    })) as 'typescript' | 'javascript';
+
+    initParams.language = language;
+  }
+};
+
+export const createProject = async (initParams: initParams) => {
+  if (initParams.template) {
+    // resolve template value: it may be a filesystem path or a template title
+    let selectedTemplatePath = initParams.template;
+    if (
+      !path.isAbsolute(selectedTemplatePath) ||
+      !fs.existsSync(selectedTemplatePath)
+    ) {
+      const instances = getTemplateInstances(templateHubPath);
+      const matched = instances.find((it) => it.title === initParams.template);
+      if (matched) {
+        selectedTemplatePath = matched.path;
+      }
+    }
+
+    if (!fs.existsSync(selectedTemplatePath)) {
+      outro(
+        `Project creation failed: cannot resolve template "${initParams.template}"`
+      );
+      exit(1);
+    }
+
+    const res = await initializeProject(selectedTemplatePath, initParams.name);
+    if (!res) {
+      outro(`Project creation failed`);
+      exit(1);
+    }
+  }
+
+  if (initParams.framework) {
+    const framework = initParams.framework;
+    const frameworkConfig = getFrameworkConfig(framework);
+    const command = frameworkConfig.command;
+    const templateFlag =
+      frameworkConfig.language?.[initParams.language || 'typescript'] || '';
+
+    const extraParams = frameworkConfig.params || '';
+    const full =
+      `${command} ${initParams.name} ${templateFlag} ${extraParams}`.trim();
+    const res = await execCommand(['sh', '-lc', full], {
+      interactive: true,
+      startText: `Starting to execute framework command: ${chalk.gray(full)}`,
+      doneText: `Framework command executed: ${chalk.bold(full)}`
+    });
+    if (!res.success) {
+      outro(`Framework command execution failed`);
+      exit(1);
+    }
+  }
+};
+
+export const installDependencies = async (initParams: initParams) => {
+  if (initParams.template) {
+    return;
+  }
+  const targetPath = path.join(process.cwd(), initParams.name);
+  const res = await execCommand(['npm', 'install'], {
+    cwd: targetPath,
+    useSpinner: true,
+    silent: true,
+    startText: 'Installing dependencies',
+    doneText: 'Dependencies installed'
+  });
+  if (!res.success) {
+    outro(`Dependencies installation failed`);
+    exit(1);
+  }
+};
+
 /**
  * Apply configured file edits (方式1: overwrite) after project scaffold
  */
 export const applyFileEdits = async (
-  targetPath: string,
-  frameworkConfig: FrameworkConfig,
-  options?: { language?: 'typescript' | 'javascript' }
-) => {
+  initParams: initParams
+): Promise<boolean> => {
+  if (!initParams.framework) {
+    return true;
+  }
+  const frameworkConfig = getFrameworkConfig(initParams.framework || '');
   const edits = frameworkConfig.fileEdits || [];
-  console.log('edits', edits);
-  console.log('targetPath', targetPath);
-  console.log('frameworkConfig', frameworkConfig);
-  console.log('options', options);
-  if (!edits.length) return;
 
+  if (!edits.length) return true;
+
+  logger.startSubStep(`Applying file edits`);
   const __dirname = getDirName(import.meta.url);
 
-  const toRegexFromGlob = (pattern: string): RegExp => {
-    // Very small glob subset: *, ?, {a,b,c}
-    let escaped = pattern
-      .replace(/[-/\\^$+?.()|[\]{}]/g, '\\$&') // escape regex specials first
-      .replace(/\\\*/g, '.*')
-      .replace(/\\\?/g, '.');
-    // restore and convert {a,b} to (a|b)
-    escaped = escaped.replace(/\\\{([^}]+)\\\}/g, (_, inner) => {
-      const parts = inner.split(',').map((s: string) => s.trim());
-      return `(${parts.join('|')})`;
-    });
-    return new RegExp('^' + escaped + '$');
-  };
+  try {
+    const toRegexFromGlob = (pattern: string): RegExp => {
+      // Very small glob subset: *, ?, {a,b,c}
+      let escaped = pattern
+        .replace(/[-/\\^$+?.()|[\]{}]/g, '\\$&') // escape regex specials first
+        .replace(/\\\*/g, '.*')
+        .replace(/\\\?/g, '.');
+      // restore and convert {a,b} to (a|b)
+      escaped = escaped.replace(/\\\{([^}]+)\\\}/g, (_, inner) => {
+        const parts = inner.split(',').map((s: string) => s.trim());
+        return `(${parts.join('|')})`;
+      });
+      return new RegExp('^' + escaped + '$');
+    };
 
-  const listRootFiles = (): string[] => {
-    try {
-      return fs.readdirSync(targetPath);
-    } catch {
-      return [];
-    }
-  };
+    const targetPath = path.join(process.cwd(), initParams.name);
 
-  for (const edit of edits) {
-    // when filter
-    if (edit.when?.language && options?.language) {
-      if (edit.when.language !== options.language) continue;
-    }
+    const listRootFiles = (): string[] => {
+      try {
+        return fs.readdirSync(targetPath);
+      } catch {
+        return [];
+      }
+    };
 
-    const createIfMissing = edit.createIfMissing !== false;
+    for (const edit of edits) {
+      if (edit.when?.language && initParams.language) {
+        if (edit.when.language !== initParams.language) continue;
+      }
 
-    let matchedFiles: string[] = [];
-    if (edit.matchType === 'exact') {
-      matchedFiles = [edit.match];
-    } else if (edit.matchType === 'glob') {
-      const regex = toRegexFromGlob(edit.match);
-      matchedFiles = listRootFiles().filter((name) => regex.test(name));
-    } else if (edit.matchType === 'regex') {
-      const regex = new RegExp(edit.match);
-      matchedFiles = listRootFiles().filter((name) => regex.test(name));
-    }
+      const createIfMissing = edit.createIfMissing !== false;
 
-    // if no matched files and allowed to create, provide a reasonable default for common patterns
-    if (!matchedFiles.length && createIfMissing) {
+      let matchedFiles: string[] = [];
       if (edit.matchType === 'exact') {
         matchedFiles = [edit.match];
-      } else if (
-        edit.matchType === 'glob' &&
-        /next\.config\.\{.*\}/.test(edit.match)
-      ) {
-        matchedFiles = ['next.config.ts'];
+      } else if (edit.matchType === 'glob') {
+        const regex = toRegexFromGlob(edit.match);
+        matchedFiles = listRootFiles().filter((name) => regex.test(name));
+      } else if (edit.matchType === 'regex') {
+        const regex = new RegExp(edit.match);
+        matchedFiles = listRootFiles().filter((name) => regex.test(name));
+      }
+
+      // if no matched files and allowed to create, provide a reasonable default for common patterns
+      if (!matchedFiles.length && createIfMissing) {
+        if (edit.matchType === 'exact') {
+          matchedFiles = [edit.match];
+        } else if (
+          edit.matchType === 'glob' &&
+          /next\.config\.\{.*\}/.test(edit.match)
+        ) {
+          matchedFiles = ['next.config.ts'];
+        }
+      }
+
+      if (!matchedFiles.length) continue;
+
+      // resolve content
+      let payload: string | null = null;
+      if (edit.fromFile) {
+        const absFrom = path.isAbsolute(edit.fromFile)
+          ? edit.fromFile
+          : path.join(__dirname, edit.fromFile);
+        payload = fs.readFileSync(absFrom, 'utf-8');
+      } else if (typeof edit.content === 'string') {
+        payload = edit.content;
+      }
+
+      for (const rel of matchedFiles) {
+        const abs = path.join(targetPath, rel);
+        if (payload == null) continue;
+        fs.ensureDirSync(path.dirname(abs));
+        fs.writeFileSync(abs, payload, 'utf-8');
       }
     }
-
-    if (!matchedFiles.length) continue;
-
-    // resolve content
-    let payload: string | null = null;
-    if (edit.fromFile) {
-      const absFrom = path.isAbsolute(edit.fromFile)
-        ? edit.fromFile
-        : path.join(__dirname, edit.fromFile);
-      payload = fs.readFileSync(absFrom, 'utf-8');
-    } else if (typeof edit.content === 'string') {
-      payload = edit.content;
-    }
-
-    for (const rel of matchedFiles) {
-      const abs = path.join(targetPath, rel);
-      if (payload == null) continue;
-      fs.ensureDirSync(path.dirname(abs));
-      fs.writeFileSync(abs, payload, 'utf-8');
-      logger.success(`Applied file edit: ${rel}`);
-    }
+    logger.endSubStep('File edits applied');
+    return true;
+  } catch {
+    outro(`File edits application failed`);
+    exit(1);
   }
 };
+
+export const installESACli = async (initParams: initParams) => {
+  const targetPath = path.join(process.cwd(), initParams.name);
+  const res = await execCommand(['npm', 'install', '-D', 'esa-cli'], {
+    cwd: targetPath,
+    useSpinner: true,
+    silent: true,
+    startText: 'Installing ESA CLI',
+    doneText: 'ESA CLI installed in the project'
+  });
+  if (!res.success) {
+    outro(`ESA CLI installation failed`);
+    exit(1);
+  }
+};
+
+export const updateConfigFile = async (initParams: initParams) => {
+  const targetPath = path.join(process.cwd(), initParams.name);
+  const configFormat = 'jsonc';
+  logger.startSubStep(`Updating config file`);
+  try {
+    if (initParams.framework) {
+      const frameworkConfig = getFrameworkConfig(initParams.framework);
+      const assetsDirectory = frameworkConfig.assets?.directory;
+      const notFoundStrategy = frameworkConfig.assets?.notFoundStrategy;
+      await generateConfigFile(
+        initParams.name,
+        {
+          assets: assetsDirectory ? { directory: assetsDirectory } : undefined
+        },
+        targetPath,
+        configFormat,
+        notFoundStrategy
+      );
+    } else {
+      // TODO revise template config file later
+      // console.log(
+      //   'test:',
+      //   initParams.name,
+      //   undefined,
+      //   targetPath,
+      //   configFormat
+      // );
+      // logger.startSubStep(`Updating config file`);
+      // await generateConfigFile(initParams.name, undefined, targetPath, 'toml');
+    }
+    logger.endSubStep('Config file updated');
+  } catch {
+    outro(`Config file update failed`);
+    exit(1);
+  }
+};
+
+export const initGit = async (initParams: initParams): Promise<boolean> => {
+  const frameworkConfig = getFrameworkConfig(initParams.framework || '');
+  if (frameworkConfig?.useGit === false) {
+    log.step('Git skipped');
+    return true;
+  }
+  const gitInstalled = await isGitInstalled();
+  if (!gitInstalled) {
+    log.step('You have not installed Git, Git skipped');
+    return true;
+  }
+
+  if (!initParams.git) {
+    const initGit = (await promptParameter<boolean>({
+      type: 'confirm',
+      question: t('init_git').d('Do you want to init git in your project?'),
+      label: 'Init git',
+      defaultValue: false
+    })) as boolean;
+    initParams.git = initGit;
+  }
+  if (initParams.git) {
+    const targetPath = path.join(process.cwd(), initParams.name);
+    const res = await execCommand(['git', 'init'], {
+      cwd: targetPath
+    });
+    if (!res.success) {
+      outro(`Git initialization failed`);
+      exit(1);
+    }
+  }
+  return true;
+};
+
+export async function getGitVersion() {
+  try {
+    const stdout = await execCommand(['git', '--version'], {
+      useSpinner: false,
+      silent: true,
+      captureOutput: true
+    });
+    const gitVersion = stdout.stdout.replace(/^git\s+version\s+/, '');
+    return gitVersion;
+  } catch {
+    log.error('Failed to get Git version');
+    return null;
+  }
+}
+
+export async function isGitInstalled() {
+  return (await getGitVersion()) !== null;
+}
+
+export const buildProject = async (initParams: initParams) => {
+  if (initParams.template) {
+    return;
+  }
+  const targetPath = path.join(process.cwd(), initParams.name);
+  const res = await execCommand(['npm', 'run', 'build'], {
+    useSpinner: true,
+    silent: true,
+    startText: 'Building project',
+    doneText: 'Project built',
+    cwd: targetPath
+  });
+  if (!res.success) {
+    outro(`Build project failed`);
+    exit(1);
+  }
+};
+
+export function prepareTemplateItems(): SelectItem[] {
+  const templateInstanceList = getTemplateInstances(templateHubPath);
+  const templateConfig = getTemplatesConfig();
+  const cliConfig = getCliConfig();
+  const lang = cliConfig?.lang ?? 'en';
+  return transferTemplatesToSelectItem(
+    templateConfig,
+    templateInstanceList,
+    lang
+  );
+}
+
+export const deployProject = async (initParams: initParams) => {
+  if (!initParams.deploy) {
+    log.step('Deploy project skipped');
+    return;
+  }
+
+  const targetPath = path.join(process.cwd(), initParams.name);
+
+  const res = await commitAndDeployVersion(
+    initParams.name,
+    undefined,
+    undefined,
+    'Init project',
+    targetPath,
+    'all'
+  );
+  if (!res) {
+    outro(`Deploy project failed`);
+    exit(1);
+  }
+};
+
+export async function initializeProject(
+  selectedTemplatePath: string,
+  name: string
+): Promise<{ template: Template; targetPath: string } | null> {
+  const selectTemplate = new Template(selectedTemplatePath, name);
+  const projectConfig = getProjectConfig(selectedTemplatePath);
+  if (!projectConfig) {
+    logger.notInProject();
+    return null;
+  }
+
+  const targetPath = path.join(process.cwd(), name);
+  if (fs.existsSync(targetPath)) {
+    logger.block();
+    logger.tree([
+      `${chalk.bgRed(' ERROR ')} ${chalk.bold.red(
+        t('init_abort').d('Initialization aborted')
+      )}`,
+      `${chalk.gray(t('reason').d('Reason:'))} ${chalk.red(
+        t('dir_already_exists').d('Target directory already exists')
+      )}`,
+      `${chalk.gray(t('path').d('Path:'))} ${chalk.cyan(targetPath)}`,
+      chalk.gray(t('try').d('Try one of the following:')),
+      `- ${chalk.white(t('try_diff_name').d('Choose a different project name'))}`,
+      `- ${chalk.white(t('try_remove').d('Remove the directory:'))} ${chalk.yellow(
+        `rm -rf "${name}”`
+      )}`,
+      `- ${chalk.white(
+        t('try_another_dir').d('Run the command in another directory')
+      )}`
+    ]);
+    logger.block();
+    return null;
+  }
+
+  await fs.copy(selectedTemplatePath, targetPath);
+  projectConfig.name = name;
+  await updateProjectConfigFile(projectConfig, targetPath);
+  await preInstallDependencies(targetPath);
+
+  return { template: selectTemplate, targetPath };
+}

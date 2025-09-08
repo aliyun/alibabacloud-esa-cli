@@ -346,6 +346,7 @@ export interface CreateRoutineWithAssetsCodeVersionReq {
   Name: string;
   CodeDescription?: string;
   BuildId?: string;
+  ExtraInfo?: string;
   ConfOptions?: {
     NotFoundStrategy: string;
   };

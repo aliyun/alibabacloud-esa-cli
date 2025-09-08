@@ -104,7 +104,7 @@
     "zh_CN": "您的代码已成功部署"
   },
   "deploy_success_guide": {
-    "en": "Run this command to add domains",
+    "en": "Add a custom domain",
     "zh_CN": "运行此命令以添加域名"
   },
   "deploy_table_header_version": {
@@ -560,7 +560,7 @@
     "zh_CN": "未找到模板 \"${templateName}\"。请检查模板名称并重试。"
   },
   "generate_config_error": {
-    "en": "${path.basename(newFilePath)} already exists",
+    "en": "already exists",
     "zh_CN": "配置文件已经存在"
   },
   "generate_config_success": {
@@ -800,7 +800,7 @@
     "zh_CN": "未找到正式版本，您需要先创建一个版本。"
   },
   "init_deploy_success": {
-    "en": "Project deployment completed. Visit: ",
+    "en": "Deploy Success",
     "zh_CN": "项目部署完成。访问："
   },
   "show_default_url": {
@@ -1140,7 +1140,7 @@
     "zh_CN": "无效的环境"
   },
   "deploy_success_guide_2": {
-    "en": "Run this command to add routes",
+    "en": "Add routes for a site",
     "zh_CN": "运行此命令以添加路由"
   },
   "login_get_from_env": {
@@ -1194,5 +1194,45 @@
   "compress_check_directory_exists": {
     "en": "(Check if directory exists)",
     "zh_CN": "（检查目录是否存在）"
+  },
+  "deploy_success_cd": {
+    "en": "Enter project directory",
+    "zh_CN": ""
+  },
+  "init_abort": {
+    "en": "Initialization aborted",
+    "zh_CN": ""
+  },
+  "reason": {
+    "en": "Reason:",
+    "zh_CN": ""
+  },
+  "dir_already_exists": {
+    "en": "Target directory already exists",
+    "zh_CN": ""
+  },
+  "path": {
+    "en": "Path:",
+    "zh_CN": ""
+  },
+  "try": {
+    "en": "Try one of the following:",
+    "zh_CN": ""
+  },
+  "try_diff_name": {
+    "en": "Choose a different project name",
+    "zh_CN": ""
+  },
+  "try_remove": {
+    "en": "Remove the directory:",
+    "zh_CN": ""
+  },
+  "try_another_dir": {
+    "en": "Run the command in another directory",
+    "zh_CN": ""
+  },
+  "step": {
+    "en": "Step:",
+    "zh_CN": ""
   }
 }

@@ -145,8 +145,6 @@ const compress = async (
     };
     addDirectoryToZip(assetsDirectory, 'assets');
   }
-  //输出zip
-  zip.writeZip('testassets.zip');
   return zip;
 };
 

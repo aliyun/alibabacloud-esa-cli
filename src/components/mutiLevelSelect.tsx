@@ -17,12 +17,6 @@ const Indicator: React.FC<{ isSelected?: boolean }> = ({ isSelected }) => {
   return <Text>{isSelected ? '👉 ' : '  '}</Text>;
 };
 
-const EXIT_ITEM: SelectItem = {
-  label: t('exit_select_init_template').d('Exit'),
-  key: 'exit',
-  value: '__exit__'
-};
-
 const RETURN_ITEM: SelectItem = {
   label: t('return_select_init_template').d('Return'),
   key: 'return',
@@ -35,7 +29,7 @@ const MultiLevelSelect: React.FC<Props> = ({
   handleExit
 }) => {
   const { exit } = useApp();
-  const [stack, setStack] = useState<SelectItem[][]>([[...items, EXIT_ITEM]]);
+  const [stack, setStack] = useState<SelectItem[][]>([[...items]]);
 
   const currentItems = stack[stack.length - 1];
 
@@ -45,15 +39,13 @@ const MultiLevelSelect: React.FC<Props> = ({
         // 返回上一级菜单
         setStack(stack.slice(0, -1));
       } else {
-        // 顶层菜单，执行退出逻辑
-        handleExit();
-        exit();
+        // 顶层菜单，忽略返回（不退出）
       }
       return;
     }
 
     if (item.children && item.children.length > 0) {
-      setStack([...stack, [...item.children, RETURN_ITEM]]); // 在子层级中添加“退出”选项
+      setStack([...stack, [...item.children, RETURN_ITEM]]);
     } else {
       handleSelect(item);
       exit();

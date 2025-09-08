@@ -5,10 +5,13 @@ import { CommandModule, ArgumentsCamelCase, Argv } from 'yargs';
 import t from '../../i18n/index.js';
 import { getDirName, getRoot } from '../../utils/fileUtils/base.js';
 import {
-  validateAndInitializeProject,
   commitAndDeployVersion,
   displayDeploySuccess
 } from '../common/utils.js';
+import { groupMultiselect, intro, outro, taskLog } from '@clack/prompts';
+import chalk from 'chalk';
+import logger from '../../libs/logger.js';
+import { getProjectConfig } from '../../utils/fileUtils/index.js';
 
 const deploy: CommandModule = {
   command: 'deploy [entry]',
@@ -70,24 +73,30 @@ const deploy: CommandModule = {
 };
 
 export async function handleDeploy(argv: ArgumentsCamelCase) {
-  const projectInfo = await validateAndInitializeProject(argv?.name as string);
-  if (!projectInfo) return;
-  const { projectConfig, projectName } = projectInfo;
-  const entry = (argv.entry as string) || projectConfig.entry;
-  const assets = (argv.assets as string) || projectConfig.assets?.directory;
+  const entry = argv.entry as string;
+  const assets = argv.assets as string;
+
+  intro(`Deploy an application with ESA`);
 
   const success = await commitAndDeployVersion(
-    projectConfig,
+    (argv.name as string) || undefined,
     entry,
     assets,
     (argv.description as string) || '',
     getRoot(),
-    argv.environment as 'staging' | 'production',
+    (argv.environment as 'staging' | 'production') || 'all',
     argv.minify as boolean,
     argv.version as string
   );
+  outro(success ? 'Deploy finished' : 'Deploy failed');
+
   if (success) {
-    await displayDeploySuccess(projectName, true, false);
+    const projectConfig = getProjectConfig(getRoot());
+    await displayDeploySuccess(
+      (argv.name as string) || projectConfig?.name || '',
+      true,
+      true
+    );
   }
 }
 

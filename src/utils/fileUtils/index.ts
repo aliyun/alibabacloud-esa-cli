@@ -96,6 +96,7 @@ export function readConfigFile(
         return config as CliConfig | ProjectConfig;
       }
     } catch (error) {
+      console.log(error);
       logger.error(`Error parsing config file: ${error}`);
       return null;
     }
@@ -167,50 +168,39 @@ export async function generateConfigFile(
 
   if (configFormat === 'jsonc') {
     newFilePath = path.join(outputDir, 'esa.jsonc');
-    const assetsBlock = assetsDirectory
-      ? `,
-  "assets": {
-    "directory": "${assetsDirectory}"
-    ${
-      notFoundStrategy
-        ? `,
-  "notFoundStrategy": "${notFoundStrategy}"`
-        : ''
+    const configObj: Record<string, any> = { name };
+    if (entry) configObj.entry = entry;
+    if (assetsDirectory) {
+      configObj.assets = { directory: assetsDirectory };
+      if (notFoundStrategy) {
+        (configObj.assets as Record<string, any>).notFoundStrategy =
+          notFoundStrategy;
+      }
     }
-  }`
-      : '';
-    const entryBlock = entry
-      ? `,
-  "entry": "${entry}"`
-      : '';
-    genConfig = `{
-  "name": "${name}"${entryBlock}${assetsBlock},
-  "dev": {
-    "port": ${port}
-  }
-}`;
+    configObj.dev = { port };
+    genConfig = JSON.stringify(configObj, null, 2) + '\n';
   } else {
     // Default to TOML format
     newFilePath = path.join(outputDir, 'esa.toml');
-    const assetsBlock = assetsDirectory
-      ? `
-[assets]
-directory = "${assetsDirectory}"
-`
-      : '';
-    genConfig = `name = "${name}"
-entry = "${entry}"
-${assetsBlock}${notFoundStrategy ? `notFoundStrategy = "${notFoundStrategy}"` : ''}
-[dev]
-port = ${port}
-  `;
+    const configObj: Record<string, any> = {
+      name,
+      dev: { port }
+    };
+    if (entry) configObj.entry = entry;
+    if (assetsDirectory) {
+      configObj.assets = { directory: assetsDirectory };
+      if (notFoundStrategy) {
+        (configObj.assets as Record<string, any>).notFoundStrategy =
+          notFoundStrategy;
+      }
+    }
+    genConfig = toml.stringify(configObj);
   }
 
   if (fs.existsSync(newFilePath)) {
     logger.error(
-      t('generate_config_error').d(
-        `${path.basename(newFilePath)} already exists`
-      )
+      `${path.basename(newFilePath)}` +
+        t('generate_config_error').d('already exists')
     );
     return;
   } else {

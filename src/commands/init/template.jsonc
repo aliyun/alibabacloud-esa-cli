@@ -2,10 +2,12 @@
   "react": {
     "label": "React",
     "command": "npm create vite@latest",
-    "templates": {
+    "useGit": true,
+    "language": {
       "typescript": "-- --template react-ts",
       "javascript": "-- --template react"
     },
+    "interactive": false,
     "assets": {
       "directory": "./dist",
       "notFoundStrategy": "singlePageApplication"
@@ -14,10 +16,12 @@
   "vue": {
     "label": "Vue",
     "command": "npm create vite@latest",
-    "templates": {
+    "useGit": true,
+    "language": {
       "typescript": "-- --template vue-ts -- --use-npm",
       "javascript": "-- --template vue"
     },
+    "interactive": false,
     "assets": {
       "directory": "./dist",
       "notFoundStrategy": "singlePageApplication"
@@ -25,26 +29,56 @@
   },
   "nextjs": {
     "label": "Next.js",
+    "useGit": false,
     "command": "npx create-next-app@latest",
+    "hint": "Only support static export",
     "assets": {
       "directory": "./out"
     },
     "fileEdits": [
       {
-        "match": "next.config.{ts,js,mjs}",
-        "matchType": "glob",
+        "match": "next.config.ts",
+        "matchType": "exact",
         "action": "overwrite",
-        "fromFile": "snippets/next.config.txt",
+        "fromFile": "snippets/nextjs/next.config.ts",
+        "createIfMissing": true
+      },
+      {
+        "match": "next.config.mjs",
+        "matchType": "exact",
+        "action": "overwrite",
+        "fromFile": "snippets/nextjs/next.config.mjs",
         "createIfMissing": true
       }
     ]
   },
   "astro": {
     "label": "Astro",
-    "command": "npm create astro@latest",
+    "useGit": false,
+    "command": "npm create-astro@4.13.1",
     "params": "--no-install",
     "assets": {
       "directory": "./dist"
     }
+  },
+  "react-router": {
+    "label": "React Router",
+    "useGit": false,
+    "command": "npx create-react-router",
+    "hint": "SPA mode",
+    "interactive": true,
+    "assets": {
+      "directory": "./build/client",
+      "notFoundStrategy": "singlePageApplication"
+    },
+    "fileEdits": [
+      {
+        "match": "react-router.config.ts",
+        "matchType": "exact",
+        "action": "overwrite",
+        "fromFile": "snippets/react-router/react-router.config.ts",
+        "createIfMissing": true
+      }
+    ]
   }
 }

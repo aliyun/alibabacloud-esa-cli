@@ -8,11 +8,12 @@ import {
   CreateRoutineWithAssetsCodeVersionReq
 } from '../../libs/interface.js';
 import logger from '../../libs/logger.js';
-import { ensureRoutineExists } from '../../utils/checkIsRoutineCreated.js';
 import compress from '../../utils/compress.js';
 import { getProjectConfig } from '../../utils/fileUtils/index.js';
 import { ProjectConfig } from '../../utils/fileUtils/interface.js';
 import sleep from '../../utils/sleep.js';
+import { intro, log, outro, spinner, taskLog } from '@clack/prompts';
+import { ensureRoutineExists } from '../../utils/checkIsRoutineCreated.js';
 import { checkIsLoginSuccess } from '../utils.js';
 
 function normalizeNotFoundStrategy(value?: string): string | undefined {
@@ -95,22 +96,25 @@ export async function commitRoutineWithAssets(
  * 包含目录检查、项目配置获取、登录检查、routine存在性检查
  */
 export async function validateAndInitializeProject(
-  name?: string
+  name?: string,
+  projectPath?: string
 ): Promise<{ projectConfig: ProjectConfig; projectName: string } | null> {
-  const projectConfig = getProjectConfig();
+  const projectConfig = getProjectConfig(projectPath);
   if (!projectConfig) {
     logger.notInProject();
     return null;
   }
 
   const projectName = name || projectConfig.name;
-
+  logger.startSubStep('Checking login status abc');
   const isSuccess = await checkIsLoginSuccess();
   if (!isSuccess) {
+    logger.endSubStep('You are not logged in');
     return null;
   }
-  await ensureRoutineExists(projectName);
+  logger.endSubStep('Logged in');
 
+  await ensureRoutineExists(projectName);
   return { projectConfig, projectName };
 }
 
@@ -147,7 +151,8 @@ export async function generateCodeVersion(
 
   const requestParams: CreateRoutineWithAssetsCodeVersionReq = {
     Name: projectName,
-    CodeDescription: description
+    CodeDescription: description,
+    ExtraInfo: JSON.stringify({ Source: 'CLI' })
   };
 
   if (notFoundStrategy) {
@@ -162,13 +167,11 @@ export async function generateCodeVersion(
   );
 
   if (res?.isSuccess) {
-    logger.success('Your code has been successfully committed');
     return {
       isSuccess: true,
       res: res?.res
     };
   } else {
-    logger.error('Generate code version failed');
     return {
       isSuccess: false,
       res: null
@@ -205,7 +208,7 @@ export async function deployToEnvironments(
  * 结合了压缩、提交和部署的完整流程
  */
 export async function commitAndDeployVersion(
-  projectConfig: ProjectConfig,
+  projectName?: string,
   scriptEntry?: string,
   assets?: string,
   description = '',
@@ -214,29 +217,57 @@ export async function commitAndDeployVersion(
   minify = false,
   version?: string
 ): Promise<boolean> {
-  if (version) {
-    return await deployToEnvironments(projectConfig.name, version, env);
-  } else {
-    const res = await generateCodeVersion(
-      projectConfig.name,
-      description,
-      scriptEntry || projectConfig.entry,
-      assets || projectConfig.assets?.directory,
-      minify || projectConfig.minify,
-      projectPath
-    );
-    const isCommitSuccess = res?.isSuccess;
-    if (isCommitSuccess) {
-      const codeVersion = res?.res?.data?.CodeVersion;
-      if (!codeVersion) {
-        logger.error('Failed to read CodeVersion from response.');
-        return false;
-      }
-      return await deployToEnvironments(projectConfig.name, codeVersion, env);
-    } else {
-      return false;
-    }
+  const projectInfo = await validateAndInitializeProject(
+    projectName,
+    projectPath
+  );
+  if (!projectInfo || !projectInfo.projectConfig) {
+    return false;
   }
+  const { projectConfig } = projectInfo;
+
+  // 2) Use existing version or generate a new one
+  if (version) {
+    logger.startSubStep(`Using existing version ${version}`);
+    const deployed = await deployToEnvironments(
+      projectConfig.name,
+      version,
+      env
+    );
+    logger.endSubStep(deployed ? 'Deploy finished' : 'Deploy failed');
+    return deployed;
+  }
+
+  logger.startSubStep('Generating code version');
+  const res = await generateCodeVersion(
+    projectConfig.name,
+    description,
+    scriptEntry || projectConfig.entry,
+    assets || projectConfig.assets?.directory,
+    minify || projectConfig.minify,
+    projectPath
+  );
+  const isCommitSuccess = res?.isSuccess;
+  if (!isCommitSuccess) {
+    logger.endSubStep('Generate version failed');
+    return false;
+  }
+
+  const codeVersion = res?.res?.data?.CodeVersion;
+  if (!codeVersion) {
+    logger.endSubStep('Missing CodeVersion in response');
+    return false;
+  }
+  logger.endSubStep(`Version generated: ${codeVersion}`);
+
+  // 3) Deploy to specified environment(s)
+  const deployed = await deployToEnvironments(
+    projectConfig.name,
+    codeVersion,
+    env
+  );
+
+  return deployed;
 }
 
 /**
@@ -249,11 +280,12 @@ export async function deployCodeVersion(
 ): Promise<boolean> {
   const server = await ApiService.getInstance();
   // Ensure the committed code version is ready before deploying
-  const isReady = await waitForCodeVersionReady(name, codeVersion);
+  const isReady = await waitForCodeVersionReady(name, codeVersion, environment);
   if (!isReady) {
     logger.error('The code version is not ready for deployment.');
     return false;
   }
+
   const res = await server.createRoutineCodeDeployment({
     Name: name,
     CodeVersions: [{ Percentage: 100, CodeVersion: codeVersion }],
@@ -262,12 +294,8 @@ export async function deployCodeVersion(
   });
 
   if (res) {
-    logger.success(
-      `Your code has been successfully deployed to ${chalk.cyan(environment)}`
-    );
     return true;
   } else {
-    logger.error('Your code has not been deployed');
     return false;
   }
 }
@@ -278,6 +306,7 @@ export async function deployCodeVersion(
 export async function waitForCodeVersionReady(
   name: string,
   codeVersion: string,
+  env: 'staging' | 'production',
   timeoutMs = 5 * 60 * 1000,
   intervalMs = 1000
 ): Promise<boolean> {
@@ -286,10 +315,8 @@ export async function waitForCodeVersionReady(
   }
   const server = await ApiService.getInstance();
   const start = Date.now();
-  logger.log(
-    `⏳ Waiting for code version ${chalk.cyan(codeVersion)} to be ready...`
-  );
 
+  logger.startSubStep(`Waiting for code version ${codeVersion} to be ready...`);
   while (Date.now() - start < timeoutMs) {
     try {
       const info = await server.getRoutineCodeVersionInfo({
@@ -302,7 +329,9 @@ export async function waitForCodeVersionReady(
         await sleep(intervalMs);
         continue;
       } else if (status === 'available') {
-        logger.log(`✅ Code version ${chalk.cyan(codeVersion)} is ready.`);
+        logger.endSubStep(
+          `Code version ${chalk.cyan(codeVersion)} is deployed to ${env}.`
+        );
         return true;
       } else {
         logger.error(
@@ -334,64 +363,77 @@ export async function displayDeploySuccess(
   const defaultUrl = res?.data?.DefaultRelatedRecord;
   const visitUrl = defaultUrl ? 'https://' + defaultUrl : '';
 
+  const accent = chalk.hex('#7C3AED');
+  const label = chalk.hex('#22c55e');
+  const subtle = chalk.gray;
+
+  const title = `${chalk.bold('🚀 ')}${chalk.bold(
+    t('init_deploy_success').d('Deploy Success')
+  )}`;
+  const lineUrl = `${label('URL')}  ${visitUrl ? chalk.yellowBright(visitUrl) : subtle('-')}`;
+  const lineProject = `${label('APP')}  ${chalk.cyan(projectName || '-')}`;
+  const lineCd = projectName
+    ? `${label('TIP')}  ${t('deploy_success_cd').d('Enter project directory')}: ${chalk.green(
+        `cd ${projectName}`
+      )}`
+    : '';
+  const guides: string[] = [];
   if (showDomainGuide) {
-    logger.log(
-      `👉 ${t('deploy_success_guide').d('Run this command to add domains')}: ${chalk.green('esa domain add <DOMAIN>')}`
+    guides.push(
+      `${label('TIP')}  ${t('deploy_success_guide').d('Add a custom domain')}: ${chalk.green(
+        'esa domain add <DOMAIN>'
+      )}`
     );
   }
-
   if (showRouteGuide) {
-    logger.log(
-      `👉 ${t('deploy_success_guide_2').d('Run this command to add routes')}: ${chalk.green('esa route add -r <ROUTE> -s <SITE>')}`
+    guides.push(
+      `${label('TIP')}  ${t('deploy_success_guide_2').d('Add routes for a site')}: ${chalk.green(
+        'esa route add -r <ROUTE> -s <SITE>'
+      )}`
     );
   }
-
-  logger.success(
-    `${t('init_deploy_success').d('Project deployment completed. Visit: ')}${chalk.yellowBright(visitUrl)}`
-  );
-
-  logger.warn(
+  const tip = `${subtle(
     t('deploy_url_warn').d(
       'The domain may take some time to take effect, please try again later.'
     )
-  );
-}
+  )}`;
 
-/**
- * 通用的快速部署函数（用于init命令）
- * 结合了登录检查、routine创建、代码提交和部署的完整流程
- */
-export async function quickDeployForInit(
-  targetPath: string,
-  projectConfig: ProjectConfig,
-  description = 'Quick deploy from init'
-): Promise<boolean> {
-  const isLoginSuccess = await checkIsLoginSuccess();
-  if (!isLoginSuccess) {
-    logger.log(
-      chalk.yellow(
-        t('not_login_auto_deploy').d(
-          'You are not logged in, automatic deployment cannot be performed. Please log in later and manually deploy.'
-        )
-      )
-    );
-    return false;
-  }
+  const lines = [
+    accent(title),
+    '',
+    lineProject,
+    lineUrl,
+    lineCd ? '' : '',
+    lineCd || '',
+    guides.length ? '' : '',
+    ...guides,
+    guides.length ? '' : '',
+    tip
+  ];
 
-  await ensureRoutineExists(projectConfig.name);
+  const stripAnsi = (s: string) => s.replace(/\x1B\[[0-?]*[ -\/]*[@-~]/g, '');
+  const contentWidth = Math.max(...lines.map((l) => stripAnsi(l).length));
 
-  const isProdSuccess = await commitAndDeployVersion(
-    projectConfig,
-    projectConfig?.entry,
-    projectConfig?.assets?.directory,
-    description,
-    targetPath,
-    'all'
-  );
+  const borderColor = chalk.hex('#00D4FF').bold;
+  const top = `${borderColor('╔')}${borderColor(
+    '═'.repeat(contentWidth + 2)
+  )}${borderColor('╗')}`;
+  const bottom = `${borderColor('╚')}${borderColor(
+    '═'.repeat(contentWidth + 2)
+  )}${borderColor('╝')}`;
 
-  if (isProdSuccess) {
-    await displayDeploySuccess(projectConfig?.name ?? '');
-  }
+  const boxLines = [
+    top,
+    ...lines.map((l) => {
+      const pad = ' '.repeat(contentWidth - stripAnsi(l).length);
+      const left = borderColor('║');
+      const right = borderColor('║');
+      return `${left} ${l}${pad} ${right}`;
+    }),
+    bottom
+  ];
 
-  return isProdSuccess;
+  logger.block();
+  boxLines.forEach((l) => logger.log(l));
+  logger.block();
 }

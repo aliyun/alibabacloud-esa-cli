@@ -1,11 +1,12 @@
 import { exit } from 'process';
 
 import { intro, outro } from '@clack/prompts';
+import chalk from 'chalk';
 import { CommandModule, ArgumentsCamelCase, Argv } from 'yargs';
 
 import t from '../../i18n/index.js';
-
 import { promptParameter } from '../../utils/prompt.js';
+import { displayDeploySuccess } from '../common/utils.js';
 
 import {
   applyFileEdits,
@@ -24,9 +25,6 @@ import {
   updateConfigFile
 } from './helper.js';
 import { initParams } from './types.js';
-import { displayDeploySuccess } from '../common/utils.js';
-
-import chalk from 'chalk';
 
 const init: CommandModule = {
   command: 'init [name]',
@@ -79,9 +77,8 @@ const init: CommandModule = {
 export default init;
 
 const handleInit = async (argv: ArgumentsCamelCase) => {
-  // await checkAndUpdatePackage('esa-template');
+  await checkAndUpdatePackage('esa-template');
   const initParams = getInitParamsFromArgv(argv);
-
   await create(initParams);
   await config(initParams);
   await deploy(initParams);

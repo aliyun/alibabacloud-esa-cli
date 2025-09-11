@@ -6,6 +6,7 @@ import logger from '../libs/logger.js';
 export interface SelectItem {
   label: string;
   value: string;
+  hint?: string;
   children?: SelectItem[];
 }
 
@@ -29,7 +30,8 @@ export default async function multiLevelSelect(
       options: [
         ...currentItems.map((item) => ({
           label: item.label,
-          value: item.value
+          value: item.value,
+          hint: item.hint
         })),
         ...(stack.length > 0 ? [{ label: 'Back', value: '__back__' }] : [])
       ]

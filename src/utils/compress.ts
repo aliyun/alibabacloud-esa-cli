@@ -33,18 +33,28 @@ const compress = async (
   assetsDir?: string,
   minify = false,
   projectPath?: string
-) => {
+): Promise<{
+  zip: AdmZip;
+  fileList: string[];
+  sourceList: string[];
+  dynamicSources: string[];
+}> => {
   let code;
   const zip = new AdmZip();
+  const fileList: string[] = [];
+  const sourceList: string[] = [];
+  const dynamicSources: string[] = [];
 
   const projectConfig = getProjectConfig(projectPath);
   let assetsDirectory = assetsDir || projectConfig?.assets?.directory;
-  assetsDirectory = path.resolve(projectPath ?? '', assetsDirectory ?? '');
 
   const routineType = checkEdgeRoutineType(scriptEntry, assetsDir, projectPath);
 
-  if (!projectConfig) {
-    throw new Error('Project config not found');
+  if (!projectConfig && !scriptEntry && !assetsDir) {
+    logger.error(
+      'esa.jsonc or esa.toml is not found and script entry or assets directory is not provided by command line'
+    );
+    exit(0);
   }
 
   // 参数优先：如果有参数则使用参数，否则使用配置文件中的值
@@ -55,13 +65,12 @@ const compress = async (
       chalk.red.bold('❌ File upload failed'),
       '',
       chalk.cyan('📋 Current configuration information:'),
-      `${chalk.white('  📁 Project path:')} ${chalk.yellow(projectPath || chalk.gray(t('compress_not_specified').d('Not specified')))}`,
-      `${chalk.white('  📄 Entry file:')} ${chalk.yellow(
+      `${chalk.white(`  📄 Entry file ${chalk.yellow('(dynamic)')} :`)} ${chalk.yellow(
         scriptEntry ||
           projectConfig?.entry ||
           chalk.gray(t('compress_not_configured').d('Not configured'))
       )}`,
-      `${chalk.white('  🗂️ Assets directory:')} ${chalk.yellow(assetsDirectory || chalk.gray(t('compress_not_configured').d('Not configured')))}`,
+      `${chalk.white(`  🗂️  Assets directory ${chalk.yellow('(static)')} :`)} ${chalk.yellow(assetsDirectory || chalk.gray(t('compress_not_configured').d('Not configured')))}`,
       '',
       chalk.cyan('🔍 Possible issue causes:'),
       chalk.white('  1. Entry file path is incorrect or file does not exist'),
@@ -90,7 +99,7 @@ const compress = async (
         : []),
       ...(assetsDirectory
         ? [
-            `${chalk.white('  🗂️ Assets directory:')} ${chalk.cyan.bold(
+            `${chalk.white('  🗂️  Assets directory:')} ${chalk.cyan.bold(
               path.resolve(projectPath ?? '', assetsDirectory)
             )} ${chalk.gray(t('compress_check_directory_exists').d('(Check if directory exists)'))}`
           ]
@@ -117,6 +126,13 @@ const compress = async (
     await prodBuild(minify, buildEntry, projectPath);
     code = readEdgeRoutineFile(projectPath);
     zip.addFile(`routine/index.js`, Buffer.from(code || ''));
+    fileList.push('routine/index.js');
+    const relativeEntry = path
+      .relative(projectPath ?? '', buildEntry)
+      .split(path.sep)
+      .join('/');
+    sourceList.push(relativeEntry);
+    dynamicSources.push(relativeEntry);
   }
   assetsDirectory = path.resolve(projectPath ?? '', assetsDirectory ?? '');
 
@@ -138,14 +154,23 @@ const compress = async (
           addDirectoryToZip(fullPath, path.join(zipPath, file));
         } else {
           const fileContent = fs.readFileSync(fullPath);
-          const relativePath = path.relative(assetsDirectory, fullPath);
+          const relativePath = path
+            .relative(assetsDirectory, fullPath)
+            .split(path.sep)
+            .join('/');
           zip.addFile(`assets/${relativePath}`, fileContent);
+          fileList.push(`assets/${relativePath}`);
+          const relativeSrcPath = path
+            .relative(projectPath ?? '', fullPath)
+            .split(path.sep)
+            .join('/');
+          sourceList.push(relativeSrcPath);
         }
       }
     };
     addDirectoryToZip(assetsDirectory, 'assets');
   }
-  return zip;
+  return { zip, fileList, sourceList, dynamicSources };
 };
 
 export default compress;

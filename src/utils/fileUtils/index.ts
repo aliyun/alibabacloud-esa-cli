@@ -127,10 +127,6 @@ export function getProjectConfig(filePath: string = root) {
 }
 
 export function readEdgeRoutineFile(projectPath: string = root): string | null {
-  const projectConfig = getProjectConfig(projectPath);
-  if (!projectConfig) {
-    return null;
-  }
   const pubFilePath = `.dev/pub.js`;
   const edgeRoutinePath = path.join(projectPath, pubFilePath);
   if (fs.existsSync(edgeRoutinePath)) {

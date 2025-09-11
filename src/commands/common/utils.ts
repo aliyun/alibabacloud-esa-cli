@@ -8,12 +8,11 @@ import {
   CreateRoutineWithAssetsCodeVersionReq
 } from '../../libs/interface.js';
 import logger from '../../libs/logger.js';
+import { ensureRoutineExists } from '../../utils/checkIsRoutineCreated.js';
 import compress from '../../utils/compress.js';
 import { getProjectConfig } from '../../utils/fileUtils/index.js';
 import { ProjectConfig } from '../../utils/fileUtils/interface.js';
 import sleep from '../../utils/sleep.js';
-import { intro, log, outro, spinner, taskLog } from '@clack/prompts';
-import { ensureRoutineExists } from '../../utils/checkIsRoutineCreated.js';
 import { checkIsLoginSuccess } from '../utils.js';
 
 function normalizeNotFoundStrategy(value?: string): string | undefined {
@@ -98,15 +97,21 @@ export async function commitRoutineWithAssets(
 export async function validateAndInitializeProject(
   name?: string,
   projectPath?: string
-): Promise<{ projectConfig: ProjectConfig; projectName: string } | null> {
+): Promise<{
+  projectConfig: ProjectConfig | null;
+  projectName: string;
+} | null> {
   const projectConfig = getProjectConfig(projectPath);
-  if (!projectConfig) {
+  // allow missing config, derive name from cwd when not provided
+  const projectName =
+    name ||
+    projectConfig?.name ||
+    (process.cwd().split(/[\\/]/).pop() as string);
+  if (!projectName) {
     logger.notInProject();
     return null;
   }
-
-  const projectName = name || projectConfig.name;
-  logger.startSubStep('Checking login status abc');
+  logger.startSubStep('Checking login status');
   const isSuccess = await checkIsLoginSuccess();
   if (!isSuccess) {
     logger.endSubStep('You are not logged in');
@@ -115,7 +120,7 @@ export async function validateAndInitializeProject(
   logger.endSubStep('Logged in');
 
   await ensureRoutineExists(projectName);
-  return { projectConfig, projectName };
+  return { projectConfig: projectConfig || null, projectName };
 }
 
 /**
@@ -142,13 +147,122 @@ export async function generateCodeVersion(
   isSuccess: boolean;
   res: CreateRoutineWithAssetsCodeVersionRes | null;
 } | null> {
-  const zip = await compress(entry, assets, minify, projectPath);
+  const { zip, sourceList, dynamicSources } = await compress(
+    entry,
+    assets,
+    minify,
+    projectPath
+  );
+
+  try {
+    // Pretty print upload directory tree
+    const buildTree = (
+      paths: string[],
+      decorateTopLevel: (name: string) => string
+    ): string[] => {
+      type Node = { children: Map<string, Node>; isFile: boolean };
+      const root: Node = { children: new Map(), isFile: false };
+      const sorted = [...paths].sort((a, b) => a.localeCompare(b));
+      for (const p of sorted) {
+        const parts = p.split('/').filter(Boolean);
+        let node = root;
+        for (let i = 0; i < parts.length; i++) {
+          const part = parts[i];
+          if (!node.children.has(part)) {
+            node.children.set(part, { children: new Map(), isFile: false });
+          }
+          const child = node.children.get(part)!;
+          if (i === parts.length - 1) child.isFile = true;
+          node = child;
+        }
+      }
+      const lines: string[] = [];
+      const render = (node: Node, prefix: string, depth: number) => {
+        const entries = [...node.children.entries()];
+        entries.forEach(([_name, _child], idx) => {
+          const isLast = idx === entries.length - 1;
+          const connector = isLast ? '└ ' : '├ ';
+          const nextPrefix = prefix + (isLast ? '   ' : '│  ');
+          const displayName = depth === 0 ? decorateTopLevel(_name) : _name;
+          lines.push(prefix + connector + displayName);
+          render(_child, nextPrefix, depth + 1);
+        });
+      };
+      render(root, '', 0);
+      return lines.length ? lines : ['-'];
+    };
+
+    const header =
+      chalk.hex('#22c55e')('UPLOAD') + ' Files to be uploaded (source paths)';
+    logger.block();
+    logger.log(header);
+
+    const dynamicSet = new Set(dynamicSources);
+    const LIMIT = 300;
+    const staticPaths = sourceList
+      .filter((p) => !dynamicSet.has(p))
+      .sort((a, b) => a.localeCompare(b));
+    const dynamicPaths = sourceList
+      .filter((p) => dynamicSet.has(p))
+      .sort((a, b) => a.localeCompare(b));
+
+    let omitted = 0;
+    let shownStatic = staticPaths;
+    if (staticPaths.length > LIMIT) {
+      shownStatic = staticPaths.slice(0, LIMIT);
+      omitted = staticPaths.length - LIMIT;
+    }
+
+    // Compute top-level markers based on whether a top-level bucket contains dynamic/static files
+    const topLevelStats = new Map<
+      string,
+      { hasDynamic: boolean; hasStatic: boolean }
+    >();
+    const addStat = (p: string, isDynamic: boolean) => {
+      const top = p.split('/')[0] || p;
+      const stat = topLevelStats.get(top) || {
+        hasDynamic: false,
+        hasStatic: false
+      };
+      if (isDynamic) stat.hasDynamic = true;
+      else stat.hasStatic = true;
+      topLevelStats.set(top, stat);
+    };
+    dynamicPaths.forEach((p) => addStat(p, true));
+    shownStatic.forEach((p) => addStat(p, false));
+
+    const dynamicMarker = chalk.bold.yellowBright(' (dynamic)');
+    const staticMarker = chalk.bold.greenBright(' (static)');
+    const decorateTopLevel = (name: string) => {
+      const stat = topLevelStats.get(name);
+      if (!stat) return name;
+      if (stat.hasDynamic && stat.hasStatic) {
+        return `${name}${dynamicMarker}${staticMarker}`;
+      }
+      if (stat.hasDynamic) return `${name}${dynamicMarker}`;
+      if (stat.hasStatic) return `${name}${staticMarker}`;
+      return name;
+    };
+
+    const combined = [...dynamicPaths, ...shownStatic];
+    const treeLines = buildTree(combined, decorateTopLevel);
+    for (const line of treeLines) {
+      logger.log(line);
+    }
+    if (omitted > 0) {
+      const note = chalk.gray(
+        `仅展示前 ${LIMIT} 个静态文件，已省略 ${omitted} 个`
+      );
+      logger.log(note);
+    }
+    logger.block();
+  } catch {}
 
   const projectConfig = getProjectConfig(projectPath);
   const notFoundStrategy = normalizeNotFoundStrategy(
     projectConfig?.assets?.notFoundStrategy
   );
-
+  logger.startSubStep('Generating code version');
   const requestParams: CreateRoutineWithAssetsCodeVersionReq = {
     Name: projectName,
     CodeDescription: description,
@@ -221,7 +335,8 @@ export async function commitAndDeployVersion(
     projectName,
     projectPath
   );
-  if (!projectInfo || !projectInfo.projectConfig) {
+
+  if (!projectInfo) {
     return false;
   }
   const { projectConfig } = projectInfo;
@@ -230,7 +345,7 @@ export async function commitAndDeployVersion(
   if (version) {
     logger.startSubStep(`Using existing version ${version}`);
     const deployed = await deployToEnvironments(
-      projectConfig.name,
+      projectInfo.projectName,
       version,
       env
     );
@@ -238,13 +353,12 @@ export async function commitAndDeployVersion(
     return deployed;
   }
 
-  logger.startSubStep('Generating code version');
   const res = await generateCodeVersion(
-    projectConfig.name,
+    projectInfo.projectName,
     description,
-    scriptEntry || projectConfig.entry,
-    assets || projectConfig.assets?.directory,
-    minify || projectConfig.minify,
+    scriptEntry || projectConfig?.entry,
+    assets || projectConfig?.assets?.directory,
+    minify || projectConfig?.minify,
     projectPath
   );
   const isCommitSuccess = res?.isSuccess;
@@ -262,7 +376,7 @@ export async function commitAndDeployVersion(
 
   // 3) Deploy to specified environment(s)
   const deployed = await deployToEnvironments(
-    projectConfig.name,
+    projectInfo.projectName,
     codeVersion,
     env
   );

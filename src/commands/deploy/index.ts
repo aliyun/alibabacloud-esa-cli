@@ -1,17 +1,16 @@
 import { exit } from 'process';
 
+import { intro, outro } from '@clack/prompts';
 import { CommandModule, ArgumentsCamelCase, Argv } from 'yargs';
 
 import t from '../../i18n/index.js';
-import { getDirName, getRoot } from '../../utils/fileUtils/base.js';
+import { getRoot } from '../../utils/fileUtils/base.js';
+import { getProjectConfig } from '../../utils/fileUtils/index.js';
 import {
   commitAndDeployVersion,
   displayDeploySuccess
 } from '../common/utils.js';
-import { groupMultiselect, intro, outro, taskLog } from '@clack/prompts';
-import chalk from 'chalk';
-import logger from '../../libs/logger.js';
-import { getProjectConfig } from '../../utils/fileUtils/index.js';
+
 
 const deploy: CommandModule = {
   command: 'deploy [entry]',
@@ -45,7 +44,7 @@ const deploy: CommandModule = {
       .option('assets', {
         alias: 'a',
         describe: t('deploy_option_assets').d('Deploy assets'),
-        type: 'boolean'
+        type: 'string'
       })
       .option('description', {
         alias: 'd',
@@ -53,11 +52,6 @@ const deploy: CommandModule = {
           'Description of the version'
         ),
         type: 'string'
-      })
-      .option('minify', {
-        alias: 'm',
-        describe: t('deploy_option_minify').d('Minify the code'),
-        type: 'boolean'
       })
       .option('minify', {
         alias: 'm',
@@ -74,7 +68,7 @@ const deploy: CommandModule = {
 
 export async function handleDeploy(argv: ArgumentsCamelCase) {
   const entry = argv.entry as string;
-  const assets = argv.assets as string;
+  const assets = (argv.assets as string) ?? undefined;
 
   intro(`Deploy an application with ESA`);
 
@@ -93,7 +87,10 @@ export async function handleDeploy(argv: ArgumentsCamelCase) {
   if (success) {
     const projectConfig = getProjectConfig(getRoot());
     await displayDeploySuccess(
-      (argv.name as string) || projectConfig?.name || '',
+      (argv.name as string) ||
+        projectConfig?.name ||
+        (getRoot().split(/[\\/]/).pop() as string) ||
+        '',
       true,
       true
     );

@@ -1234,5 +1234,41 @@
   "step": {
     "en": "Step:",
     "zh_CN": ""
+  },
+  "version_title_update_available": {
+    "en": "ESA CLI Update Available",
+    "zh_CN": "ESA CLI 有新版本可用"
+  },
+  "version_current": {
+    "en": "Current",
+    "zh_CN": "当前版本"
+  },
+  "version_latest": {
+    "en": "Latest",
+    "zh_CN": "最新版本"
+  },
+  "version_note": {
+    "en": "Note",
+    "zh_CN": "提示"
+  },
+  "version_note_incompatible": {
+    "en": "This version may have incompatibilities, please upgrade soon.",
+    "zh_CN": "当前版本可能存在不兼容，建议尽快升级至最新版本。"
+  },
+  "version_update": {
+    "en": "Update",
+    "zh_CN": "升级"
+  },
+  "version_continue": {
+    "en": "You can continue using the current version; commands will proceed.",
+    "zh_CN": "你可以继续使用当前版本；命令将继续执行。"
+  },
+  "version_prompt_update_now": {
+    "en": "Update now to the latest version?",
+    "zh_CN": "是否立即更新到最新版本？"
+  },
+  "version_update_failed": {
+    "en": "Global update failed. You may need elevated permissions (sudo) or use yarn/pnpm:",
+    "zh_CN": "全局更新失败。你可能需要更高权限（sudo）或使用 yarn/pnpm："
   }
 }

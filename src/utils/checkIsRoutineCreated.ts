@@ -1,12 +1,12 @@
 import { exit } from 'process';
 
+import { log } from '@clack/prompts';
 import chalk from 'chalk';
 
 import t from '../i18n/index.js';
 import { ApiService } from '../libs/apiService.js';
 import { GetRoutineReq } from '../libs/interface.js';
 import logger from '../libs/logger.js';
-import { log, taskLog } from '@clack/prompts';
 
 export async function isRoutineExist(name: string) {
   const server = await ApiService.getInstance();
@@ -45,16 +45,9 @@ export async function ensureRoutineExists(name: string) {
     });
     const isSuccess = createRes?.data.Status === 'OK';
     if (isSuccess) {
-      // logger.endSubStep(
-      //   t('routine_create_success').d('Routine created successfully.')
-      // );
       logger.endSubStep('Routine created successfully');
-      // tlog.success(
-      //   t('routine_create_success').d('Routine created successfully.')
-      // );
     } else {
       logger.endSubStep('Routine created failed');
-      // tlog.error(t('routine_create_fail').d('Routine created failed.'));
       exit();
     }
   } else {

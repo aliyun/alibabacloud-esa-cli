@@ -1,17 +1,17 @@
 import { exit } from 'process';
 
+import { intro, outro } from '@clack/prompts';
+import chalk from 'chalk';
 import { CommandModule, Argv, ArgumentsCamelCase } from 'yargs';
 
-import { descriptionInput } from '../../components/descriptionInput.js';
 import t from '../../i18n/index.js';
+import logger from '../../libs/logger.js';
+import promptParameter from '../../utils/prompt.js';
 import {
   validateAndInitializeProject,
   generateCodeVersion
 } from '../common/utils.js';
-import { intro, outro } from '@clack/prompts';
-import promptParameter from '../../utils/prompt.js';
-import logger from '../../libs/logger.js';
-import chalk from 'chalk';
+
 
 const commit: CommandModule = {
   command: 'commit [entry]',

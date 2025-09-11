@@ -226,12 +226,70 @@ class Logger {
   }
 
   notInProject() {
-    const initCommand = chalk.green('esa init');
-    this.error(
-      t('common_not_edge_project', { initCommand }).d(
-        `You are not in an esa project, Please run ${initCommand} to initialize a project, or enter an esa project.`
-      )
+    this.block();
+    this.error('Missing ESA project configuration (esa.jsonc or esa.toml)');
+    this.block();
+
+    this.log('If there is code to deploy, you can either:');
+    this.subLog(
+      `- Specify an entry-point to your Routine via the command line (ex: ${chalk.green(
+        'esa deploy src/index.ts'
+      )})`
     );
+    this.subLog('- Or add the following to your "esa.jsonc" file:');
+    console.log(
+      '```jsonc\n' +
+        '{\n' +
+        '  "name": "my-routine",\n' +
+        '  "entry": "src/index.ts",\n' +
+        '  "dev": { "port": 18080 }\n' +
+        '}\n' +
+        '```'
+    );
+    this.subLog('- Or, if you prefer TOML, add to your "esa.toml":');
+    console.log(
+      '```toml\n' +
+        'name = "my-routine"\n' +
+        'entry = "src/index.ts"\n' +
+        '\n' +
+        '[dev]\n' +
+        'port = 18080\n' +
+        '```\n'
+    );
+
+    this.log(
+      'If you are deploying a directory of static assets, you can either:'
+    );
+    this.subLog(
+      `- Add the assets directory to your "esa.jsonc" and run ${chalk.green(
+        'esa deploy -a ./dist'
+      )}`
+    );
+    console.log(
+      '```jsonc\n' +
+        '{\n' +
+        '  "name": "my-routine",\n' +
+        '  "assets": {\n' +
+        '    "directory": "./dist"\n' +
+        '  }\n' +
+        '}\n' +
+        '```'
+    );
+    this.subLog(
+      `- Or add to your "esa.toml" and run ${chalk.green('esa deploy -a ./dist')}`
+    );
+    console.log(
+      '```toml\n' +
+        'name = "my-routine"\n' +
+        '\n' +
+        '[assets]\n' +
+        'directory = "./dist"\n' +
+        '```\n'
+    );
+
+    this.log('Alternatively, initialize a new ESA project:');
+    this.log(chalk.green('$ esa init my-routine'));
+    this.block();
   }
 
   pathEacces(localPath: string) {

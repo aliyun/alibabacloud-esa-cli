@@ -1,7 +1,6 @@
 import { spawn } from 'child_process';
 
-import { cancel, log, spinner } from '@clack/prompts';
-
+import { cancel, spinner } from '@clack/prompts';
 import chalk from 'chalk';
 
 export interface ExecCommandOptions {

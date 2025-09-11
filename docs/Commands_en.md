@@ -72,7 +72,7 @@ esa deploy [entry]
   - -v, --version string: Version to deploy (skip interactive selection)
   - -e, --environment string: Environment to deploy to. Choices: staging | production
   - -n, --name string: Name of the routine
-  - -a, --assets boolean: Deploy assets
+  - -a, --assets string: Assets directory (e.g., ./dist)
   - -d, --description string: Description of the version
   - -m, --minify boolean: Minify the code
 
@@ -152,6 +152,39 @@ esa route delete <routeName>
   - add: Bind a Route to a routine
   - list: List all related routes
   - delete <routeName>: Delete a related route
+
+#### esa route add
+
+Bind a route to the current routine.
+
+```bash
+esa route add [route] [site] [--alias <routeName>] [--route <route>] [--site <site>]
+```
+
+- Positionals (optional):
+  - route: The route value, e.g. example.com/_ or _.example.com/\*
+  - site: The site name, e.g. example.com
+
+- Options:
+  - -r, --route string: Route value, e.g. example.com/\*
+    - Host supports leading `*` for suffix match (e.g., `*.example.com`)
+    - Path supports trailing `*` for prefix match (e.g., `/api/*`)
+  - -s, --site string: Site name (must be an active site)
+  - -a, --alias string: Route name (alias)
+
+- Interactive behavior:
+  - If `--alias` is missing, you will be prompted to input a route name
+  - If `--site` is missing, you will be prompted to choose from active sites
+  - If `--route` is missing, you will be prompted to input the route value
+
+- Route matching notes:
+  - Host supports `*` prefix: `*.example.com` matches any host ending with `.example.com`
+  - Path supports `*` suffix: `/api/*` matches any path starting with `/api/`
+  - Examples: `example.com/*`, `*.example.com/`, `*.example.com/api/*`
+
+- Examples:
+  - `esa route add -a home -s example.com -r example.com/*`
+  - `esa route add example.com/* example.com -a home`
 
 ---
 

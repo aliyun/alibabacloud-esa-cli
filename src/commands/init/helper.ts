@@ -1,14 +1,18 @@
 import { execSync } from 'child_process';
 import path from 'path';
+import { exit } from 'process';
 
 import { confirm as clackConfirm, isCancel, log, outro } from '@clack/prompts';
 import chalk from 'chalk';
 import fs from 'fs-extra';
+import Haikunator from 'haikunator';
+import { ArgumentsCamelCase } from 'yargs';
 
 import { SelectItem } from '../../components/mutiLevelSelect.js';
 import t from '../../i18n/index.js';
 import logger from '../../libs/logger.js';
 import Template from '../../libs/templates/index.js';
+import { execCommand } from '../../utils/command.js';
 import { getDirName } from '../../utils/fileUtils/base.js';
 import {
   generateConfigFile,
@@ -19,13 +23,10 @@ import {
   TemplateItem,
   updateProjectConfigFile
 } from '../../utils/fileUtils/index.js';
-import { execCommand } from '../../utils/command.js';
-import { FrameworkConfig, InitArgv, initParams } from './types.js';
 import promptParameter from '../../utils/prompt.js';
-import { ArgumentsCamelCase } from 'yargs';
-import Haikunator from 'haikunator';
 import { commitAndDeployVersion } from '../common/utils.js';
-import { exit } from 'process';
+
+import { FrameworkConfig, InitArgv, initParams } from './types.js';
 
 export const getTemplateInstances = (templateHubPath: string) => {
   return fs
@@ -65,6 +66,7 @@ export const transferTemplatesToSelectItem = (
     return {
       label: lang === 'en' ? config.Title_EN : config.Title_ZH,
       value: value,
+      hint: lang === 'en' ? config.Desc_EN : config.Desc_ZH,
       children
     };
   });
@@ -241,6 +243,7 @@ export const getFrameworkConfig = (framework: string): FrameworkConfig => {
   const templatePath = path.join(getDirName(import.meta.url), 'template.jsonc');
   const jsonc = fs.readFileSync(templatePath, 'utf-8');
   const json = JSON.parse(jsonc);
+  console.log(json);
   return json[framework];
 };
 
@@ -271,7 +274,6 @@ export function getInitParamsFromArgv(argv: ArgumentsCamelCase): initParams {
     params.name = haikunator.haikunate();
     params.git = true;
     params.deploy = true;
-
     params.template = 'Hello World';
     params.framework = undefined;
     params.language = undefined;
@@ -283,11 +285,13 @@ export function getInitParamsFromArgv(argv: ArgumentsCamelCase): initParams {
     params.template = a.template;
     params.framework = undefined;
     params.language = undefined;
+    params.category = 'template';
   } else {
     const fw = a.framework as initParams['framework'] | undefined;
     const lang = a.language as initParams['language'] | undefined;
     if (fw) {
       params.framework = fw;
+      params.category = 'framework';
     }
     if (lang) {
       params.language = lang;
@@ -305,11 +309,22 @@ export const configProjectName = async (initParams: initParams) => {
     log.step(`Project name configured ${initParams.name}`);
     return;
   }
+  const HaikunatorCtor = Haikunator as unknown as new () => {
+    haikunate: () => string;
+  };
+  const haikunator = new HaikunatorCtor();
+  const defaultName = haikunator.haikunate();
+
   const name = (await promptParameter<string>({
     type: 'text',
     question: `${t('init_input_name').d('Enter the name of edgeRoutine:')}`,
     label: 'Project name',
+    defaultValue: defaultName,
     validate: (input: string) => {
+      if (input === '' || input === undefined) {
+        initParams.name = defaultName;
+        return true;
+      }
       const regex = /^[a-z0-9-]{2,}$/;
       if (!regex.test(input)) {
         return t('init_name_error').d(
@@ -462,8 +477,8 @@ export const createProject = async (initParams: initParams) => {
       `${command} ${initParams.name} ${templateFlag} ${extraParams}`.trim();
     const res = await execCommand(['sh', '-lc', full], {
       interactive: true,
-      startText: `Starting to execute framework command: ${chalk.gray(full)}`,
-      doneText: `Framework command executed: ${chalk.bold(full)}`
+      startText: `Starting to execute framework command ${chalk.gray(full)}`,
+      doneText: `Framework command executed  ${chalk.gray(full)}`
     });
     if (!res.success) {
       outro(`Framework command execution failed`);
@@ -666,12 +681,18 @@ export const initGit = async (initParams: initParams): Promise<boolean> => {
   if (initParams.git) {
     const targetPath = path.join(process.cwd(), initParams.name);
     const res = await execCommand(['git', 'init'], {
-      cwd: targetPath
+      cwd: targetPath,
+      silent: true,
+      startText: 'Initializing git',
+      doneText: 'Git initialized'
     });
     if (!res.success) {
       outro(`Git initialization failed`);
       exit(1);
     }
+
+    // Ensure .gitignore exists and has sensible defaults
+    await ensureGitignore(targetPath, frameworkConfig?.assets?.directory);
   }
   return true;
 };
@@ -693,6 +714,98 @@ export async function getGitVersion() {
 
 export async function isGitInstalled() {
   return (await getGitVersion()) !== null;
+}
+
+/**
+ * Create or update .gitignore in project root with sensible defaults.
+ * - Preserves existing entries and comments
+ * - Avoids duplicates
+ * - Adds framework assets directory if provided
+ */
+async function ensureGitignore(
+  projectRoot: string,
+  assetsDirectory?: string
+): Promise<void> {
+  try {
+    const gitignorePath = path.join(projectRoot, '.gitignore');
+
+    const defaults: string[] = [
+      '# Logs',
+      'logs',
+      '*.log',
+      'npm-debug.log*',
+      'yarn-debug.log*',
+      'yarn-error.log*',
+      'pnpm-debug.log*',
+      '',
+      '# Node modules',
+      'node_modules/',
+      '',
+      '# Build output',
+      'dist/',
+      'build/',
+      'out/',
+      '.next/',
+      '.nuxt/',
+      'coverage/',
+      '.vite/',
+      '',
+      '# Env files',
+      '.env',
+      '.env.local',
+      '.env.development.local',
+      '.env.test.local',
+      '.env.production.local',
+      '',
+      '# IDE/editor',
+      '.DS_Store',
+      '.idea/',
+      '.vscode/',
+      '',
+      '# Misc caches',
+      '.eslintcache',
+      '.parcel-cache/',
+      '.turbo/',
+      '.cache/'
+    ];
+
+    // Include assets directory if provided and not a common default
+    if (
+      assetsDirectory &&
+      !['dist', 'build', 'out'].includes(assetsDirectory.replace(/\/$/, ''))
+    ) {
+      defaults.push('', '# Project assets output', `${assetsDirectory}/`);
+    }
+
+    let existingContent = '';
+    if (fs.existsSync(gitignorePath)) {
+      existingContent = fs.readFileSync(gitignorePath, 'utf-8');
+    }
+
+    const existingLines = new Set(
+      existingContent.split(/\r?\n/).map((l) => l.trimEnd())
+    );
+
+    const toAppend: string[] = [];
+    for (const line of defaults) {
+      if (!existingLines.has(line)) {
+        toAppend.push(line);
+        existingLines.add(line);
+      }
+    }
+
+    // If nothing to add, keep as is
+    if (!toAppend.length) return;
+
+    const newContent = existingContent
+      ? `${existingContent.replace(/\n$/, '')}\n${toAppend.join('\n')}\n`
+      : `${toAppend.join('\n')}\n`;
+
+    fs.writeFileSync(gitignorePath, newContent, 'utf-8');
+    logger.log('Updated .gitignore');
+  } catch {
+    // Do not fail init due to .gitignore issues
+  }
 }
 
 export const buildProject = async (initParams: initParams) => {

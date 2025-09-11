@@ -3,25 +3,23 @@ import chalk from 'chalk';
 import moment from 'moment';
 
 import SelectItems, { SelectItem } from '../../components/selectInput.js';
-import { yesNoPrompt } from '../../components/yesNoPrompt.js';
 import t from '../../i18n/index.js';
 import { PublishType } from '../../libs/interface.js';
 import logger from '../../libs/logger.js';
+import promptParameter from '../../utils/prompt.js';
 
-export function yesNoPromptAndExecute(
+export async function yesNoPromptAndExecute(
   message: string,
   execute: () => Promise<boolean>
 ): Promise<boolean> {
-  return new Promise((resolve) => {
-    yesNoPrompt(async (item: SelectItem) => {
-      if (item.value === 'yes') {
-        const result = await execute();
-        resolve(result);
-      } else {
-        resolve(false);
-      }
-    }, message);
-  });
+  const confirmed = (await promptParameter<boolean>({
+    type: 'confirm',
+    question: message,
+    label: 'Confirm',
+    defaultValue: true
+  })) as boolean;
+  if (!confirmed) return false;
+  return await execute();
 }
 
 export function promptSelectVersion(

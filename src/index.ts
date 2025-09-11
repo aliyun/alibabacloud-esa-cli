@@ -16,7 +16,7 @@ import routeCommand from './commands/route/index.js';
 import routine from './commands/routine/index.js';
 import site from './commands/site/index.js';
 import t from './i18n/index.js';
-import { handleCheckVersion } from './utils/checkVersion.js';
+import { handleCheckVersion, checkCLIVersion } from './utils/checkVersion.js';
 import { getCliConfig } from './utils/fileUtils/index.js';
 
 const main = async () => {
@@ -32,6 +32,17 @@ const main = async () => {
     .version(false)
     .wrap(null)
     .help()
+    .middleware(async (argv) => {
+      try {
+        // Pass current command (first positional) so version check can decide prompting behavior
+        await checkCLIVersion(
+          (argv._ && argv._[0] ? String(argv._[0]) : '') as string
+        );
+      } catch (e) {
+        console.log(e);
+        console.log('error');
+      }
+    })
     .epilogue(
       `${t('main_epilogue').d('For more information, visit ESA')}: ${chalk.underline.blue('https://www.aliyun.com/product/esa')}`
     )

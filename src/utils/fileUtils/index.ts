@@ -21,6 +21,19 @@ export const cliConfigPath = path.join(
   os.homedir(),
   '.esa/config/default.toml'
 );
+
+// Function to get the actual config file path (supports both .toml and .jsonc)
+export const getCliConfigPath = (): string => {
+  const configDir = path.join(os.homedir(), '.esa/config');
+  const jsoncPath = path.join(configDir, 'default.jsonc');
+  const tomlPath = path.join(configDir, 'default.toml');
+
+  // Check if JSONC file exists first, then fallback to TOML
+  if (fs.existsSync(jsoncPath)) {
+    return jsoncPath;
+  }
+  return tomlPath;
+};
 export const hiddenConfigDir = path.join(os.homedir(), '.esa/config');
 
 export const generateHiddenConfigDir = () => {
@@ -42,7 +55,8 @@ export const generateToml = (path: string) => {
 
 export const generateDefaultConfig = () => {
   generateHiddenConfigDir();
-  generateToml(cliConfigPath);
+  const configPath = getCliConfigPath();
+  generateToml(configPath);
 };
 
 export async function updateProjectConfigFile(
@@ -64,15 +78,33 @@ export async function updateProjectConfigFile(
 
 export async function updateCliConfigFile(configUpdate: Partial<CliConfig>) {
   try {
-    let configFileContent = await fsPromises.readFile(cliConfigPath, 'utf8');
-    let config = toml.parse(configFileContent);
-    config = { ...config, ...configUpdate };
-    const updatedConfigString = toml.stringify(config);
-    await fsPromises.writeFile(cliConfigPath, updatedConfigString);
+    const configPath = getCliConfigPath();
+    let configFileContent = await fsPromises.readFile(configPath, 'utf8');
+    let config: any;
+    let updatedConfigString: string;
+
+    // Detect file format based on file extension
+    if (configPath.endsWith('.jsonc') || configPath.endsWith('.json')) {
+      // Handle JSONC format
+      const jsonContent = configFileContent.replace(
+        /\/\*[\s\S]*?\*\/|\/\/.*$/gm,
+        ''
+      );
+      config = JSON.parse(jsonContent);
+      config = { ...config, ...configUpdate };
+      updatedConfigString = JSON.stringify(config, null, 2) + '\n';
+    } else {
+      // Handle TOML format (default)
+      config = toml.parse(configFileContent);
+      config = { ...config, ...configUpdate };
+      updatedConfigString = toml.stringify(config);
+    }
+
+    await fsPromises.writeFile(configPath, updatedConfigString);
   } catch (error) {
-    logger.error(`Error updating TOML file: ${error}`);
+    logger.error(`Error updating config file: ${error}`);
     logger.pathEacces(__dirname);
-    throw new Error('Login error');
+    throw new Error('Config update error');
   }
 }
 
@@ -104,7 +136,8 @@ export function readConfigFile(
   return null;
 }
 export function getCliConfig() {
-  const res = readConfigFile(cliConfigPath);
+  const configPath = getCliConfigPath();
+  const res = readConfigFile(configPath);
   if (!res) {
     return null;
   }

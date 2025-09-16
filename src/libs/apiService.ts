@@ -263,7 +263,12 @@ export class ApiService {
     return null;
   }
 
-  async listUserRoutines(): Promise<ListUserRoutinesRes | null> {
+  async listUserRoutines(requestParams?: {
+    RegionId?: string;
+    PageNumber?: number;
+    PageSize?: number;
+    SearchKeyWord?: string;
+  }): Promise<ListUserRoutinesRes | null> {
     try {
       let params = {
         action: 'ListUserRoutines',
@@ -279,7 +284,9 @@ export class ApiService {
           return this;
         }
       };
-      let request = new $OpenApi.OpenApiRequest();
+      let request = new $OpenApi.OpenApiRequest({
+        query: requestParams || {}
+      });
       let runtime = {
         toMap: function () {
           return this;

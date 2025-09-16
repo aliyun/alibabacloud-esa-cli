@@ -1270,5 +1270,41 @@
   "version_update_failed": {
     "en": "Global update failed. You may need elevated permissions (sudo) or use yarn/pnpm:",
     "zh_CN": "全局更新失败。你可能需要更高权限（sudo）或使用 yarn/pnpm："
+  },
+  "deploy_option_keyword": {
+    "en": "Keyword to search for routines",
+    "zh_CN": ""
+  },
+  "route_input_method": {
+    "en": "How would you like to input the route?",
+    "zh_CN": "您希望如何输入路由？"
+  },
+  "route_input_builder": {
+    "en": "Use route builder (prefix + suffix)",
+    "zh_CN": "使用路由构建器（前缀 + 后缀）"
+  },
+  "route_input_manual": {
+    "en": "Enter route manually",
+    "zh_CN": "手动输入路由"
+  },
+  "route_build_cancelled": {
+    "en": "Route building cancelled",
+    "zh_CN": "路由构建已取消"
+  },
+  "route_builder_prefix_prompt": {
+    "en": "Enter route prefix for ${siteName} (e.g., api, v1):",
+    "zh_CN": "为 ${siteName} 输入路由前缀（例如：api, v1）："
+  },
+  "route_builder_suffix_prompt": {
+    "en": "Enter route suffix for ${siteName} (e.g., *, users/*):",
+    "zh_CN": "为 ${siteName} 输入路由后缀（例如：*, users/*）："
+  },
+  "route_builder_preview": {
+    "en": "Preview: ${siteName}${prefix}${suffix}",
+    "zh_CN": "预览：{route}"
+  },
+  "route_builder_instructions": {
+    "en": "Press Enter to continue, Ctrl+C to cancel",
+    "zh_CN": "按回车键继续，Ctrl+C 取消"
   }
 }

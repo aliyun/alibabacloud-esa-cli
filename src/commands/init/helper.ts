@@ -243,7 +243,6 @@ export const getFrameworkConfig = (framework: string): FrameworkConfig => {
   const templatePath = path.join(getDirName(import.meta.url), 'template.jsonc');
   const jsonc = fs.readFileSync(templatePath, 'utf-8');
   const json = JSON.parse(jsonc);
-  console.log(json);
   return json[framework];
 };
 
@@ -664,6 +663,7 @@ export const initGit = async (initParams: initParams): Promise<boolean> => {
     return true;
   }
   const gitInstalled = await isGitInstalled();
+  console.log('gitInstalled', gitInstalled);
   if (!gitInstalled) {
     log.step('You have not installed Git, Git skipped');
     return true;
@@ -699,7 +699,7 @@ export const initGit = async (initParams: initParams): Promise<boolean> => {
 
 export async function getGitVersion() {
   try {
-    const stdout = await execCommand(['git', '--version'], {
+    let stdout = await execCommand(['git', '--version'], {
       useSpinner: false,
       silent: true,
       captureOutput: true
@@ -713,7 +713,7 @@ export async function getGitVersion() {
 }
 
 export async function isGitInstalled() {
-  return (await getGitVersion()) !== null;
+  return (await getGitVersion()) !== '';
 }
 
 /**

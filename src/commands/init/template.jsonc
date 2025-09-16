@@ -55,7 +55,7 @@
   "astro": {
     "label": "Astro",
     "useGit": false,
-    "command": "npm create-astro@4.13.1",
+    "command": "npm create astro@4.13.1",
     "params": "--no-install",
     "assets": {
       "directory": "./dist"

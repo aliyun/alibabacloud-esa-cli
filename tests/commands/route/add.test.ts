@@ -24,6 +24,7 @@ describe('handle add routes', () => {
           value: 4589034801
         }
       },
+      { method: 'manual' },
       { inputRoute: 'kl.test.site/*' }
     ]);
     await handlerAddRoute({
@@ -49,15 +50,23 @@ describe('handle add routes', () => {
           ],
           [
             {
+              "method": "manual",
+            },
+          ],
+          [
+            {
               "inputRoute": "kl.test.site/*",
             },
           ],
           [
-            "
-      🎉  SUCCESS  Add route success!",
+            "🎉  SUCCESS  Add route success!",
           ],
         ],
         "results": [
+          {
+            "type": "return",
+            "value": undefined,
+          },
           {
             "type": "return",
             "value": undefined,
@@ -90,6 +99,7 @@ describe('handle add routes', () => {
           value: 4589034801
         }
       },
+      { method: 'manual' },
       { inputRoute: 'kl.test.site/*' }
     ]);
 
@@ -121,6 +131,11 @@ describe('handle add routes', () => {
           ],
           [
             {
+              "method": "manual",
+            },
+          ],
+          [
+            {
               "inputRoute": "kl.test.site/*",
             },
           ],
@@ -130,6 +145,10 @@ describe('handle add routes', () => {
           ],
         ],
         "results": [
+          {
+            "type": "return",
+            "value": undefined,
+          },
           {
             "type": "return",
             "value": undefined,

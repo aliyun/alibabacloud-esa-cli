@@ -5,7 +5,7 @@ import { CommandModule, ArgumentsCamelCase, Argv } from 'yargs';
 
 import t from '../../i18n/index.js';
 import { ApiService } from '../../libs/apiService.js';
-import { EdgeFunctionItem, ListSitesReq } from '../../libs/interface.js';
+import { EdgeFunctionItem } from '../../libs/interface.js';
 import logger from '../../libs/logger.js';
 import { checkIsLoginSuccess } from '../utils.js';
 
@@ -13,7 +13,15 @@ const list: CommandModule = {
   command: 'list',
   describe: `📋 ${t('list_describe').d('List all your routines')}`,
   builder: (yargs: Argv) => {
-    return yargs.usage(`${t('common_usage').d('Usage')}: \$0 list []`);
+    return yargs
+      .option('keyword', {
+        alias: 'k',
+        describe: t('deploy_option_keyword').d(
+          'Keyword to search for routines'
+        ),
+        type: 'string'
+      })
+      .usage(`${t('common_usage').d('Usage')}: \$0 list [--keyword <keyword>]`);
   },
   handler: async (argv: ArgumentsCamelCase) => {
     handleList(argv);
@@ -22,33 +30,51 @@ const list: CommandModule = {
 
 export default list;
 
-export async function handleList(argv: ArgumentsCamelCase) {
-  const { site } = argv;
-  const isSuccess = await checkIsLoginSuccess();
-  if (!isSuccess) return;
+export async function getAllRoutines(options?: {
+  RegionId?: string;
+  SearchKeyWord?: string;
+  PageSize?: number;
+}): Promise<EdgeFunctionItem[]> {
   const server = await ApiService.getInstance();
+  const allRoutines: EdgeFunctionItem[] = [];
 
-  if (site) {
-    const req: ListSitesReq = {
-      SiteSearchType: 'fuzzy',
-      Status: 'active',
-      PageNumber: 1,
-      PageSize: 50
-    };
-    const res = await server.listSites(req);
-    const siteList = res?.data.Sites ?? [];
-    const siteNameList: string[] = siteList?.map((item: any) => item.SiteName);
-    logger.log(
-      chalk.bold.bgGray(
-        `📃 ${t('list_site_name_title').d('List all of site names')}:`
-      )
-    );
-    logger.tree(siteNameList);
-    return;
+  let pageNumber = 1;
+  const pageSize = options?.PageSize || 50;
+
+  while (true) {
+    const res = await server.listUserRoutines({
+      RegionId: options?.RegionId,
+      PageNumber: pageNumber,
+      PageSize: pageSize,
+      SearchKeyWord: options?.SearchKeyWord
+    });
+
+    if (!res?.body?.Routines) {
+      break;
+    }
+
+    allRoutines.push(...res.body.Routines);
+
+    const totalCount = res.body.TotalCount;
+    const currentCount = allRoutines.length;
+
+    if (currentCount >= totalCount) {
+      break;
+    }
+
+    pageNumber++;
   }
 
-  const res = await server.listUserRoutines();
-  const routineList = res?.body?.Routines;
+  return allRoutines;
+}
+
+export async function handleList(argv: ArgumentsCamelCase) {
+  const isSuccess = await checkIsLoginSuccess();
+  if (!isSuccess) return;
+
+  const routineList = await getAllRoutines({
+    SearchKeyWord: argv.keyword as string
+  });
   if (routineList) {
     logger.log(
       chalk.bold.bgGray(

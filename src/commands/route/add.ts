@@ -8,6 +8,7 @@ import logger from '../../libs/logger.js';
 import { validRoutine } from '../../utils/checkIsRoutineCreated.js';
 import { getProjectConfig } from '../../utils/fileUtils/index.js';
 import { checkDirectory, checkIsLoginSuccess } from '../utils.js';
+import { routeBuilder } from '../../components/routeBuilder.js';
 
 import { transferRouteToRuleString } from './helper.js';
 
@@ -107,37 +108,19 @@ export async function handlerAddRoute(argv: ArgumentsCamelCase) {
   let siteId: string | number;
 
   if (!siteName) {
-    if (argv._.length > 2) {
-      siteName = argv._[2] as string;
-    }
-
-    // 如果仍未提供站点名称，则提示选择
-    if (!siteName) {
-      const response = await inquirer.prompt([
-        {
-          type: 'list',
-          name: 'routeSite',
-          message: t('create_route_site').d(
-            'Select a site that is active in your account:'
-          ),
-          choices: siteList
-        }
-      ]);
-      siteId = response.routeSite;
-    } else {
-      // 根据站点名称查找对应的站点ID
-      const matchedSite = siteList.find((site: any) => site.name === siteName);
-      if (matchedSite) {
-        siteId = matchedSite.value;
-      } else {
-        logger.error(
-          t('site_not_found').d(`Site "${siteName}" not found in your account`)
-        );
-        return;
+    const response = await inquirer.prompt([
+      {
+        type: 'list',
+        name: 'routeSite',
+        message: t('create_route_site').d(
+          'Select a site that is active in your account:'
+        ),
+        choices: siteList
       }
-    }
+    ]);
+    siteId = response.routeSite;
   } else {
-    // 根据站点名称查找对应的站点ID
+    // Find corresponding site ID by site name
     const matchedSite = siteList.find((site: any) => site.name === siteName);
     if (matchedSite) {
       siteId = matchedSite.value;
@@ -149,38 +132,19 @@ export async function handlerAddRoute(argv: ArgumentsCamelCase) {
     }
   }
 
-  // 获取路由值，支持直接通过参数传入
   let inputRoute = argv.route as string;
   if (!inputRoute) {
-    // 如果参数中提供了路由值，使用它
-    if (argv._.length > 1) {
-      inputRoute = argv._[1] as string;
-    }
+    // Get selected site name for route building
+    const selectedSite = siteList.find((site: any) => site.value === siteId);
+    const displaySiteName = selectedSite ? selectedSite.name : siteName;
 
-    // 如果仍未提供路由值，则提示输入
-    if (!inputRoute) {
-      const response = await inquirer.prompt([
-        {
-          type: 'input',
-          name: 'inputRoute',
-          message: t('create_route_route').d(
-            'Enter a Route (e.g., example.com/*):'
-          ),
-          validate: (input: string) => {
-            if (!input) {
-              return t('route_input_required').d('Route is required');
-            }
-            if (!input.includes('*') && !input.includes('/')) {
-              return t('route_format_invalid').d(
-                'Route format is invalid. Please include wildcard (*) or path (/)'
-              );
-            }
-            return true;
-          }
-        }
-      ]);
-      inputRoute = response.inputRoute;
+    // Use route builder
+    const builtRoute = await routeBuilder(displaySiteName);
+    if (!builtRoute) {
+      logger.info(t('route_build_cancelled').d('Route building cancelled'));
+      return;
     }
+    inputRoute = builtRoute;
   }
 
   const rule = transferRouteToRuleString(inputRoute as string);
@@ -190,7 +154,6 @@ export async function handlerAddRoute(argv: ArgumentsCamelCase) {
     return;
   }
 
-  // 获取站点名称用于显示
   const selectedSite = siteList.find((site: any) => site.value === siteId);
   const displaySiteName = selectedSite ? selectedSite.name : siteName;
 

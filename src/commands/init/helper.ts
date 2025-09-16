@@ -663,7 +663,6 @@ export const initGit = async (initParams: initParams): Promise<boolean> => {
     return true;
   }
   const gitInstalled = await isGitInstalled();
-  console.log('gitInstalled', gitInstalled);
   if (!gitInstalled) {
     log.step('You have not installed Git, Git skipped');
     return true;

@@ -1306,5 +1306,9 @@
   "route_builder_instructions": {
     "en": "Press Enter to continue, Ctrl+C to cancel",
     "zh_CN": "按回车键继续，Ctrl+C 取消"
+  },
+  "kv_parse_failed": {
+    "en": "kv.json parse failed, use empty local kv store.",
+    "zh_CN": "kv.json 解析失败，使用空本地 kv 存储。"
   }
 }

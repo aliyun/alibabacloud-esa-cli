@@ -246,6 +246,7 @@ class Ew2Server {
     const key = url.searchParams.get('key');
     const namespace = url.searchParams.get('namespace');
     const body = await this.parseKVBody(req);
+    console.log(body);
     if (!key || !namespace) {
       return {
         success: false

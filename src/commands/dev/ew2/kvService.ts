@@ -1,6 +1,32 @@
+import path from 'path';
+import fs from 'fs';
+import { getRoot } from '../../../utils/fileUtils/base.js';
+import t from '../../../i18n/index.js';
+
 class EdgeKV {
   static store: Map<string, any> = new Map();
-  constructor() {}
+  constructor() {
+    const root = getRoot();
+    const kvPath = path.join(root, 'kv.json');
+    if (fs.existsSync(kvPath)) {
+      try {
+        const kvJson = fs.readFileSync(kvPath, 'utf8');
+        const kvJsonObj = JSON.parse(kvJson);
+        Object.keys(kvJsonObj).forEach((namespace) => {
+          EdgeKV.store.set(
+            namespace,
+            new Map(Object.entries(kvJsonObj[namespace]))
+          );
+        });
+      } catch (err) {
+        console.log(
+          t('kv_parse_failed').d(
+            'kv.json parse failed, use empty local kv store.'
+          )
+        );
+      }
+    }
+  }
 
   get(key: string, namespace: string) {
     const store = EdgeKV.store.get(namespace);

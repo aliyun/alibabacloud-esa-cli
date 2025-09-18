@@ -8,11 +8,8 @@ import AdmZip from 'adm-zip';
 import chalk from 'chalk';
 import fetch from 'node-fetch';
 
-
-
 import t from '../i18n/index.js';
 import logger from '../libs/logger.js';
-
 
 const execAsync = promisify(exec);
 
@@ -92,8 +89,8 @@ async function isBinDirInPath(binDir: string): Promise<boolean> {
  * @param binDir BinDir 路径
  */
 async function addBinDirToPath(binDir: string): Promise<void> {
-  // 使用 setx 添加到 PATH
-  // setx 对 PATH 的长度有2047字符的限制
+  // Use setx to add to PATH
+  // setx has a 2047 character limit for PATH
   const command = `setx Path "%Path%;${binDir}"`;
   try {
     await execAsync(command);

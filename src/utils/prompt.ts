@@ -27,14 +27,14 @@ export type PromptChoice<T = string> =
     };
 
 export interface PromptParameter<T = unknown> {
-  question: string; // 显示给用户的问题
-  defaultValue?: T | T[] | boolean; // 默认值
-  label?: string; // 问题的标签（可用于日志）
+  question: string; // Question displayed to user
+  defaultValue?: T | T[] | boolean; // Default value
+  label?: string; // Label for the question (can be used for logging)
   type: PromptType;
-  choices?: Array<PromptChoice<T>>; // 仅 select/multiselect 使用
-  pageSize?: number; // 列表显示条数
-  validate?: (input: string) => boolean | string; // 输入校验
-  treeItems?: MultiLevelSelectItem[]; // 仅 multiLevelSelect 使用
+  choices?: Array<PromptChoice<T>>; // Only for select/multiselect
+  pageSize?: number; // Number of items to display in list
+  validate?: (input: string) => boolean | string; // Input validation
+  treeItems?: MultiLevelSelectItem[]; // Only for multiLevelSelect
 }
 
 type ClackOption = { value: string; label: string; hint?: string };

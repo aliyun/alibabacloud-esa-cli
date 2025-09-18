@@ -204,8 +204,8 @@
     "zh_CN": "读取 CLI 配置错误"
   },
   "dev_error_no_project_config": {
-    "en": "Error reading project configuration esa.toml file.",
-    "zh_CN": "读取项目配置 esa.toml 文件错误"
+    "en": "Error reading project configuration esa.jsonc (recommended) or esa.toml file.",
+    "zh_CN": "读取项目配置 esa.jsonc (推荐) 或 esa.toml 文件错误"
   },
   "dev_build_start": {
     "en": "Starting build process",

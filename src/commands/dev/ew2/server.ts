@@ -197,7 +197,7 @@ class Ew2Server {
           }
         );
         const workerHeaders = Object.fromEntries(workerRes.headers.entries());
-        // 解决 gzip 兼容性问题，防止net::ERR_CONTENT_DECODING_FAILED
+        // Solve gzip compatibility issue, prevent net::ERR_CONTENT_DECODING_FAILED
         workerHeaders['content-encoding'] = 'identity';
         if (workerRes.body) {
           res.writeHead(workerRes.status, workerHeaders);

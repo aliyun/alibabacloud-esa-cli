@@ -62,7 +62,7 @@ export interface DeleteRoutineRelatedRecordRes {
 export interface Summary {
   title: string;
   command: string;
-  projectName?: string; //暂时用不到
+  projectName?: string; // Not used for now
 }
 
 export interface CommitRoutineStagingCodeReq {
@@ -270,7 +270,7 @@ export interface ApiMethod<RequestType = any, ResponseType = any> {
 }
 
 export interface IApiClient {
-  [method: string]: ApiMethod; // 使用索引签名来表示所有的方法
+  [method: string]: ApiMethod; // Use index signature to represent all methods
 }
 
 export interface ApiError {

@@ -23,7 +23,7 @@ export async function validRoutine(name: string) {
         'Routine does not exist, please create a new one. Run command:'
       )} ${chalk.greenBright('esa deploy')}`
     );
-    exit(0);
+    exit(1);
   }
 }
 

@@ -36,10 +36,10 @@ const MultiLevelSelect: React.FC<Props> = ({
   const onSelect = (item: SelectItem) => {
     if (item.value === '__return__') {
       if (stack.length > 1) {
-        // 返回上一级菜单
+        // Return to previous level menu
         setStack(stack.slice(0, -1));
       } else {
-        // 顶层菜单，忽略返回（不退出）
+        // Top level menu, ignore return (do not exit)
       }
       return;
     }

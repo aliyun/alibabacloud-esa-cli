@@ -11,7 +11,6 @@ import {
   displayDeploySuccess
 } from '../common/utils.js';
 
-
 const deploy: CommandModule = {
   command: 'deploy [entry]',
   builder: (yargs: Argv) => {
@@ -95,6 +94,7 @@ export async function handleDeploy(argv: ArgumentsCamelCase) {
       true
     );
   }
+  exit(success ? 0 : 1);
 }
 
 export default deploy;

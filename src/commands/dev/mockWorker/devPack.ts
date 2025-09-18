@@ -57,12 +57,12 @@ const prepare = async (
 ) => {
   const options: Record<string, any> = {};
   const currentOptions = { entry, port, localUpstream };
-  // 支持同时跑多个 deno
+  // Support running multiple deno instances simultaneously
   const id = new Date().getTime().toString();
   // @ts-ignore
   global.id = id;
   await generateEntry(id, entry, userRoot);
-  // 给每一次 dev 的配置项，在一个文件中通过 id 区分
+  // Configuration items for each dev session, distinguished by id in one file
   if (fs.existsSync(configPath)) {
     const currentConfig = fs
       .readFileSync(configPath, 'utf-8')
@@ -104,7 +104,7 @@ const devPack = async () => {
   // Try to find config file in order of preference: .jsonc, .toml
   const configFormats = ['esa.jsonc', 'esa.toml'];
   let configPath: string | null = null;
-  
+
   for (const format of configFormats) {
     const testPath = path.resolve(userRoot, format);
     if (fs.existsSync(testPath)) {
@@ -127,7 +127,7 @@ const devPack = async () => {
     }
   } else {
     logger.notInProject();
-    process.exit(0);
+    process.exit(1);
   }
   return prepare(
     path.resolve(userRoot, '.dev/devConfig.js'),

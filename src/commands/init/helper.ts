@@ -136,7 +136,7 @@ export async function checkAndUpdatePackage(
       'Checking esa-template updates...'
     );
     spinner.start();
-    // 获取当前安装的版本
+    // Get currently installed version
     const __dirname = getDirName(import.meta.url);
     const packageJsonPath = path.join(__dirname, '../../../');
     let versionInfo;
@@ -164,7 +164,7 @@ export async function checkAndUpdatePackage(
 
     const match = versionInfo.match(new RegExp(`(${packageName})@([0-9.]+)`));
     const currentVersion = match ? match[2] : '';
-    // 获取最新版本
+    // Get latest version
 
     const latestVersion: string = execSync(`npm view ${packageName} version`, {
       cwd: packageJsonPath
@@ -239,7 +239,7 @@ export async function checkAndUpdatePackage(
 }
 
 export const getFrameworkConfig = (framework: string): FrameworkConfig => {
-  // 从init目录读取template.jsonc
+  // Read template.jsonc from init directory
   const templatePath = path.join(getDirName(import.meta.url), 'template.jsonc');
   const jsonc = fs.readFileSync(templatePath, 'utf-8');
   const json = JSON.parse(jsonc);
@@ -251,7 +251,7 @@ export const getFrameworkConfig = (framework: string): FrameworkConfig => {
  * @returns 框架全部配置
  */
 export const getAllFrameworkConfig = () => {
-  // 从init目录读取template.jsonc
+  // Read template.jsonc from init directory
   const templatePath = path.join(getDirName(import.meta.url), 'template.jsonc');
   const jsonc = fs.readFileSync(templatePath, 'utf-8');
   const json = JSON.parse(jsonc);
@@ -302,7 +302,7 @@ export function getInitParamsFromArgv(argv: ArgumentsCamelCase): initParams {
   return params;
 }
 
-// 配置项目名称
+// Configure project name
 export const configProjectName = async (initParams: initParams) => {
   if (initParams.name) {
     log.step(`Project name configured ${initParams.name}`);
@@ -712,7 +712,7 @@ export async function getGitVersion() {
 }
 
 export async function isGitInstalled() {
-  return (await getGitVersion()) !== '';
+  return (await getGitVersion()) !== '' && (await getGitVersion()) !== null;
 }
 
 /**
@@ -801,7 +801,6 @@ async function ensureGitignore(
       : `${toAppend.join('\n')}\n`;
 
     fs.writeFileSync(gitignorePath, newContent, 'utf-8');
-    logger.log('Updated .gitignore');
   } catch {
     // Do not fail init due to .gitignore issues
   }

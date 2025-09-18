@@ -75,8 +75,7 @@ export const transferRouteToRuleString = (routePath: string): string => {
 export const transferRuleStringToRoute = (ruleStr: string): string => {
   if (!ruleStr) {
     return '';
-  }
-  // 去掉外层括号并按 " and " 分割
+  } // Remove outer brackets and split by " and "
   const cleanedRule = ruleStr.replace(/^\(|\)$/g, '');
   const parts = cleanedRule.split(' and ');
   if (parts.length !== 2) {
@@ -86,21 +85,21 @@ export const transferRuleStringToRoute = (ruleStr: string): string => {
   let host = '';
   let uriPath = '';
 
-  // 处理host部分
+  // Process host part
   const hostPart = parts[0].trim();
   if (
     hostPart.startsWith(`${RuleMatchOperatorEndsWith}(${RuleMatchTypeHost},`)
   ) {
-    // host匹配eq时的逻辑
+    // Logic when host matches eq
     // ends_with(http.host, "value")
     const match = hostPart.match(/ends_with\(http\.host,\s*"([^"]+)"\)/);
     if (match) {
-      host = `*${match[1]}`; // 加前缀 *
+      host = `*${match[1]}`; // Add prefix *
     }
   } else if (
     hostPart.startsWith(`${RuleMatchTypeHost} ${RuleMatchOperatorEq}`)
   ) {
-    // host匹配eq时的逻辑
+    // Logic when host matches eq
     // http.host eq "value"
     const match = hostPart.match(/http\.host eq "([^"]+)"/);
     if (match) {
@@ -108,25 +107,25 @@ export const transferRuleStringToRoute = (ruleStr: string): string => {
     }
   }
 
-  // 处理uriPath 部分
+  // Process uriPath part
   const uriPathPart = parts[1].trim();
   if (
     uriPathPart.startsWith(
       `${RuleMatchOperatorStartsWith}(${RuleMatchTypeUriPath},`
     )
   ) {
-    // uriPath匹配startsWith时的逻辑
+    // Logic when uriPath matches startsWith
     // starts_with(http.request.uri.path, "value")
     const match = uriPathPart.match(
       /starts_with\(http\.request\.uri\.path,\s*"([^"]+)"\)/
     );
     if (match) {
-      uriPath = `${match[1]}*`; // 加后缀 *
+      uriPath = `${match[1]}*`; // Add suffix *
     }
   } else if (
     uriPathPart.startsWith(`${RuleMatchTypeUriPath} ${RuleMatchOperatorEq}`)
   ) {
-    // uriPath匹配eq时的逻辑
+    // Logic when uriPath matches eq
     // http.request.uri.path eq "value"
     const match = uriPathPart.match(/http\.request\.uri\.path eq "([^"]+)"/);
     if (match) {

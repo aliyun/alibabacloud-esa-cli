@@ -52,12 +52,12 @@ const compress = async (
 
   if (!projectConfig && !scriptEntry && !assetsDir) {
     logger.error(
-      'esa.jsonc or esa.toml is not found and script entry or assets directory is not provided by command line'
+      'esa.jsonc (recommended) or esa.toml is not found and script entry or assets directory is not provided by command line'
     );
-    exit(0);
+    exit(1);
   }
 
-  // 参数优先：如果有参数则使用参数，否则使用配置文件中的值
+  // Parameter priority: use parameters if available, otherwise use values from config file
   const entry = scriptEntry || projectConfig?.entry;
 
   if (routineType === EDGE_ROUTINE_TYPE.NOT_EXIST) {
@@ -78,7 +78,7 @@ const compress = async (
         '  2. Assets directory path is incorrect or directory does not exist'
       ),
       chalk.white(
-        `  3. Project configuration file ${chalk.yellow('esa.jsonc')} or ${chalk.yellow('esa.toml')} format error`
+        `  3. Project configuration file ${chalk.yellow('esa.jsonc')} (recommended) or ${chalk.yellow('esa.toml')} format error`
       ),
       chalk.white(
         `  4. Relative path format error, please use ${chalk.yellow('./xxx')} format`
@@ -115,7 +115,7 @@ const compress = async (
     ].join('\n');
 
     logger.error(errorMessage);
-    exit(0);
+    exit(1);
   }
 
   if (

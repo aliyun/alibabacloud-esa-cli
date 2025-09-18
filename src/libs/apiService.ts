@@ -128,7 +128,6 @@ export class ApiService {
         };
       }
     } catch (error) {
-      console.log('error', error);
       return {
         success: false,
         message: t('login_failed').d(
@@ -140,18 +139,18 @@ export class ApiService {
 
   async quickDeployRoutine(edgeRoutine: EdgeRoutineProps) {
     try {
-      // 上传代码到unstable版本
+      // Upload code to unstable version
       const stagingRes =
         await this.getRoutineStagingCodeUploadInfo(edgeRoutine);
 
       if (stagingRes) {
-        // 生产版本
+        // Production version
         const commitRes = await this.commitRoutineStagingCode({
           Name: edgeRoutine.name,
           CodeDescription: edgeRoutine.description
         });
 
-        // 发布到生产环境
+        // Deploy to production environment
         if (commitRes) {
           const deployRes = await this.publishRoutineCodeVersion({
             Name: edgeRoutine.name,

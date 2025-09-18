@@ -236,7 +236,7 @@ class Logger {
         'esa deploy src/index.ts'
       )})`
     );
-    this.subLog('- Or add the following to your "esa.jsonc" file:');
+    this.subLog('- Or create an "esa.jsonc" file (recommended):');
     console.log(
       '```jsonc\n' +
         '{\n' +
@@ -246,7 +246,7 @@ class Logger {
         '}\n' +
         '```'
     );
-    this.subLog('- Or, if you prefer TOML, add to your "esa.toml":');
+    this.subLog('- Or, if you prefer TOML, create an "esa.toml" file:');
     console.log(
       '```toml\n' +
         'name = "my-routine"\n' +
@@ -261,7 +261,7 @@ class Logger {
       'If you are deploying a directory of static assets, you can either:'
     );
     this.subLog(
-      `- Add the assets directory to your "esa.jsonc" and run ${chalk.green(
+      `- Create an "esa.jsonc" file (recommended) and run ${chalk.green(
         'esa deploy -a ./dist'
       )}`
     );
@@ -276,7 +276,7 @@ class Logger {
         '```'
     );
     this.subLog(
-      `- Or add to your "esa.toml" and run ${chalk.green('esa deploy -a ./dist')}`
+      `- Or create an "esa.toml" file and run ${chalk.green('esa deploy -a ./dist')}`
     );
     console.log(
       '```toml\n' +

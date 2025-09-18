@@ -64,7 +64,7 @@ export const FilterSelector: React.FC<FilterSelectorProps> = ({
           site.label.includes(inputValue)
         );
         setFilteredData(filteredDataInner);
-        // 匹配结果大于等于1个时，进入选择模式
+        // Enter selection mode when match results >= 1
         if (
           (filteredDataInner.length >= 1 &&
             showAll &&

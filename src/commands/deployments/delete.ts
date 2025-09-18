@@ -63,7 +63,7 @@ export async function handleDeleteDeployments(argv: ArgumentsCamelCase) {
     const { allVersions, stagingVersions, productionVersions } =
       await getRoutineCodeVersions(projectConfig.name);
 
-    // 显示正在部署的版本信息
+    // Show information about versions being deployed
     if (stagingVersions.length > 0 || productionVersions.length > 0) {
       logger.log(chalk.yellow('⚠️  Currently deploying versions:'));
       if (stagingVersions.length > 0) {
@@ -83,7 +83,7 @@ export async function handleDeleteDeployments(argv: ArgumentsCamelCase) {
       )
     );
 
-    // 过滤掉正在部署的版本
+    // Filter out versions being deployed
     const selectList: TableItem[] = allVersions
       .filter((item) => {
         if (stagingVersions.length === 0 && productionVersions.length === 0)

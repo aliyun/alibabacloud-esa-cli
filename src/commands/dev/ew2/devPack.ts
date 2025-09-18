@@ -9,7 +9,7 @@ import { getDevConf } from '../../../utils/fileUtils/index.js';
 import { EW2Path } from '../../../utils/installEw2.js';
 import devBuild from '../build.js';
 
-// 生成可用的Ew2端口
+// Generate available Ew2 port
 const generateEw2Port = async () => {
   let ew2port = 3322;
   let portAvailable = await checkPort(ew2port);
@@ -55,7 +55,7 @@ conf_path = "${erConfPath}"
   ]);
 };
 
-// 生成入口文件
+// Generate entry file
 const generateEntry = async (
   id: string,
   projectEntry: string,
@@ -94,7 +94,7 @@ const generateEntry = async (
   );
 };
 
-// 前期准备
+// Preliminary preparation
 const prepare = async (
   configPath: string,
   entry: string,
@@ -104,16 +104,16 @@ const prepare = async (
 ) => {
   const options: Record<string, any> = {};
   const currentOptions = { entry, port, localUpstream };
-  // 支持同时跑多个 worker
+  // Support running multiple workers simultaneously
   const id = new Date().getTime().toString();
   // @ts-ignore
   global.id = id;
-  // 生成入口文件
+  // Generate entry file
   await generateEntry(id, entry, userRoot, port);
-  // 生成 Ew2 配置
+  // Generate Ew2 configuration
   const ew2port = await generateEw2Port();
   await writeEw2config(id, ew2port, userRoot);
-  // 给每一次 dev 的配置项，在一个文件中通过 id 区分
+  // Configuration items for each dev session, distinguished by id in one file
   if (fs.existsSync(configPath)) {
     const currentConfig = fs
       .readFileSync(configPath, 'utf-8')
@@ -121,7 +121,7 @@ const prepare = async (
     const currentConfigObj = JSON.parse(currentConfig);
     const currentIds = Object.keys(currentConfigObj);
     if (currentIds[0] && /^\d+$/.test(currentIds[0])) {
-      // 删除没有用到的入口
+      // Remove unused entries
       for (let currentId of currentIds) {
         const unused = await checkPort(currentConfigObj[currentId].port);
         if (unused) {
@@ -179,7 +179,7 @@ const devPack = async () => {
     }
   } else {
     logger.notInProject();
-    process.exit(0);
+    process.exit(1);
   }
   return prepare(
     path.resolve(userRoot, '.dev/devConfig.js'),

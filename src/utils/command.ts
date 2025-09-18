@@ -6,16 +6,16 @@ import chalk from 'chalk';
 export interface ExecCommandOptions {
   startText?: string;
   doneText?: string | ((output: string) => string);
-  silent?: boolean; // 不显示子进程输出
-  captureOutput?: boolean; // 捕获输出并返回
-  useSpinner?: boolean; // 是否显示进度条
-  realtimeOutput?: boolean; // 是否实时显示输出
-  interactive?: boolean; // 交互式：继承父进程的 stdio，允许输入/输出直接在终端中进行
-  env?: NodeJS.ProcessEnv; // 环境变量
-  cwd?: string; // 工作目录
-  transformOutput?: (output: string) => string; // 输出转换
-  fallbackOutput?: (error: unknown) => string; // 错误时的备用输出
-  errorMessage?: string; // 取消时的提示信息
+  silent?: boolean; // Do not display subprocess output
+  captureOutput?: boolean; // Capture output and return
+  useSpinner?: boolean; // Whether to show progress bar
+  realtimeOutput?: boolean; // Whether to display output in real-time
+  interactive?: boolean; // Interactive: inherit parent process stdio, allow direct input/output in terminal
+  env?: NodeJS.ProcessEnv; // Environment variables
+  cwd?: string; // Working directory
+  transformOutput?: (output: string) => string; // Output transformation
+  fallbackOutput?: (error: unknown) => string; // Fallback output on error
+  errorMessage?: string; // Prompt message when cancelled
 }
 
 /**

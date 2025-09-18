@@ -103,7 +103,7 @@ class EdgeKV {
         headers: { 'Content-Type': 'application/json' }
       }
     );
-    // 判断是否存在key
+    // Check if key exists
     let isGetFailed = false;
     fetchRes.headers.forEach((v, k) => {
       if (k === 'kv-get-empty') {

@@ -89,7 +89,7 @@ export function validName(name: any): boolean {
   return /^[a-zA-Z0-9-_]+$/.test(name);
 }
 
-// 校验域名是否有效
+// Validate if domain is valid
 export function validDomain(domain: any): boolean {
   return /^(?:[a-z0-9-](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/.test(
     domain
@@ -173,13 +173,13 @@ export async function validateLoginCredentials(
 }
 
 export function isValidRouteForDomain(route: string, domain: string): boolean {
-  // 构建一个允许子域和任意路径的正则表达式
-  // 例如，匹配形式如 *.example.com/* 的URL
+  // Build a regex that allows subdomains and arbitrary paths
+  // For example, match URLs like *.example.com/*
   return route.includes(domain);
 }
 
 export function escapeRegExp(string: string) {
-  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& 表示整个被匹配的字符串
+  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& represents the entire matched string
 }
 
 export const getAllSites = async (): Promise<Option[]> => {

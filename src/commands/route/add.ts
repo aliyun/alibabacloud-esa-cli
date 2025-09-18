@@ -83,7 +83,6 @@ export async function handlerAddRoute(argv: ArgumentsCamelCase) {
     value: i.SiteId
   }));
 
-  // 获取路由名称，支持直接通过参数传入
   let routeName = argv.alias as string;
   if (!routeName) {
     const response = await inquirer.prompt([

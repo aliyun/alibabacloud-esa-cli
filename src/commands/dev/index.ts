@@ -217,7 +217,7 @@ const dev: CommandModule = {
     try {
       await worker.start();
     } catch (err) {
-      console.log('Track err', err);
+      logger.error(`Worker start failed: ${err}`);
       process.exit(1);
     }
 

@@ -12,7 +12,6 @@ import {
   generateCodeVersion
 } from '../common/utils.js';
 
-
 const commit: CommandModule = {
   command: 'commit [entry]',
   describe: `📦 ${t('commit_describe').d('Commit your code, save as a new version')}`,
@@ -76,12 +75,16 @@ export async function handleCommit(argv: ArgumentsCamelCase) {
     argv?.assets as string,
     argv?.minify as boolean
   );
+  const { isSuccess } = res || {};
+  if (!isSuccess) {
+    logger.endSubStep('Generate version failed');
+    exit(1);
+  }
   const codeVersion = res?.res?.data?.CodeVersion;
   if (!codeVersion) {
     logger.endSubStep('Missing CodeVersion in response');
     return false;
   }
   logger.endSubStep(`Version generated: ${codeVersion}`);
-
   outro(`Code version ${chalk.bold(codeVersion)} generated successfully`);
 }

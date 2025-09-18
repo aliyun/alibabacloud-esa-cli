@@ -75,6 +75,9 @@ export async function commitRoutineWithAssets(
       if (uploadSuccess) {
         break;
       }
+      if (i < 2) {
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+      }
     }
 
     return {
@@ -154,109 +157,107 @@ export async function generateCodeVersion(
     projectPath
   );
 
-  try {
-    // Pretty print upload directory tree
-    const buildTree = (
-      paths: string[],
-      decorateTopLevel: (name: string) => string
-    ): string[] => {
-      type Node = { children: Map<string, Node>; isFile: boolean };
-      const root: Node = { children: new Map(), isFile: false };
-      const sorted = [...paths].sort((a, b) => a.localeCompare(b));
-      for (const p of sorted) {
-        const parts = p.split('/').filter(Boolean);
-        let node = root;
-        for (let i = 0; i < parts.length; i++) {
-          const part = parts[i];
-          if (!node.children.has(part)) {
-            node.children.set(part, { children: new Map(), isFile: false });
-          }
-          const child = node.children.get(part)!;
-          if (i === parts.length - 1) child.isFile = true;
-          node = child;
+  // Pretty print upload directory tree
+  const buildTree = (
+    paths: string[],
+    decorateTopLevel: (name: string) => string
+  ): string[] => {
+    type Node = { children: Map<string, Node>; isFile: boolean };
+    const root: Node = { children: new Map(), isFile: false };
+    const sorted = [...paths].sort((a, b) => a.localeCompare(b));
+    for (const p of sorted) {
+      const parts = p.split('/').filter(Boolean);
+      let node = root;
+      for (let i = 0; i < parts.length; i++) {
+        const part = parts[i];
+        if (!node.children.has(part)) {
+          node.children.set(part, { children: new Map(), isFile: false });
         }
+        const child = node.children.get(part)!;
+        if (i === parts.length - 1) child.isFile = true;
+        node = child;
       }
-      const lines: string[] = [];
-      const render = (node: Node, prefix: string, depth: number) => {
-        const entries = [...node.children.entries()];
-        entries.forEach(([_name, _child], idx) => {
-          const isLast = idx === entries.length - 1;
-          const connector = isLast ? '└ ' : '├ ';
-          const nextPrefix = prefix + (isLast ? '   ' : '│  ');
-          const displayName = depth === 0 ? decorateTopLevel(_name) : _name;
-          lines.push(prefix + connector + displayName);
-          render(_child, nextPrefix, depth + 1);
-        });
-      };
-      render(root, '', 0);
-      return lines.length ? lines : ['-'];
-    };
-
-    const header =
-      chalk.hex('#22c55e')('UPLOAD') + ' Files to be uploaded (source paths)';
-    logger.block();
-    logger.log(header);
-
-    const dynamicSet = new Set(dynamicSources);
-    const LIMIT = 300;
-    const staticPaths = sourceList
-      .filter((p) => !dynamicSet.has(p))
-      .sort((a, b) => a.localeCompare(b));
-    const dynamicPaths = sourceList
-      .filter((p) => dynamicSet.has(p))
-      .sort((a, b) => a.localeCompare(b));
-
-    let omitted = 0;
-    let shownStatic = staticPaths;
-    if (staticPaths.length > LIMIT) {
-      shownStatic = staticPaths.slice(0, LIMIT);
-      omitted = staticPaths.length - LIMIT;
     }
-
-    // Compute top-level markers based on whether a top-level bucket contains dynamic/static files
-    const topLevelStats = new Map<
-      string,
-      { hasDynamic: boolean; hasStatic: boolean }
-    >();
-    const addStat = (p: string, isDynamic: boolean) => {
-      const top = p.split('/')[0] || p;
-      const stat = topLevelStats.get(top) || {
-        hasDynamic: false,
-        hasStatic: false
-      };
-      if (isDynamic) stat.hasDynamic = true;
-      else stat.hasStatic = true;
-      topLevelStats.set(top, stat);
+    const lines: string[] = [];
+    const render = (node: Node, prefix: string, depth: number) => {
+      const entries = [...node.children.entries()];
+      entries.forEach(([_name, _child], idx) => {
+        const isLast = idx === entries.length - 1;
+        const connector = isLast ? '└ ' : '├ ';
+        const nextPrefix = prefix + (isLast ? '   ' : '│  ');
+        const displayName = depth === 0 ? decorateTopLevel(_name) : _name;
+        lines.push(prefix + connector + displayName);
+        render(_child, nextPrefix, depth + 1);
+      });
     };
-    dynamicPaths.forEach((p) => addStat(p, true));
-    shownStatic.forEach((p) => addStat(p, false));
+    render(root, '', 0);
+    return lines.length ? lines : ['-'];
+  };
 
-    const dynamicMarker = chalk.bold.yellowBright(' (dynamic)');
-    const staticMarker = chalk.bold.greenBright(' (static)');
-    const decorateTopLevel = (name: string) => {
-      const stat = topLevelStats.get(name);
-      if (!stat) return name;
-      if (stat.hasDynamic && stat.hasStatic) {
-        return `${name}${dynamicMarker}${staticMarker}`;
-      }
-      if (stat.hasDynamic) return `${name}${dynamicMarker}`;
-      if (stat.hasStatic) return `${name}${staticMarker}`;
-      return name;
+  const header =
+    chalk.hex('#22c55e')('UPLOAD') + ' Files to be uploaded (source paths)';
+  logger.block();
+  logger.log(header);
+
+  const dynamicSet = new Set(dynamicSources);
+  const LIMIT = 300;
+  const staticPaths = sourceList
+    .filter((p) => !dynamicSet.has(p))
+    .sort((a, b) => a.localeCompare(b));
+  const dynamicPaths = sourceList
+    .filter((p) => dynamicSet.has(p))
+    .sort((a, b) => a.localeCompare(b));
+
+  let omitted = 0;
+  let shownStatic = staticPaths;
+  if (staticPaths.length > LIMIT) {
+    shownStatic = staticPaths.slice(0, LIMIT);
+    omitted = staticPaths.length - LIMIT;
+  }
+
+  // Compute top-level markers based on whether a top-level bucket contains dynamic/static files
+  const topLevelStats = new Map<
+    string,
+    { hasDynamic: boolean; hasStatic: boolean }
+  >();
+  const addStat = (p: string, isDynamic: boolean) => {
+    const top = p.split('/')[0] || p;
+    const stat = topLevelStats.get(top) || {
+      hasDynamic: false,
+      hasStatic: false
     };
+    if (isDynamic) stat.hasDynamic = true;
+    else stat.hasStatic = true;
+    topLevelStats.set(top, stat);
+  };
+  dynamicPaths.forEach((p) => addStat(p, true));
+  shownStatic.forEach((p) => addStat(p, false));
 
-    const combined = [...dynamicPaths, ...shownStatic];
-    const treeLines = buildTree(combined, decorateTopLevel);
-    for (const line of treeLines) {
-      logger.log(line);
+  const dynamicMarker = chalk.bold.yellowBright(' (dynamic)');
+  const staticMarker = chalk.bold.greenBright(' (static)');
+  const decorateTopLevel = (name: string) => {
+    const stat = topLevelStats.get(name);
+    if (!stat) return name;
+    if (stat.hasDynamic && stat.hasStatic) {
+      return `${name}${dynamicMarker}${staticMarker}`;
     }
-    if (omitted > 0) {
-      const note = chalk.gray(
-        `仅展示前 ${LIMIT} 个静态文件，已省略 ${omitted} 个`
-      );
-      logger.log(note);
-    }
-    logger.block();
-  } catch {}
+    if (stat.hasDynamic) return `${name}${dynamicMarker}`;
+    if (stat.hasStatic) return `${name}${staticMarker}`;
+    return name;
+  };
+
+  const combined = [...dynamicPaths, ...shownStatic];
+  const treeLines = buildTree(combined, decorateTopLevel);
+  for (const line of treeLines) {
+    logger.log(line);
+  }
+  if (omitted > 0) {
+    const note = chalk.gray(
+      `Only show the first ${LIMIT} static files, omitted ${omitted} files`
+    );
+    logger.log(note);
+  }
+  logger.block();
 
   const projectConfig = getProjectConfig(projectPath);
   const notFoundStrategy = normalizeNotFoundStrategy(

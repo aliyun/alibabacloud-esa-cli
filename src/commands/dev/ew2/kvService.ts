@@ -13,10 +13,11 @@ class EdgeKV {
         const kvJson = fs.readFileSync(kvPath, 'utf8');
         const kvJsonObj = JSON.parse(kvJson);
         Object.keys(kvJsonObj).forEach((namespace) => {
-          EdgeKV.store.set(
-            namespace,
-            new Map(Object.entries(kvJsonObj[namespace]))
-          );
+          const childMap = new Map();
+          Object.keys(kvJsonObj[namespace]).forEach((key) => {
+            childMap.set(key, JSON.stringify(kvJsonObj[namespace][key]));
+          });
+          EdgeKV.store.set(namespace, childMap);
         });
       } catch (err) {
         console.log(

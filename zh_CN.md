@@ -27,6 +27,12 @@ ESA CLI 是用于构建阿里云 ESA Functions 与 Pages 的命令行工具。
 npm i -D esa-cli@latest
 ```
 
+或者全局安装，以便在系统范围内使用 `esa-cli` 命令：
+
+```
+npm i -g esa-cli@latest
+```
+
 当尚未安装 `esa-cli` 时，`npx` 会从注册表拉取并运行最新版本。
 
 ## 查看 ESA CLI 版本

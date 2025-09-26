@@ -18,7 +18,7 @@ const siteCommand: CommandModule<{}> = {
         type: 'boolean',
         default: false
       })
-      .usage(`${t('common_usage').d('Usage')}: esa site [list]`);
+      .usage(`${t('common_usage').d('Usage')}: esa-cli site [list]`);
   },
   handler: (argv) => {
     if (yargsIns && (argv.help || argv._.length < 2)) {

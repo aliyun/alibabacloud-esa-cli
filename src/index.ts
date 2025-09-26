@@ -27,7 +27,7 @@ const main = async () => {
     .fail((msg, err) => {
       console.error(msg, err);
     })
-    .scriptName('esa')
+    .scriptName('esa-cli')
     .locale(cliConfig?.lang || 'en')
     .version(false)
     .wrap(null)
@@ -63,7 +63,7 @@ const main = async () => {
       if (args._.length > 0) {
         // Unknown command
         console.error(
-          t('common_sub_command_fail').d('Use esa <command> -h to see help')
+          t('common_sub_command_fail').d('Use esa-cli <command> -h to see help')
         );
       } else {
         if (args.v) {

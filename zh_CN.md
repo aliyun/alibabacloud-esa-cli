@@ -2,6 +2,15 @@
 
 ESA CLI 是用于构建阿里云 ESA Functions 与 Pages 的命令行工具。
 
+<p>
+  <a href="https://discord.gg/xygV6MYx">
+    <img alt="Discord 中文" src="https://img.shields.io/badge/Discord-中文-5865F2?logo=discord&logoColor=white" />
+  </a>
+  <a href="https://discord.gg/YeFg4yUA" style="margin-left:8px;">
+    <img alt="Discord English" src="https://img.shields.io/badge/Discord-English-5865F2?logo=discord&logoColor=white" />
+  </a>
+ </p>
+
 ## 安装 ESA CLI
 
 ### 前置条件
@@ -23,9 +32,9 @@ npm i -D esa-cli@latest
 ## 查看 ESA CLI 版本
 
 ```
-npx esa --version
+npx esa-cli --version
 # 或
-npx esa -v
+npx esa-cli -v
 ```
 
 ## 更新 ESA CLI
@@ -36,6 +45,7 @@ npm i -D esa-cli@latest
 
 ## 相关文档
 
-- [ESA CLI 使用指南](./README.md)
+- [esa-cli 命令](./docs/Commands_zh_CN.md)
+- [ESA 配置文件说明](./docs/Config_zh_CN.md)
 - [阿里云 ESA 文档](https://help.aliyun.com/document_detail/2710021.html)
 - [Functions 和 Pages API 参考](https://help.aliyun.com/document_detail/2710024.html)

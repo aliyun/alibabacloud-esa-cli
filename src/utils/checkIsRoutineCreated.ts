@@ -20,8 +20,8 @@ export async function validRoutine(name: string) {
   if (!isCreatedRoutine) {
     logger.warn(
       `${t('routine_not_exist').d(
-        'Routine does not exist, please create a new one. Run command:'
-      )} ${chalk.greenBright('esa deploy')}`
+        'Project does not exist, please create a new one. Run command:'
+      )} ${chalk.greenBright('esa-cli deploy')}`
     );
     exit(1);
   }

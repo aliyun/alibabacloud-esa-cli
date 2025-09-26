@@ -1,11 +1,11 @@
 ## 命令一览
 
-### esa init [name]
+### esa-cli init [name]
 
-初始化一个边缘函数项目（支持框架或模板）。
+初始化一个函数和Pages项目（支持框架或模板）。
 
 ```bash
-esa init [name]
+esa-cli init [name]
 ```
 
 - 位置参数：
@@ -21,16 +21,16 @@ esa init [name]
 
 ---
 
-### esa dev [entry]
+### esa-cli dev [entry]
 
 启动本地开发服务器。
 
 ```bash
-esa dev [entry]
+esa-cli dev [entry]
 ```
 
 - 位置参数：
-  - entry：边缘函数入口文件
+  - entry：函数和Pages入口文件
 
 - 选项：
   - -p, --port number：监听端口
@@ -41,122 +41,147 @@ esa dev [entry]
 
 ---
 
-### esa commit [entry]
+### esa-cli commit [entry]
 
 提交代码并保存为新版本。
 
 ```bash
-esa commit [entry]
+esa-cli commit [entry]
 ```
 
 - 选项：
   - -m, --minify boolean：提交前压缩代码（默认 false）
   - -a, --assets string：静态资源目录
   - -d, --description string：版本/例程描述（跳过交互输入）
-  - -n, --name string：边缘函数名称
+  - -n, --name string：函数和Pages名称
 
 ---
 
-### esa deploy [entry]
+### esa-cli deploy [entry]
 
-部署项目。
+生成一个代码版本，并同时部署项目到仿真和线上环境
 
 ```bash
-esa deploy [entry]
+esa-cli deploy [entry]
 ```
 
 - 选项：
-  - entry 可选参数，默认以`esa.jsonc`中entry配置为准
+  - entry 可选参数，默认以 `esa.jsonc`中entry配置为准
   - -v, --version string：指定要部署的版本（跳过交互选择）
   - -e, --environment string：部署环境。可选：staging | production
-  - -n, --name string：边缘函数名称
+  - -n, --name string：函数和Pages名称
   - -a, --assets string：静态资源目录（例如：./dist）
   - -d, --description string：版本描述
   - -m, --minify boolean：是否压缩代码
 
 ---
 
-### esa deployments [list | delete]
+### esa-cli deployments list
 
-管理部署版本。
+列出当前函数和Pages下所有代码版本。
 
 ```bash
-esa deployments list
-esa deployments delete [deploymentId...]
+esa-cli deployments list
 ```
 
-- 子命令：
-  - list：列出所有部署
-  - delete [deploymentId...]：删除一个或多个部署版本
+无额外选项。
 
 ---
 
-### esa routine [list | delete]
+### esa-cli deployments delete [deploymentId...]
 
-管理边缘函数。
+删除当前函数和Pages的一个或多个代码版本。
 
 ```bash
-esa routine list
-esa routine delete <routineName>
+esa-cli deployments delete [deploymentId...]
 ```
 
-- 子命令：
-  - list：列出所有边缘函数
-  - delete `<routineName>`：删除指定边缘函数
+- 位置参数：
+  - deploymentId...：要删除的部署版本ID（可一次传多个）
 
 ---
 
-### esa site [list]
+### esa-cli project list
 
-管理站点。
+列出账号下所有的函数和Pages。
 
 ```bash
-esa site list
+esa-cli project list
 ```
 
-- 子命令：
-  - list：列出所有已激活站点
+无额外选项。
 
 ---
 
-### esa domain <add | list | delete>
+### esa-cli project delete <projectName>
 
-管理与边缘函数绑定的域名。
+删除指定函数和Pages。
 
 ```bash
-esa domain add <domain>
-esa domain list
-esa domain delete <domain>
+esa-cli project delete <projectName>
 ```
 
-- 子命令：
-  - add `<domain>`：绑定域名
-  - list：查看所有已绑定域名
-  - delete `<domain>`：删除已绑定域名
+- 位置参数：
+  - projectName：要删除的函数或Pages名称
 
 ---
 
-### esa route <add | list | delete>
+### esa-cli site list
 
-管理与边缘函数绑定的路由。
+列出账号下所有已激活站点。
 
 ```bash
-esa route add
-esa route list
-esa route delete <routeName>
+esa-cli site list
 ```
 
-- 子命令：
-  - add：绑定路由
-  - list：查看所有已绑定路由
-  - delete `<routeName>`：删除已绑定路由
+无额外选项。
 
-#### esa route add
+---
 
-为当前边缘函数绑定一个路由。
+### esa-cli domain add <domain>
+
+绑定域名到当前函数和Pages。
 
 ```bash
-esa route add [route] [site] [--alias <routeName>] [--route <route>] [--site <site>]
+esa-cli domain add <domain>
+```
+
+- 位置参数：
+  - domain：要绑定的域名
+
+---
+
+### esa-cli domain list
+
+查看当前函数和Pages所有已绑定域名。
+
+```bash
+esa-cli domain list
+```
+
+无额外选项。
+
+---
+
+### esa-cli domain delete <domain>
+
+删除当前函数和Pages下已绑定域名。
+
+```bash
+esa-cli domain delete <domain>
+```
+
+- 位置参数：
+  - domain：要删除绑定的域名
+
+---
+
+#### esa-cli route add
+
+为当前函数和Pages绑定一个路由。
+
+```bash
+esa-cli route add [route] [site] [--alias <routeName>] [--route <route>] [--site <site>]
 ```
 
 - 位置参数（可选）：
@@ -168,30 +193,41 @@ esa route add [route] [site] [--alias <routeName>] [--route <route>] [--site <si
     - 主机名支持以 `*` 开头表示后缀匹配（如：`*.example.com`）
     - 路径支持以 `*` 结尾表示前缀匹配（如：`/api/*`）
   - -s, --site string：站点名称（需为已激活站点）
-  - -a, --alias string：路由名称（别名）
-
-- 交互提示：
-  - 未提供 `--alias` 时，会提示输入路由名称
-  - 未提供 `--site` 时，会列出账号下已激活站点供选择
-  - 未提供 `--route` 时，会提示输入路由值
-
-- 路由匹配说明：
-  - host 支持前缀 `*`：`*.example.com` 表示匹配所有以 `.example.com` 结尾的域名
-  - path 支持后缀 `*`：`/api/*` 表示匹配以 `/api/` 开头的路径
-  - 示例：`example.com/*`、`*.example.com/`、`*.example.com/api/*`
-
-- 示例：
-  - `esa route add -a home -s example.com -r example.com/*`
-  - `esa route add example.com/* example.com -a home`
+  - -a, --alias string：路由名称（别名） 例如：apple、orange等
 
 ---
 
-### esa login
+### esa-cli route list
+
+查看函数和Pages所有已绑定路由。
+
+```bash
+esa-cli route list
+```
+
+无额外选项。
+
+---
+
+### esa-cli route delete <routeName>
+
+删除函数和Pages下已绑定路由。
+
+```bash
+esa-cli route delete <routeName>
+```
+
+- 位置参数：
+  - routeName：要删除的路由名称
+
+---
+
+### esa-cli login
 
 登录。
 
 ```bash
-esa login
+esa-cli login
 ```
 
 - 选项：
@@ -203,22 +239,22 @@ esa login
 
 ---
 
-### esa logout
+### esa-cli logout
 
 退出登录。
 
 ```bash
-esa logout
+esa-cli logout
 ```
 
 ---
 
-### esa config [-l | -g]
+### esa-cli config [-l | -g]
 
 修改本地或全局配置。
 
 ```bash
-esa config [--local] [--global]
+esa-cli config [--local] [--global]
 ```
 
 - 选项：
@@ -227,10 +263,10 @@ esa config [--local] [--global]
 
 ---
 
-### esa lang
+### esa-cli lang
 
 设置 CLI 语言。
 
 ```bash
-esa lang
+esa-cli lang
 ```

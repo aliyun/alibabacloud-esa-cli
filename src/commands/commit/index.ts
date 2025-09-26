@@ -31,13 +31,13 @@ const commit: CommandModule = {
       .option('description', {
         alias: 'd',
         describe: t('commit_option_description').d(
-          'Description for the routine/version (skip interactive input)'
+          'Description for Functions& Pages/version (skip interactive input)'
         ),
         type: 'string'
       })
       .option('name', {
         alias: 'n',
-        describe: t('commit_option_name').d('Edge Routine name'),
+        describe: t('commit_option_name').d('Functions& Pages name'),
         type: 'string'
       });
   },

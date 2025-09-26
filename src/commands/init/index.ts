@@ -28,7 +28,7 @@ import { initParams } from './types.js';
 
 const init: CommandModule = {
   command: 'init [name]',
-  describe: `📥 ${t('init_describe').d('Initialize a routine with a template')}`,
+  describe: `📥 ${t('init_describe').d('Initialize a project with a template')}`,
   builder: (yargs: Argv) => {
     return yargs
       .positional('name', {

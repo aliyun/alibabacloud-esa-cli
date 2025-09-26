@@ -4,11 +4,11 @@
     "zh_CN": "提交代码，保存为一个版本"
   },
   "commit_er_not_exist": {
-    "en": "No routine found, creating a new one",
+    "en": "No Functions& Pages found, creating a new one",
     "zh_CN": "没有找到任何函数，正在创建新函数"
   },
   "commit_er_description": {
-    "en": "Enter a description for the routine",
+    "en": "Enter a description for Functions& Pages",
     "zh_CN": "请输入函数的描述"
   },
   "commit_version_description": {
@@ -20,8 +20,8 @@
     "zh_CN": "发生错误"
   },
   "commit_create_er_success": {
-    "en": "Routine created successfully.",
-    "zh_CN": "Routine 创建成功。"
+    "en": "Functions& Pages created successfully.",
+    "zh_CN": "函数和Pages创建成功。"
   },
   "commit_upload_success": {
     "en": "Code uploaded successfully.",
@@ -36,8 +36,8 @@
     "zh_CN": "提交代码时发生错误。"
   },
   "summery_cd": {
-    "en": "Enter your routine project folder",
-    "zh_CN": "进入您的 routine 项目文件夹"
+    "en": "Enter your project folder",
+    "zh_CN": "进入您的项目文件夹"
   },
   "summery_commit": {
     "en": "Save a new version of code",
@@ -76,8 +76,8 @@
     "zh_CN": "生产环境"
   },
   "deploy_description_routine": {
-    "en": "Enter the description of the routine",
-    "zh_CN": "请输入边缘函数的描述"
+    "en": "Enter the description of Functions& Pages",
+    "zh_CN": "请输入函数和Pages的描述"
   },
   "deploy_description_version": {
     "en": "Enter the description of the code version",
@@ -92,7 +92,7 @@
     "zh_CN": "请选择您要发布的版本"
   },
   "deploy_spec_select": {
-    "en": "Please select the spec of the routine you want to create",
+    "en": "Please select the spec of Functions& Pages you want to create",
     "zh_CN": "请选择您要创建的函数规格"
   },
   "deploy_create_formal_version_ques": {
@@ -136,8 +136,8 @@
     "zh_CN": "显示帮助"
   },
   "commit_create_er_fail": {
-    "en": "An error occurred while trying to create a routine",
-    "zh_CN": "创建边缘函数时发生错误"
+    "en": "An error occurred while trying to create Functions& Pages",
+    "zh_CN": "创建函数和Pages时发生错误"
   },
   "commit_upload_fail": {
     "en": "An error occurred while trying to upload your code",
@@ -164,8 +164,8 @@
     "zh_CN": "帮助"
   },
   "common_sub_command_fail": {
-    "en": "Use esa <command> -h to see help",
-    "zh_CN": "使用 esa <command> -h 查看帮助"
+    "en": "Use esa-cli <command> -h to see help",
+    "zh_CN": "使用 esa-cli <command> -h 查看帮助"
   },
   "deployments_delete_describe": {
     "en": "Delete one or more deployment versions",
@@ -192,7 +192,7 @@
     "zh_CN": "构建完成"
   },
   "dev_describe": {
-    "en": "Start a local server for developing your routine",
+    "en": "Start a local server for developing your project",
     "zh_CN": "启动本地调试"
   },
   "dev_port_describe": {
@@ -224,20 +224,20 @@
     "zh_CN": "Worker server 已重启"
   },
   "domain_add_describe": {
-    "en": "Bind a domain to a routine",
-    "zh_CN": "绑定域名到边缘函数"
+    "en": "Bind a domain to your project",
+    "zh_CN": "绑定域名到函数和Pages"
   },
   "domain_describe": {
-    "en": "Manage the domain names bound to your routine",
-    "zh_CN": "管理绑定到边缘函数的域名"
+    "en": "Manage the domain names bound to your project",
+    "zh_CN": "管理绑定到函数和Pages的域名"
   },
   "delete_describe": {
-    "en": "Delete a routine",
-    "zh_CN": "删除一个边缘函数"
+    "en": "Delete a project",
+    "zh_CN": "删除一个函数和Pages"
   },
   "delete_routineName_positional_describe": {
-    "en": "The name of the routine to delete",
-    "zh_CN": "要删除的边缘函数名称"
+    "en": "The name of the project to delete",
+    "zh_CN": "要删除的函数和Pages名称"
   },
   "delete_success": {
     "en": "Delete success!",
@@ -276,12 +276,12 @@
     "zh_CN": "绑定域名："
   },
   "init_describe": {
-    "en": "Initialize a routine with a template",
+    "en": "Initialize a project with a template",
     "zh_CN": "选择模版初始化项目"
   },
   "init_input_name": {
-    "en": "Enter the name of edgeRoutine:",
-    "zh_CN": "输入 edgeRoutine 的名称"
+    "en": "Enter the name of project:",
+    "zh_CN": "输入项目的名称"
   },
   "init_skip_git": {
     "en": "Git installation was skipped.",
@@ -292,8 +292,8 @@
     "zh_CN": "切换为中文"
   },
   "list_describe": {
-    "en": "List all your routines",
-    "zh_CN": "查看所有边缘函数"
+    "en": "List all your projects",
+    "zh_CN": "查看所有函数和Pages"
   },
   "list_deployment_positional_describe": {
     "en": "(Optional) ID or URL of the deployment to tail. Specify by environment if deployment ID is unknown.",
@@ -308,8 +308,8 @@
     "zh_CN": "查看所有站点名称"
   },
   "list_routine_name_title": {
-    "en": "List all of routine",
-    "zh_CN": "查看所有边缘函数"
+    "en": "List all of Functions and Pages",
+    "zh_CN": "查看所有函数和Pages项目"
   },
   "login_describe": {
     "en": "Login to the server",
@@ -352,8 +352,8 @@
     "zh_CN": "注销成功"
   },
   "route_add_describe": {
-    "en": "Bind a Route to a routine",
-    "zh_CN": "将路由绑定到边缘函数"
+    "en": "Bind a Route to a project",
+    "zh_CN": "将路由绑定到函数和Pages"
   },
   "route_add_route_describe": {
     "en": "The name of route to add",
@@ -404,8 +404,8 @@
     "zh_CN": "路由删除失败！"
   },
   "route_describe": {
-    "en": "Manage the routes bound to your routine",
-    "zh_CN": "管理绑定到边缘函数的路由"
+    "en": "Manage the routes bound to your project",
+    "zh_CN": "管理绑定到函数和Pages的路由"
   },
   "route_list_describe": {
     "en": "List all related routes",
@@ -448,11 +448,11 @@
     "zh_CN": "Git状态检查错误"
   },
   "utils_bind_success": {
-    "en": "Binding domain ${domain} to routine successfully",
+    "en": "Binding domain ${domain} to project successfully",
     "zh_CN": "域名 ${domain} 绑定成功"
   },
   "utils_bind_error": {
-    "en": "Binding domain ${domain} to routine failed",
+    "en": "Binding domain ${domain} to project failed",
     "zh_CN": "域名 ${domain} 绑定失败"
   },
   "utils_domain_error": {
@@ -468,8 +468,8 @@
     "zh_CN": "用这个命令登录：${namedCommand}"
   },
   "routine_describe": {
-    "en": "Manage your routine",
-    "zh_CN": "管理边缘函数"
+    "en": "Manage your project",
+    "zh_CN": "管理函数和Pages"
   },
   "route_input": {
     "en": "Enter a Route:",
@@ -484,8 +484,8 @@
     "zh_CN": "我们的Runtime还不支持此操作系统，我们暂时使用Deno作为本地开发runtime，需要先安装。"
   },
   "install_runtime_tip": {
-    "en": "🔔 Runtime must be installed to use esa dev. Installing...",
-    "zh_CN": "必须安装Runtime才能使用 esa dev。正在安装..."
+    "en": "🔔 Runtime must be installed to use esa-cli dev. Installing...",
+    "zh_CN": "必须安装Runtime才能使用 esa-cli dev。正在安装..."
   },
   "install_runtime_success": {
     "en": "Runtime installed.",
@@ -505,7 +505,7 @@
   },
   "deploy_first_time": {
     "en": "This is first time to deploy. Let's create a version first!",
-    "zh_CN": "这是您第一次部署此边缘函数，请先创建一个版本"
+    "zh_CN": "这是您第一次部署此函数和Pages，请先创建一个版本"
   },
   "deploy_select_version": {
     "en": "Select which version you'd like to deploy",
@@ -572,11 +572,11 @@
     "zh_CN": "上传前压缩代码"
   },
   "commit_option_description": {
-    "en": "Description for the routine/version (skip interactive input)",
+    "en": "Description for Functions& Pages/version (skip interactive input)",
     "zh_CN": "函数/版本的描述（跳过交互式输入）"
   },
   "dev_entry_describe": {
-    "en": "Entry file of the Routine",
+    "en": "Entry file of Functions& Pages",
     "zh_CN": "入口文件路径"
   },
   "dev_option_minify": {
@@ -732,7 +732,7 @@
     "zh_CN": "  版本ID                版本描述"
   },
   "commit_er_exist": {
-    "en": "Routine exists, updating the code",
+    "en": "Functions& Pages exists, updating the code",
     "zh_CN": "边缘函数已存在，已更新代码"
   },
   "domain_add_invalid_name": {
@@ -792,7 +792,7 @@
     "zh_CN": "您想要部署您的项目吗？"
   },
   "first_deploy": {
-    "en": "This is the first time to deploy, we will create a new routine for you.",
+    "en": "This is the first time to deploy, we will create a new project for you.",
     "zh_CN": "这是第一次部署，我们将为您创建一个新的函数。"
   },
   "no_formal_version_found": {
@@ -808,8 +808,8 @@
     "zh_CN": "访问："
   },
   "routine_not_exist": {
-    "en": "Routine does not exist, please create a new one. Run command:",
-    "zh_CN": "函数不存在，请创建一个新函数。运行命令："
+    "en": "Project does not exist, please create a new one. Run command:",
+    "zh_CN": "函数和Pages不存在，请创建一个新函数和Pages项目。运行命令："
   },
   "dev_input_inspect_tip1": {
     "en": "👉 Please visit ${inspectLink} in the Chrome browser",
@@ -824,7 +824,7 @@
     "zh_CN": "域名生效可能需要一段时间，请稍后再试。"
   },
   "deploy_quick_describe": {
-    "en": "Quick deploy the routine to production environment",
+    "en": "Quick deploy Functions& Pages to production environment",
     "zh_CN": "快速部署到生产环境"
   },
   "deploy_option_version": {
@@ -968,8 +968,8 @@
     "zh_CN": "输出debug日志"
   },
   "install_runtime_update_tip": {
-    "en": "🔔 Runtime must be update to use esa dev. Installing...",
-    "zh_CN": "必须更新Runtime才能使用 esa dev。正在安装..."
+    "en": "🔔 Runtime must be update to use esa-cli dev. Installing...",
+    "zh_CN": "必须更新Runtime才能使用 esa-cli dev。正在安装..."
   },
   "dev_ip_not_allowed": {
     "en": "Direct access to IP addresses is not allowed when setting local-upstream: ${url}",
@@ -1012,12 +1012,12 @@
     "zh_CN": "用户取消了操作。"
   },
   "routine_create_success": {
-    "en": "Routine created successfully.",
-    "zh_CN": "边缘函数创建成功"
+    "en": "Project created successfully.",
+    "zh_CN": "函数和Pages创建成功"
   },
   "routine_create_fail": {
-    "en": "Routine created failed.",
-    "zh_CN": "边缘函数创建失败"
+    "en": "Project created failed.",
+    "zh_CN": "函数和Pages创建失败"
   },
   "create_route_route": {
     "en": "Enter a Route (e.g., example.com/*):",
@@ -1108,27 +1108,27 @@
     "zh_CN": "站点 \"${siteName}\" 未找到"
   },
   "commit_assets_exist": {
-    "en": "This is a routine with assets project",
-    "zh_CN": "这是一个带静态资源的边缘函数项目"
+    "en": "This is a Functions& Pages with assets project",
+    "zh_CN": "这是一个带静态资源的函数和Pages项目"
   },
   "commit_routine_with_assets_success": {
-    "en": "Routine with assets code version committed successfully.",
-    "zh_CN": "带静态资源的边缘函数代码版本提交成功。"
+    "en": "Functions& Pages with assets code version committed successfully.",
+    "zh_CN": "带静态资源的函数和Pages代码版本提交成功。"
   },
   "commit_routine_with_assets_fail": {
-    "en": "An error occurred while trying to commit your routine with assets.",
-    "zh_CN": "提交带静态资源的边缘函数时发生错误。"
+    "en": "An error occurred while trying to commit your Functions& Pages with assets.",
+    "zh_CN": "提交带静态资源的函数和Pages时发生错误。"
   },
   "commit_option_assets": {
     "en": "Assets directory",
     "zh_CN": "静态资源目录"
   },
   "commit_option_name": {
-    "en": "Edge Routine name",
+    "en": "Functions& Pages name",
     "zh_CN": "边缘函数名称"
   },
   "deploy_option_name": {
-    "en": "Name of the routine",
+    "en": "Name of Functions& Pages",
     "zh_CN": "边缘函数名称"
   },
   "deploy_option_assets": {
@@ -1272,7 +1272,7 @@
     "zh_CN": "全局更新失败。你可能需要更高权限（sudo）或使用 yarn/pnpm："
   },
   "deploy_option_keyword": {
-    "en": "Keyword to search for routines",
+    "en": "Keyword to search for projects",
     "zh_CN": ""
   },
   "route_input_method": {

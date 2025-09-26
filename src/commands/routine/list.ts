@@ -11,13 +11,13 @@ import { checkIsLoginSuccess } from '../utils.js';
 
 const list: CommandModule = {
   command: 'list',
-  describe: `📋 ${t('list_describe').d('List all your routines')}`,
+  describe: `📋 ${t('list_describe').d('List all your projects')}`,
   builder: (yargs: Argv) => {
     return yargs
       .option('keyword', {
         alias: 'k',
         describe: t('deploy_option_keyword').d(
-          'Keyword to search for routines'
+          'Keyword to search for projects'
         ),
         type: 'string'
       })
@@ -78,7 +78,7 @@ export async function handleList(argv: ArgumentsCamelCase) {
   if (routineList) {
     logger.log(
       chalk.bold.bgGray(
-        `📃 ${t('list_routine_name_title').d('List all of routine')}:`
+        `📃 ${t('list_routine_name_title').d('List all of Functions and Pages')}:`
       )
     );
     displayRoutineList(routineList);

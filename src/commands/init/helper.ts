@@ -316,7 +316,7 @@ export const configProjectName = async (initParams: initParams) => {
 
   const name = (await promptParameter<string>({
     type: 'text',
-    question: `${t('init_input_name').d('Enter the name of edgeRoutine:')}`,
+    question: `${t('init_input_name').d('Enter the name of project:')}`,
     label: 'Project name',
     defaultValue: defaultName,
     validate: (input: string) => {

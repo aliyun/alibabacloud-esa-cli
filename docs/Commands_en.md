@@ -1,11 +1,11 @@
 ## Commands
 
-### esa init [name]
+### esa-cli init [name]
 
-Initialize a routine with a template or a framework.
+Initialize a project with a template or a framework.
 
 ```bash
-esa init [name]
+esa-cli init [name]
 ```
 
 - Positionals:
@@ -21,16 +21,16 @@ esa init [name]
 
 ---
 
-### esa dev [entry]
+### esa-cli dev [entry]
 
-Start a local server for developing your routine.
+Start a local server for developing your project.
 
 ```bash
-esa dev [entry]
+esa-cli dev [entry]
 ```
 
 - Positionals:
-  - entry: Entry file of the Routine
+  - entry: Entry file of Functions& Pages
 
 - Options:
   - -p, --port number: Port to listen on
@@ -41,124 +41,149 @@ esa dev [entry]
 
 ---
 
-### esa commit [entry]
+### esa-cli commit [entry]
 
 Commit your code and save as a new version.
 
 ```bash
-esa commit [entry]
+esa-cli commit [entry]
 ```
 
 - Options:
   - -m, --minify boolean: Minify code before committing (default: false)
   - -a, --assets string: Assets directory
-  - -d, --description string: Description for the routine/version (skip interactive input)
-  - -n, --name string: Edge Routine name
+  - -d, --description string: Description for Functions& Pages/version (skip interactive input)
+  - -n, --name string: Functions& Pages name
 
 ---
 
-### esa deploy [entry]
+### esa-cli deploy [entry]
 
 Deploy your project.
 
 ```bash
-esa deploy [entry]
+esa-cli deploy [entry]
 ```
 
 - Positionals:
-  - entry: Entry file of the Routine
+  - entry: Entry file of Functions& Pages
 
 - Options:
   - -v, --version string: Version to deploy (skip interactive selection)
   - -e, --environment string: Environment to deploy to. Choices: staging | production
-  - -n, --name string: Name of the routine
+  - -n, --name string: Name of Functions& Pages
   - -a, --assets string: Assets directory (e.g., ./dist)
   - -d, --description string: Description of the version
   - -m, --minify boolean: Minify the code
 
 ---
 
-### esa deployments [list | delete]
+### esa-cli deployments list
 
-Manage your deployments.
+List all deployments.
 
 ```bash
-esa deployments list
-esa deployments delete [deploymentId...]
+esa-cli deployments list
 ```
 
-- Subcommands:
-  - list: List all deployments
-  - delete [deploymentId...]: Delete one or more deployment versions
+No additional options.
 
 ---
 
-### esa routine [list | delete]
+### esa-cli deployments delete [deploymentId...]
 
-Manage your routines.
+Delete one or more deployment versions.
 
 ```bash
-esa routine list
-esa routine delete <routineName>
+esa-cli deployments delete [deploymentId...]
 ```
 
-- Subcommands:
-  - list: List all your routines
-  - delete <routineName>: Delete a routine
+- Positionals:
+  - deploymentId...: Deployment version IDs to delete (one or more)
 
 ---
 
-### esa site [list]
+### esa-cli project list
 
-Manage your sites.
+List all your projects.
 
 ```bash
-esa site list
+esa-cli project list
 ```
 
-- Subcommands:
-  - list: List all your sites
+No additional options.
 
 ---
 
-### esa domain <add | list | delete>
+### esa-cli project delete <projectName>
 
-Manage the domain names bound to your routine.
+Delete a project.
 
 ```bash
-esa domain add <domain>
-esa domain list
-esa domain delete <domain>
+esa-cli project delete <projectName>
 ```
 
-- Subcommands:
-  - add <domain>: Bind a domain to a routine
-  - list: List all related domains
-  - delete <domain>: Delete a related domain
+- Positionals:
+  - projectName: The name of the project to delete
 
 ---
 
-### esa route <add | list | delete>
+### esa-cli site list
 
-Manage the routes bound to your routine.
+List all your sites.
 
 ```bash
-esa route add
-esa route list
-esa route delete <routeName>
+esa-cli site list
 ```
 
-- Subcommands:
-  - add: Bind a Route to a routine
-  - list: List all related routes
-  - delete <routeName>: Delete a related route
+No additional options.
 
-#### esa route add
+---
 
-Bind a route to the current routine.
+### esa-cli domain add <domain>
+
+Bind a domain to your project.
 
 ```bash
-esa route add [route] [site] [--alias <routeName>] [--route <route>] [--site <site>]
+esa-cli domain add <domain>
+```
+
+- Positionals:
+  - domain: The domain name to bind
+
+---
+
+### esa-cli domain list
+
+List all related domains.
+
+```bash
+esa-cli domain list
+```
+
+No additional options.
+
+---
+
+### esa-cli domain delete <domain>
+
+Delete a related domain.
+
+```bash
+esa-cli domain delete <domain>
+```
+
+- Positionals:
+  - domain: The domain name to delete
+
+---
+
+### esa-cli route add
+
+Bind a route to the current project.
+
+```bash
+esa-cli route add [route] [site] [--alias <routeName>] [--route <route>] [--site <site>]
 ```
 
 - Positionals (optional):
@@ -172,28 +197,39 @@ esa route add [route] [site] [--alias <routeName>] [--route <route>] [--site <si
   - -s, --site string: Site name (must be an active site)
   - -a, --alias string: Route name (alias)
 
-- Interactive behavior:
-  - If `--alias` is missing, you will be prompted to input a route name
-  - If `--site` is missing, you will be prompted to choose from active sites
-  - If `--route` is missing, you will be prompted to input the route value
+---
 
-- Route matching notes:
-  - Host supports `*` prefix: `*.example.com` matches any host ending with `.example.com`
-  - Path supports `*` suffix: `/api/*` matches any path starting with `/api/`
-  - Examples: `example.com/*`, `*.example.com/`, `*.example.com/api/*`
+### esa-cli route list
 
-- Examples:
-  - `esa route add -a home -s example.com -r example.com/*`
-  - `esa route add example.com/* example.com -a home`
+List all related routes.
+
+```bash
+esa-cli route list
+```
+
+No additional options.
 
 ---
 
-### esa login
+### esa-cli route delete <routeName>
+
+Delete a related route.
+
+```bash
+esa-cli route delete <routeName>
+```
+
+- Positionals:
+  - routeName: The name of the route to delete
+
+---
+
+### esa-cli login
 
 Login to the server.
 
 ```bash
-esa login
+esa-cli login
 ```
 
 - Options:
@@ -202,22 +238,22 @@ esa login
 
 ---
 
-### esa logout
+### esa-cli logout
 
 Logout.
 
 ```bash
-esa logout
+esa-cli logout
 ```
 
 ---
 
-### esa config [-l | -g]
+### esa-cli config [-l | -g]
 
 Modify your local or global configuration.
 
 ```bash
-esa config [--local] [--global]
+esa-cli config [--local] [--global]
 ```
 
 - Options:
@@ -226,10 +262,10 @@ esa config [--local] [--global]
 
 ---
 
-### esa lang
+### esa-cli lang
 
 Set the language of the CLI.
 
 ```bash
-esa lang
+esa-cli lang
 ```

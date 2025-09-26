@@ -16,7 +16,7 @@ const deploy: CommandModule = {
   builder: (yargs: Argv) => {
     return yargs
       .positional('entry', {
-        describe: t('dev_entry_describe').d('Entry file of the Routine'),
+        describe: t('dev_entry_describe').d('Entry file of Functions& Pages'),
         type: 'string',
         demandOption: false
       })
@@ -37,7 +37,7 @@ const deploy: CommandModule = {
       })
       .option('name', {
         alias: 'n',
-        describe: t('deploy_option_name').d('Name of the routine'),
+        describe: t('deploy_option_name').d('Name of Functions& Pages'),
         type: 'string'
       })
       .option('assets', {

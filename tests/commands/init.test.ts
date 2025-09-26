@@ -138,13 +138,13 @@ describe('handleInit', () => {
             "Enter your routine project folder: 💡 cd test-template-1",
           ],
           [
-            "Start a local development server for your project: 💡 esa dev",
+            "Start a local development server for your project: 💡 esa-cli dev",
           ],
           [
-            "Save a new version of code: 💡 esa commit",
+            "Save a new version of code: 💡 esa-cli commit",
           ],
           [
-            "Deploy your project to different environments: 💡 esa deploy",
+            "Deploy your project to different environments: 💡 esa-cli deploy",
           ],
         ],
         "results": [
@@ -233,13 +233,13 @@ describe('handleInit', () => {
             "Enter your routine project folder: 💡 cd test-template-1",
           ],
           [
-            "Start a local development server for your project: 💡 esa dev",
+            "Start a local development server for your project: 💡 esa-cli dev",
           ],
           [
-            "Save a new version of code: 💡 esa commit",
+            "Save a new version of code: 💡 esa-cli commit",
           ],
           [
-            "Deploy your project to different environments: 💡 esa deploy",
+            "Deploy your project to different environments: 💡 esa-cli deploy",
           ],
         ],
         "results": [
@@ -327,13 +327,13 @@ describe('handleInit', () => {
             "Enter your routine project folder: 💡 cd test-template-1",
           ],
           [
-            "Start a local development server for your project: 💡 esa dev",
+            "Start a local development server for your project: 💡 esa-cli dev",
           ],
           [
-            "Save a new version of code: 💡 esa commit",
+            "Save a new version of code: 💡 esa-cli commit",
           ],
           [
-            "Deploy your project to different environments: 💡 esa deploy",
+            "Deploy your project to different environments: 💡 esa-cli deploy",
           ],
         ],
         "results": [
@@ -423,13 +423,13 @@ describe('handleInit', () => {
             "Enter your routine project folder: 💡 cd test-template-1",
           ],
           [
-            "Start a local development server for your project: 💡 esa dev",
+            "Start a local development server for your project: 💡 esa-cli dev",
           ],
           [
-            "Save a new version of code: 💡 esa commit",
+            "Save a new version of code: 💡 esa-cli commit",
           ],
           [
-            "Deploy your project to different environments: 💡 esa deploy",
+            "Deploy your project to different environments: 💡 esa-cli deploy",
           ],
         ],
         "results": [

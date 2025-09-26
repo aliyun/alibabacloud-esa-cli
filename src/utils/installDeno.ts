@@ -65,7 +65,7 @@ export async function installDeno(): Promise<boolean> {
   }
   logger.warn(
     t('install_runtime_tip').d(
-      `🔔 Runtime must be installed to use esa dev. Installing...`
+      `🔔 Runtime must be installed to use esa-cli dev. Installing...`
     )
   );
   try {

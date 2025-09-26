@@ -45,7 +45,7 @@ export async function preCheckEw2(): Promise<boolean> {
     if (!manifestRes.isLatest) {
       logger.warn(
         t('install_runtime_update_tip').d(
-          `🔔 Runtime must be update to use esa dev. Installing...`
+          `🔔 Runtime must be update to use esa-cli dev. Installing...`
         )
       );
       return await installVersion(manifestRes.remoteManifest);
@@ -60,7 +60,7 @@ export async function preCheckEw2(): Promise<boolean> {
     if (err.code === 'ENOENT' || err.code === 'EPERM') {
       logger.warn(
         t('install_runtime_tip').d(
-          `🔔 Runtime must be installed to use esa dev. Installing...`
+          `🔔 Runtime must be installed to use esa-cli dev. Installing...`
         )
       );
       return await installVersion(manifestRes.remoteManifest);

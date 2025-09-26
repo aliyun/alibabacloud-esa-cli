@@ -74,7 +74,7 @@ const checkAndInputPort = async (port: number, inspectPort?: number) => {
         throw new Error('Specified port already in use.');
       }
     } catch (_) {
-      const option = chalk.green('esa dev --port <port>');
+      const option = chalk.green('esa-cli dev --port <port>');
       logger.log(
         t('dev_port_used_advice', { option }).d(
           `You can use ${option} to specify another port.`
@@ -113,7 +113,7 @@ const checkAndInputPort = async (port: number, inspectPort?: number) => {
         ])
       ).port;
     } catch (_) {
-      const option = chalk.green('esa dev --inspect-port <port>');
+      const option = chalk.green('esa-cli dev --inspect-port <port>');
       logger.log(
         t('dev_port_used_advice', { option }).d(
           `You can use ${option} to specify another port.`

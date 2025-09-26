@@ -7,19 +7,20 @@ import logger from '../../libs/logger.js';
 import { checkIsLoginSuccess } from '../utils.js';
 
 const deleteCommand: CommandModule = {
-  command: 'delete <routineName>',
-  describe: `🗑  ${t('delete_describe').d('Delete a routine')}`,
+  command: 'delete <projectName>',
+  aliases: ['delete <routineName>'],
+  describe: `🗑  ${t('delete_describe').d('Delete a project')}`,
   builder: (yargs: Argv) => {
     return yargs
-      .positional('routineName', {
+      .positional('projectName', {
         describe: t('delete_routineName_positional_describe').d(
-          'The name of the routine to delete'
+          'The name of the project to delete'
         ),
         type: 'string',
         array: true,
         demandOption: true
       })
-      .usage(`${t('common_usage').d('Usage')}: $0 delete <routineName>`);
+      .usage(`${t('common_usage').d('Usage')}: $0 delete <projectName>`);
   },
   handler: async (argv: ArgumentsCamelCase) => {
     handleDelete(argv);
@@ -32,7 +33,8 @@ export async function handleDelete(argv: ArgumentsCamelCase) {
   const isSuccess = await checkIsLoginSuccess();
   if (!isSuccess) return;
 
-  const routineName: string = argv.routineName as string;
+  const routineName: string =
+    (argv.projectName as string) || (argv.routineName as string);
   const req: DeleteRoutineReq = { Name: routineName };
   return await deleteRoutineFromUserAccount(req);
 }

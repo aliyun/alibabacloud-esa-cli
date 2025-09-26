@@ -70,13 +70,13 @@ export const bindRoutineWithDomain = async (name: string, domain: string) => {
     if (isBindSuccess) {
       logger.success(
         t('utils_bind_success', { domain }).d(
-          `Binding domain ${domain} to routine successfully`
+          `Binding domain ${domain} to project successfully`
         )
       );
     } else {
       logger.error(
         t('utils_bind_error', { domain }).d(
-          `Binding domain ${domain} to routine failed`
+          `Binding domain ${domain} to project failed`
         )
       );
     }
@@ -110,7 +110,7 @@ export async function checkIsLoginSuccess(): Promise<boolean> {
     endpoint = cliConfig?.endpoint;
   }
 
-  const namedCommand = chalk.green('esa login');
+  const namedCommand = chalk.green('esa-cli login');
   if (!accessKeyId || !accessKeySecret) {
     logger.log(
       `❌ ${t('utils_login_error').d('Maybe you are not logged in yet.')}`

@@ -2,6 +2,15 @@
 
 ESA CLI is a command-line tool for building with Alibaba Cloud ESA Functions and Pages.
 
+<p>
+  <a href="https://discord.gg/xygV6MYx">
+    <img alt="Discord CN" src="https://img.shields.io/badge/Discord-中文-5865F2?logo=discord&logoColor=white" />
+  </a>
+  <a href="https://discord.gg/YeFg4yUA" style="margin-left:8px;">
+    <img alt="Discord EN" src="https://img.shields.io/badge/Discord-English-5865F2?logo=discord&logoColor=white" />
+  </a>
+ </p>
+
 ## Install ESA CLI
 
 ### Prerequisites
@@ -26,9 +35,9 @@ npm i -D esa-cli@latest
 **To check your ESA CLI version, run:**
 
 ```bash
-npx esa --version
+npx esa-cli --version
 # or
-npx esa -v
+npx esa-cli -v
 ```
 
 ## Update ESA CLI
@@ -41,6 +50,7 @@ npm i -D esa-cli@latest
 
 ## Related Documentation
 
-- [ESA CLI Usage Guide](./README.md)
-- [Alibaba Cloud ESA Documentation](https://help.aliyun.com/document_detail/2710021.html)
-- [Functions and Pages API Reference](https://help.aliyun.com/document_detail/2710024.html)
+- [esa-cli command](./docs/Commands_en.md)
+- [ESA Configuration Guide](./docs/Config_en.md)
+- [Alibaba Cloud ESA Documentation](https://www.alibabacloud.com/help/en/edge-security-acceleration/esa/user-guide/what-is-er/)
+- [Functions and Pages API Reference](https://www.alibabacloud.com/help/en/edge-security-acceleration/esa/user-guide/api-documentation/)

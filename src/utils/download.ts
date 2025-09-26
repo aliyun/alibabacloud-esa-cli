@@ -169,7 +169,7 @@ export async function downloadRuntimeAndUnzipForWindows() {
 
     logger.success(t('deno_install_success').d('Runtime install success!'));
     logger.block();
-    const dev = chalk.green('esa dev');
+    const dev = chalk.green('esa-cli dev');
     logger.log(
       t('deno_install_success_tips', { dev }).d(`Please run ${dev} again`)
     );

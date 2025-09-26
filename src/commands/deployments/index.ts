@@ -21,7 +21,7 @@ const deploymentsCommand: CommandModule<{}> = {
         default: false
       })
       .usage(
-        `${t('common_usage').d('Usage')}: esa deployments [list | delete]`
+        `${t('common_usage').d('Usage')}: esa-cli deployments [list | delete]`
       );
   },
   handler: (argv) => {

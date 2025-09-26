@@ -1,11 +1,12 @@
 {
   "name": "esa-cli",
-  "version": "0.0.2-beta.22",
-  "description": "A CLI for operating Alibaba Cloud ESA EdgeRoutine (Edge Functions).",
+  "version": "0.0.2-beta.23",
+  "description": "A CLI for operating Alibaba Cloud ESA Functions and Pages.",
   "main": "bin/enter.cjs",
   "type": "module",
   "bin": {
-    "esa": "bin/enter.cjs"
+    "esa": "bin/enter.cjs",
+    "esa-cli": "bin/enter.cjs"
   },
   "files": [
     "bin",

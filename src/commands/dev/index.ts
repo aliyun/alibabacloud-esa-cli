@@ -31,11 +31,11 @@ const EW2OS = [Platforms.AppleArm, Platforms.AppleIntel, Platforms.LinuxX86];
 const useEw2 = EW2OS.includes(OS);
 const dev: CommandModule = {
   command: 'dev [entry]',
-  describe: `💻 ${t('dev_describe').d('Start a local server for developing your routine')}`,
+  describe: `💻 ${t('dev_describe').d('Start a local server for developing your project')}`,
   builder: (yargs: Argv) => {
     yargsIns = yargs
       .positional('entry', {
-        describe: t('dev_entry_describe').d('Entry file of the Routine'),
+        describe: t('dev_entry_describe').d('Entry file of Functions& Pages'),
         type: 'string',
         demandOption: false
       })

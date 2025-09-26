@@ -496,14 +496,14 @@ export async function displayDeploySuccess(
   if (showDomainGuide) {
     guides.push(
       `${label('TIP')}  ${t('deploy_success_guide').d('Add a custom domain')}: ${chalk.green(
-        'esa domain add <DOMAIN>'
+        'esa-cli domain add <DOMAIN>'
       )}`
     );
   }
   if (showRouteGuide) {
     guides.push(
       `${label('TIP')}  ${t('deploy_success_guide_2').d('Add routes for a site')}: ${chalk.green(
-        'esa route add -r <ROUTE> -s <SITE>'
+        'esa-cli route add -r <ROUTE> -s <SITE>'
       )}`
     );
   }

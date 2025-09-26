@@ -14,7 +14,7 @@ import {
 
 const addDomain: CommandModule = {
   command: 'add <domain>',
-  describe: `🔗 ${t('domain_add_describe').d('Bind a domain to a routine')}`,
+  describe: `🔗 ${t('domain_add_describe').d('Bind a domain to your project')}`,
   builder: (yargs: Argv) => {
     return yargs
       .positional('domain', {
@@ -24,7 +24,7 @@ const addDomain: CommandModule = {
         type: 'string',
         demandOption: true
       })
-      .usage(`${t('common_usage').d('Usage')}: esa domain add <domain>`)
+      .usage(`${t('common_usage').d('Usage')}: esa-cli domain add <domain>`)
       .option('help', {
         alias: 'h',
         describe: t('common_help').d('Help'),

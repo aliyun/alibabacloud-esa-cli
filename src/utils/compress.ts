@@ -52,7 +52,13 @@ const compress = async (
 
   if (!projectConfig && !scriptEntry && !assetsDir) {
     logger.error(
-      'esa.jsonc (recommended) or esa.toml is not found and script entry or assets directory is not provided by command line'
+      [
+        'esa.jsonc (recommended) or esa.toml is not found and script entry or assets directory is not provided by command line',
+        '',
+        'See configuration guide:',
+        `- English: ${chalk.underline('https://github.com/aliyun/alibabacloud-esa-cli/blob/main/docs/Config_en.md')}`,
+        `- 中文: ${chalk.underline('https://github.com/aliyun/alibabacloud-esa-cli/blob/main/docs/Config_zh_CN.md')}`
+      ].join('\n')
     );
     exit(1);
   }

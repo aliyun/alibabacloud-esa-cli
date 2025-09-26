@@ -233,7 +233,7 @@ class Logger {
     this.log('If there is code to deploy, you can either:');
     this.subLog(
       `- Specify an entry-point to your Routine via the command line (ex: ${chalk.green(
-        'esa deploy src/index.ts'
+        'esa-cli deploy src/index.ts'
       )})`
     );
     this.subLog('- Or create an "esa.jsonc" file (recommended):');
@@ -262,7 +262,7 @@ class Logger {
     );
     this.subLog(
       `- Create an "esa.jsonc" file (recommended) and run ${chalk.green(
-        'esa deploy -a ./dist'
+        'esa-cli deploy -a ./dist'
       )}`
     );
     console.log(
@@ -276,7 +276,7 @@ class Logger {
         '```'
     );
     this.subLog(
-      `- Or create an "esa.toml" file and run ${chalk.green('esa deploy -a ./dist')}`
+      `- Or create an "esa.toml" file and run ${chalk.green('esa-cli deploy -a ./dist')}`
     );
     console.log(
       '```toml\n' +
@@ -288,7 +288,7 @@ class Logger {
     );
 
     this.log('Alternatively, initialize a new ESA project:');
-    this.log(chalk.green('$ esa init my-routine'));
+    this.log(chalk.green('$ esa-cli init my-project'));
     this.block();
   }
 
@@ -302,7 +302,7 @@ class Logger {
       )
     );
     this.block();
-    this.log(chalk.green(`$ ${chalk.red('sudo')} esa <Command>`));
+    this.log(chalk.green(`$ ${chalk.red('sudo')} esa-cli <Command>`));
     this.block();
     this.subLog(chalk.yellow('OR'));
     this.block();

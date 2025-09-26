@@ -31,7 +31,7 @@ const check: CommandModule = {
         type: 'boolean',
         default: false
       })
-      .usage(`${t('common_usage').d('Usage')}: esa config [-l | -g]`)
+      .usage(`${t('common_usage').d('Usage')}: esa-cli config [-l | -g]`)
       .check((argv: ArgumentsCamelCase) => {
         if (!argv.local && !argv.global) {
           yargs.showHelp();

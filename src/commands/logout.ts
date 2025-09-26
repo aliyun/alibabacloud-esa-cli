@@ -1,29 +1,27 @@
-import { CommandModule, ArgumentsCamelCase, Argv } from 'yargs';
-import { getCliConfig, updateCliConfigFile } from '../utils/fileUtils/index.js';
-import { checkIsLoginSuccess } from './utils.js';
-import logger from '../libs/logger.js';
+import { CommandModule, Argv } from 'yargs';
+
 import t from '../i18n/index.js';
+import logger from '../libs/logger.js';
+import { getCliConfig, updateCliConfigFile } from '../utils/fileUtils/index.js';
 
 const logout: CommandModule = {
   command: 'logout',
-  describe: `📥 ${t('logout_describe').d('Logout')}`,
+  describe: `🚪 ${t('logout_describe').d('Logout')}`,
   builder: (yargs: Argv) => {
     return yargs;
   },
-  handler: (argv: ArgumentsCamelCase) => {
-    handleLogout(argv);
+  handler: () => {
+    handleLogout();
   }
 };
 
 export default logout;
 
-export async function handleLogout(argv: ArgumentsCamelCase) {
+export async function handleLogout() {
   let cliConfig = getCliConfig();
   if (!cliConfig) {
     return;
   }
-  const isSuccess = await checkIsLoginSuccess();
-  if (!isSuccess) return;
 
   if (!cliConfig.auth) {
     cliConfig.auth = { accessKeyId: '', accessKeySecret: '' };

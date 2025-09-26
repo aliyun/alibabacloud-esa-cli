@@ -1,6 +1,8 @@
-import { describe, expect, it, vi } from 'vitest';
-import { handleCheckVersion } from '../../src/utils/checkVersion.js';
 import { promises as fs } from 'fs';
+
+import { describe, expect, it, vi } from 'vitest';
+
+import { handleCheckVersion } from '../../src/utils/checkVersion.js';
 import { mockConsoleMethods } from '../helper/mockConsole.js';
 
 describe('handleCheckVersion', () => {

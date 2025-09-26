@@ -1,12 +1,14 @@
-import React from 'react';
-import { render } from 'ink';
+import { render , Text } from 'ink';
 import SelectInput from 'ink-select-input';
-import { Text } from 'ink';
+import React from 'react';
+
 import Item from './selectItem.js';
 
 export interface SelectItem {
   label: string;
   value: string;
+  key?: string;
+  children?: SelectItem[];
 }
 
 const Indicator: React.FC<{ isSelected?: boolean }> = ({ isSelected }) => {

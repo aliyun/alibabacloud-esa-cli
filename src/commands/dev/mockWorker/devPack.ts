@@ -1,11 +1,12 @@
-import path from 'path';
 import fs from 'fs';
-import logger from '../../libs/logger.js';
-import devBuild from './config/devBuild.js';
-import t from '../../i18n/index.js';
-import { getDevConf } from '../../utils/fileUtils/index.js';
-import { getRoot, getDirName } from '../../utils/fileUtils/base.js';
-import { checkPort } from '../../utils/checkDevPort.js';
+import path from 'path';
+
+import t from '../../../i18n/index.js';
+import logger from '../../../libs/logger.js';
+import { checkPort } from '../../../utils/checkDevPort.js';
+import { getRoot, getDirName } from '../../../utils/fileUtils/base.js';
+import { getDevConf } from '../../../utils/fileUtils/index.js';
+import devBuild from '../build.js';
 
 const generateEntry = async (
   id: string,
@@ -16,11 +17,11 @@ const generateEntry = async (
 
   const devDir = path.resolve(userRoot, '.dev');
   const devEntry = path.resolve(devDir, `devEntry-${id}.js`);
-  const devEntryTemp = path.resolve(__dirname, './config/devEntry.js');
+  const devEntryTemp = path.resolve(__dirname, './devEntry.js');
   const devEntryTempFile = fs.readFileSync(devEntryTemp, 'utf-8');
 
   const mockDevDir = path.resolve(userRoot, '.dev/mock');
-  const mockDir = path.resolve(__dirname, './config/mock');
+  const mockDir = path.resolve(__dirname, './mock');
 
   if (!fs.existsSync(devDir)) {
     await fs.promises.mkdir(devDir);
@@ -40,7 +41,10 @@ const generateEntry = async (
 
   return fs.promises.writeFile(
     devEntry,
-    devEntryTempFile.replace(/'\$userPath'/g, `'${projectEntry}'`)
+    devEntryTempFile.replace(
+      /'\$userPath'/g,
+      `'${projectEntry.replace(/\\/g, '/')}'`
+    )
   );
 };
 
@@ -53,30 +57,36 @@ const prepare = async (
 ) => {
   const options: Record<string, any> = {};
   const currentOptions = { entry, port, localUpstream };
+  // Support running multiple deno instances simultaneously
   const id = new Date().getTime().toString();
   // @ts-ignore
   global.id = id;
   await generateEntry(id, entry, userRoot);
+  // Configuration items for each dev session, distinguished by id in one file
   if (fs.existsSync(configPath)) {
     const currentConfig = fs
       .readFileSync(configPath, 'utf-8')
       .replace('export default ', '');
     const currentConfigObj = JSON.parse(currentConfig);
-    const cIds = Object.keys(currentConfigObj);
-    if (cIds[0] && /^\d+$/.test(cIds[0])) {
-      for (let cid of cIds) {
-        const useful = await checkPort(currentConfigObj[cid].port);
-        if (useful) {
-          const unusedEntry = path.resolve(userRoot, `.dev/index-${cid}.js`);
-          const unusedTemp = path.resolve(userRoot, `.dev/devEntry-${cid}.js`);
-          if (fs.existsSync(unusedEntry)) {
-            fs.rmSync(unusedEntry);
-          }
-          if (fs.existsSync(unusedTemp)) {
-            fs.rmSync(unusedTemp);
+    const currentIds = Object.keys(currentConfigObj);
+    if (currentIds[0] && /^\d+$/.test(currentIds[0])) {
+      for (let currentId of currentIds) {
+        const unused = await checkPort(currentConfigObj[currentId].port);
+        if (unused) {
+          const devDir = path.resolve(userRoot, '.dev');
+          const files = fs.readdirSync(devDir);
+          const filesToDelete = files.filter((file) =>
+            file.includes(currentId)
+          );
+          for (const file of filesToDelete) {
+            fs.rmSync(path.resolve(devDir, file), {
+              force: true,
+              recursive: true,
+              maxRetries: 5
+            });
           }
         } else {
-          options[cid] = currentConfigObj[cid];
+          options[currentId] = currentConfigObj[currentId];
         }
       }
     }
@@ -91,12 +101,22 @@ const devPack = async () => {
   logger.ora.start('Processing...\n');
 
   const userRoot = getRoot();
-  const configPath = path.resolve(userRoot, 'esa.toml');
+  // Try to find config file in order of preference: .jsonc, .toml
+  const configFormats = ['esa.jsonc', 'esa.toml'];
+  let configPath: string | null = null;
+
+  for (const format of configFormats) {
+    const testPath = path.resolve(userRoot, format);
+    if (fs.existsSync(testPath)) {
+      configPath = testPath;
+      break;
+    }
+  }
 
   let port: number, minify: boolean, localUpstream: string, entry: string;
   let projectEntry = path.resolve(userRoot, 'src/index.js');
 
-  if (fs.existsSync(configPath)) {
+  if (configPath) {
     port = getDevConf('port', 'dev', 18080);
     minify = getDevConf('minify', 'dev', false);
     localUpstream = getDevConf('localUpstream', 'dev', '');
@@ -107,7 +127,7 @@ const devPack = async () => {
     }
   } else {
     logger.notInProject();
-    process.exit(0);
+    process.exit(1);
   }
   return prepare(
     path.resolve(userRoot, '.dev/devConfig.js'),

@@ -1,20 +1,21 @@
+import chalk from 'chalk';
 import { CommandModule, ArgumentsCamelCase, Argv } from 'yargs';
-import { getProjectConfig } from '../../utils/fileUtils/index.js';
-import {
-  checkDirectory,
-  checkIsLoginSuccess,
-  getRoutineVersionList
-} from '../utils.js';
-import { ApiService } from '../../libs/apiService.js';
-import { DeleteRoutineCodeVersionReq } from '../../libs/interface.js';
-import t from '../../i18n/index.js';
-import logger from '../../libs/logger.js';
+
 import {
   displayMultiSelectTable,
   TableItem
 } from '../../components/mutiSelectTable.js';
-import { Base64 } from 'js-base64';
+import t from '../../i18n/index.js';
+import { ApiService } from '../../libs/apiService.js';
+import { DeleteRoutineCodeVersionReq } from '../../libs/interface.js';
+import logger from '../../libs/logger.js';
 import { validRoutine } from '../../utils/checkIsRoutineCreated.js';
+import { getProjectConfig } from '../../utils/fileUtils/index.js';
+import {
+  checkDirectory,
+  checkIsLoginSuccess,
+  getRoutineCodeVersions
+} from '../utils.js';
 
 const deploymentsDelete: CommandModule = {
   command: 'delete [deploymentId..]',
@@ -57,33 +58,54 @@ export async function handleDeleteDeployments(argv: ArgumentsCamelCase) {
   const server = await ApiService.getInstance();
 
   let versions: string[] = argv.deploymentId as string[];
-  // const req: DeleteRoutineCodeVersionReq = {
-  //   Name: projectConfig.name,
-  //   CodeVersion: version
-  // };
-  // const res = await server.deleteRoutineCodeVersion(req);
-  // if (res?.Status === 'OK') {
-  //   logger.success(
-  //     `${t('deployments_delete_success').d('Delete success')}: ${version}`
-  //   );
-  // } else {
-  //   logger.error(
-  //     `🙅 ${t('deployments_delete_failed').d('Delete failed')}: ${version}`
-  //   );
-  // }
   const isInteractive = argv.i;
   if (isInteractive) {
-    const versionList = await getRoutineVersionList(projectConfig.name);
+    const { allVersions, stagingVersions, productionVersions } =
+      await getRoutineCodeVersions(projectConfig.name);
+
+    // Show information about versions being deployed
+    if (stagingVersions.length > 0 || productionVersions.length > 0) {
+      logger.log(chalk.yellow('⚠️  Currently deploying versions:'));
+      if (stagingVersions.length > 0) {
+        logger.log(chalk.yellow(`   Staging: ${stagingVersions.join(',')}`));
+      }
+      if (productionVersions.length > 0) {
+        logger.log(
+          chalk.yellow(`   Production: ${productionVersions.join(',')}`)
+        );
+      }
+      logger.log('');
+    }
+
     logger.log(
       t('delete_deployments_table_title').d(
         '  Version ID            Description'
       )
     );
-    const selectList: TableItem[] = versionList.map((item) => {
-      return {
-        label: item.CodeVersion + '   ' + Base64.decode(item.CodeDescription)
-      };
-    });
+
+    // Filter out versions being deployed
+    const selectList: TableItem[] = allVersions
+      .filter((item) => {
+        if (stagingVersions.length === 0 && productionVersions.length === 0)
+          return true;
+        return (
+          !stagingVersions.includes(item.codeVersion ?? '') &&
+          !productionVersions.includes(item.codeVersion ?? '')
+        );
+      })
+      .map((item) => {
+        return {
+          label: item.codeVersion + '   ' + item.codeDescription
+        };
+      });
+
+    if (selectList.length === 0) {
+      logger.error(
+        'No deletable versions found. All versions are currently deployed.'
+      );
+      return;
+    }
+
     versions = (await displayMultiSelectTable(selectList, 1, 100)).map((item) =>
       item.slice(0, item.indexOf(' '))
     );

@@ -1,11 +1,12 @@
-import { CliConfig } from '../utils/fileUtils/interface.js';
 import * as $OpenApi from '@alicloud/openapi-client';
 import FormData from 'form-data';
 import fetch from 'node-fetch';
 
+import t from '../i18n/index.js';
+import { getApiConfig } from '../utils/fileUtils/index.js';
+import { CliConfig } from '../utils/fileUtils/interface.js';
+
 import {
-  GetRoutineUserInfoRes,
-  ListRoutineCanaryAreasRes,
   PublishRoutineCodeVersionReq,
   GetMatchSiteReq,
   GetMatchSiteRes,
@@ -33,12 +34,19 @@ import {
   DeleteRoutineRelatedRecordRes,
   PublishRoutineCodeVersionRes,
   Environment,
-  ListRoutineOptionalSpecsRes
+  ListRoutineRelatedRecordsReq,
+  ListRoutineRelatedRecordsRes,
+  CreateRoutineRouteReq,
+  CreateRoutineRouteRes,
+  ListUserRoutinesRes,
+  IOssConfig,
+  CreateRoutineWithAssetsCodeVersionReq,
+  CreateRoutineWithAssetsCodeVersionRes,
+  CreateRoutineCodeDeploymentReq,
+  CreateRoutineCodeDeploymentRes,
+  GetRoutineCodeVersionInfoRes,
+  GetRoutineCodeVersionInfoReq
 } from './interface.js';
-import { getApiConfig } from '../utils/fileUtils/index.js';
-import chain from 'lodash';
-import { IOssConfig } from './interface.js';
-import t from '../i18n/index.js';
 
 export class ApiService {
   private static instance: ApiService | null = null;
@@ -77,9 +85,7 @@ export class ApiService {
    *   - success: A boolean indicating if the login check was successful.
    *   - message: (Optional) A string providing additional information in case of failure.
    */
-  async checkLogin(
-    isShowError = true
-  ): Promise<{ success: boolean; message?: string }> {
+  async checkLogin(): Promise<{ success: boolean; message?: string }> {
     try {
       let params = {
         action: 'GetErService',
@@ -122,7 +128,6 @@ export class ApiService {
         };
       }
     } catch (error) {
-      isShowError && console.log(error);
       return {
         success: false,
         message: t('login_failed').d(
@@ -134,18 +139,18 @@ export class ApiService {
 
   async quickDeployRoutine(edgeRoutine: EdgeRoutineProps) {
     try {
-      // 上传代码到unstable版本
+      // Upload code to unstable version
       const stagingRes =
         await this.getRoutineStagingCodeUploadInfo(edgeRoutine);
 
       if (stagingRes) {
-        // 生产版本
+        // Production version
         const commitRes = await this.commitRoutineStagingCode({
           Name: edgeRoutine.name,
           CodeDescription: edgeRoutine.description
         });
 
-        // 发布到生产环境
+        // Deploy to production environment
         if (commitRes) {
           const deployRes = await this.publishRoutineCodeVersion({
             Name: edgeRoutine.name,
@@ -181,15 +186,11 @@ export class ApiService {
           return this;
         }
       };
-      const CanaryAreaList = requestParams.CanaryAreaList ?? [];
-      const CanaryAreaListString = JSON.stringify(CanaryAreaList);
       let request = new $OpenApi.OpenApiRequest({
         query: {
           Env: requestParams.Env,
           Name: requestParams.Name,
-          CodeVersion: requestParams.CodeVersion,
-          CanaryCodeVersion: requestParams.CanaryCodeVersion,
-          CanaryAreaList: CanaryAreaListString
+          CodeVersion: requestParams.CodeVersion
         }
       });
 
@@ -261,10 +262,15 @@ export class ApiService {
     return null;
   }
 
-  async listRoutineCanaryAreas(): Promise<ListRoutineCanaryAreasRes | null> {
+  async listUserRoutines(requestParams?: {
+    RegionId?: string;
+    PageNumber?: number;
+    PageSize?: number;
+    SearchKeyWord?: string;
+  }): Promise<ListUserRoutinesRes | null> {
     try {
       let params = {
-        action: 'ListRoutineCanaryAreas',
+        action: 'ListUserRoutines',
         version: '2024-09-10',
         protocol: 'https',
         method: 'GET',
@@ -277,7 +283,9 @@ export class ApiService {
           return this;
         }
       };
-      let request = new $OpenApi.OpenApiRequest();
+      let request = new $OpenApi.OpenApiRequest({
+        query: requestParams || {}
+      });
       let runtime = {
         toMap: function () {
           return this;
@@ -285,46 +293,7 @@ export class ApiService {
       };
       const res = await this.client.callApi(params, request, runtime);
       if (res.statusCode === 200 && res.body) {
-        const ret: ListRoutineCanaryAreasRes = {
-          CanaryAreas: res.body.CanaryAreas
-        };
-        return ret;
-      }
-    } catch (error) {
-      console.log(error);
-    }
-    return null;
-  }
-
-  async getRoutineUserInfo(): Promise<GetRoutineUserInfoRes | null> {
-    try {
-      let params = {
-        action: 'GetRoutineUserInfo',
-        version: '2024-09-10',
-        protocol: 'https',
-        method: 'GET',
-        authType: 'AK',
-        bodyType: 'json',
-        reqBodyType: 'json',
-        style: 'RPC',
-        pathname: '/',
-        toMap: function () {
-          return this;
-        }
-      };
-      let request = new $OpenApi.OpenApiRequest();
-      let runtime = {
-        toMap: function () {
-          return this;
-        }
-      };
-      const res = await this.client.callApi(params, request, runtime);
-      if (res.statusCode === 200 && res.body) {
-        const ret: GetRoutineUserInfoRes = {
-          Subdomains: res.body.RoutineName,
-          Routines: res.body.Routines
-        };
-        return ret;
+        return res as ListUserRoutinesRes;
       }
     } catch (error) {
       console.log(error);
@@ -631,16 +600,7 @@ export class ApiService {
       if (res.statusCode === 200 && res.body) {
         const routineResponse: GetRoutineRes = {
           code: res.statusCode,
-          data: {
-            RequestId: res.body?.RequestId,
-            CodeVersions: res.body?.CodeVersions || [],
-            RelatedRecords: res.body?.RelatedRecords || [],
-            Envs: res.body?.Envs || [],
-            CreateTime: res.body?.CreateTime,
-            Description: res.body?.Description,
-            RelatedRoutes: res.body?.RelatedRoutes || [],
-            DefaultRelatedRecord: res.body?.DefaultRelatedRecord
-          }
+          data: res.body
         };
         return routineResponse;
       }
@@ -673,7 +633,7 @@ export class ApiService {
       query: {
         Name: edgeRoutine.name,
         Description: edgeRoutine.description,
-        SpecName: edgeRoutine.specName
+        HasAssets: edgeRoutine.hasAssets
       }
     });
     let runtime = {
@@ -728,7 +688,7 @@ export class ApiService {
         }
       };
       const uploadResult = await this.client.callApi(params, request, runtime);
-      const ossConfig = chain(uploadResult).get('body.OssPostConfig');
+      const ossConfig = uploadResult.body.OssPostConfig;
 
       if (uploadResult.statusCode !== 200 || !ossConfig) {
         return false;
@@ -751,7 +711,7 @@ export class ApiService {
       formData.append('policy', policy);
       formData.append('key', key);
       formData.append('file', edgeRoutine.code);
-      // TODO: 检查oss结果;
+
       const ossRes = await fetch(Url, {
         method: 'POST',
         body: formData,
@@ -803,44 +763,6 @@ export class ApiService {
           data: {
             RequestId: res.body.RequestId,
             CodeVersion: res.body.CodeVersion
-          }
-        };
-        return ret;
-      }
-    } catch (error) {
-      console.log(error);
-    }
-    return null;
-  }
-  async ListRoutineOptionalSpecs(): Promise<ListRoutineOptionalSpecsRes | null> {
-    try {
-      let params = {
-        action: 'ListRoutineOptionalSpecs',
-        version: '2024-09-10',
-        protocol: 'https',
-        method: 'GET',
-        authType: 'AK',
-        bodyType: 'json',
-        reqBodyType: 'json',
-        style: 'RPC',
-        pathname: '/',
-        toMap: function () {
-          return this;
-        }
-      };
-      let request = new $OpenApi.OpenApiRequest();
-      let runtime = {
-        toMap: function () {
-          return this;
-        }
-      };
-      const res = await this.client.callApi(params, request, runtime);
-      if (res.statusCode === 200 && res.body) {
-        const ret: ListRoutineOptionalSpecsRes = {
-          code: res.statusCode,
-          data: {
-            RequestId: res.body.RequestId,
-            Specs: res.body.Specs
           }
         };
         return ret;
@@ -941,6 +863,303 @@ export class ApiService {
             Status: res.body.Status,
             RequestId: res.body.RequestId
           }
+        };
+        return ret;
+      }
+    } catch (error) {
+      console.log(error);
+    }
+    return null;
+  }
+
+  async listRoutineRelatedRecords(
+    requestParams: ListRoutineRelatedRecordsReq
+  ): Promise<ListRoutineRelatedRecordsRes | null> {
+    try {
+      let params = {
+        action: 'ListRoutineRelatedRecords',
+        version: '2024-09-10',
+        protocol: 'https',
+        method: 'GET',
+        authType: 'AK',
+        bodyType: 'json',
+        reqBodyType: 'json',
+        style: 'RPC',
+        pathname: '/',
+        toMap: function () {
+          return this;
+        }
+      };
+
+      let request = new $OpenApi.OpenApiRequest({
+        query: {
+          Name: requestParams.Name,
+          PageNumber: requestParams.PageNumber,
+          PageSize: requestParams.PageSize,
+          SearchKeyWord: requestParams.SearchKeyWord
+        }
+      });
+      let runtime = {
+        toMap: function () {
+          return this;
+        }
+      };
+      const res = await this.client.callApi(params, request, runtime);
+      if (res.statusCode === 200 && res.body) {
+        const ret: ListRoutineRelatedRecordsRes = {
+          code: res.statusCode,
+          data: {
+            PageNumber: res.body.PageNumber,
+            PageSize: res.body.PageSize,
+            TotalCount: res.body.TotalCount,
+            RelatedRecords: res.body.RelatedRecords
+          }
+        };
+        return ret;
+      }
+    } catch (error) {
+      console.log(error);
+    }
+    return null;
+  }
+
+  async createRoutineRoute(
+    requestParams: CreateRoutineRouteReq
+  ): Promise<CreateRoutineRouteRes | null> {
+    try {
+      let params = {
+        action: 'CreateRoutineRoute',
+        version: '2024-09-10',
+        protocol: 'https',
+        method: 'POST',
+        authType: 'AK',
+        bodyType: 'json',
+        reqBodyType: 'json',
+        style: 'RPC',
+        pathname: '/',
+        toMap: function () {
+          return this;
+        }
+      };
+
+      let request = new $OpenApi.OpenApiRequest({
+        query: {
+          SiteId: requestParams.SiteId,
+          RoutineName: requestParams.RoutineName,
+          RouteName: requestParams.RouteName,
+          RouteEnable: 'on',
+          Rule: requestParams.Rule,
+          Bypass: requestParams.Bypass,
+          Mode: 'simple'
+        }
+      });
+      let runtime = {
+        toMap: function () {
+          return this;
+        }
+      };
+      const res = await this.client.callApi(params, request, runtime);
+      if (res.statusCode === 200 && res.body) {
+        const ret: CreateRoutineRouteRes = {
+          code: res.statusCode,
+          data: {
+            RequestId: res.body.RequestId,
+            ConfigId: res.body.ConfigId
+          }
+        };
+        return ret;
+      }
+    } catch (error) {
+      console.log(error);
+    }
+    return null;
+  }
+
+  /**
+   * 调用 CreateRoutineWithAssetsCodeVersion API 获取 OSS 上传配置
+   */
+  async CreateRoutineWithAssetsCodeVersion(
+    requestParams: CreateRoutineWithAssetsCodeVersionReq
+  ): Promise<CreateRoutineWithAssetsCodeVersionRes | null> {
+    try {
+      let params = {
+        action: 'CreateRoutineWithAssetsCodeVersion',
+        version: '2024-09-10',
+        protocol: 'https',
+        method: 'POST',
+        authType: 'AK',
+        bodyType: 'json',
+        reqBodyType: 'json',
+        style: 'RPC',
+        pathname: '/',
+        toMap: function () {
+          return this;
+        }
+      };
+
+      let request = new $OpenApi.OpenApiRequest({
+        body: {
+          Name: requestParams.Name,
+          CodeDescription: requestParams.CodeDescription,
+          ExtraInfo: requestParams.ExtraInfo,
+          ConfOptions: {
+            NotFoundStrategy: requestParams.ConfOptions?.NotFoundStrategy
+          }
+        }
+      });
+      let runtime = {
+        toMap: function () {
+          return this;
+        }
+      };
+
+      const result = await this.client.callApi(params, request, runtime);
+      if (result.statusCode === 200 && result.body) {
+        return {
+          code: result.statusCode.toString(),
+          data: {
+            RequestId: result.body.RequestId,
+            CodeVersion: result.body.CodeVersion,
+            Status: result.body.Status,
+            OssPostConfig: result.body.OssPostConfig
+          }
+        };
+      }
+
+      return null;
+    } catch (error) {
+      console.error('Error calling CreateRoutineWithAssetsCodeVersion:', error);
+      return null;
+    }
+  }
+
+  /**
+   * 上传文件到 OSS
+   */
+  async uploadToOss(
+    ossConfig: {
+      OSSAccessKeyId: string;
+      Signature: string;
+      Url: string;
+      Key: string;
+      Policy: string;
+      XOssSecurityToken: string;
+    },
+    zipBuffer: Buffer
+  ): Promise<boolean> {
+    try {
+      const { OSSAccessKeyId, Signature, Url, Key, Policy, XOssSecurityToken } =
+        ossConfig;
+
+      const formData = new FormData();
+      formData.append('OSSAccessKeyId', OSSAccessKeyId);
+      formData.append('Signature', Signature);
+      formData.append('x-oss-security-token', XOssSecurityToken);
+      formData.append('policy', Policy);
+      formData.append('key', Key);
+      formData.append('file', zipBuffer);
+
+      const ossRes = await fetch(Url, {
+        method: 'POST',
+        body: formData,
+        headers: formData.getHeaders()
+      });
+
+      return ossRes && (ossRes.status === 200 || ossRes.status === 204);
+    } catch (error) {
+      console.error('Error uploading to OSS:', error);
+      return false;
+    }
+  }
+
+  async createRoutineCodeDeployment(
+    requestParams: CreateRoutineCodeDeploymentReq
+  ): Promise<CreateRoutineCodeDeploymentRes | null> {
+    try {
+      let params = {
+        action: 'CreateRoutineCodeDeployment',
+        version: '2024-09-10',
+        protocol: 'https',
+        method: 'POST',
+        authType: 'AK',
+        bodyType: 'json',
+        reqBodyType: 'json',
+        style: 'RPC',
+        pathname: '/',
+        toMap: function () {
+          return this;
+        }
+      };
+
+      let request = new $OpenApi.OpenApiRequest({
+        query: {
+          Name: requestParams.Name,
+          Env: requestParams.Env,
+          Strategy: requestParams.Strategy,
+          CodeVersions: JSON.stringify(requestParams.CodeVersions)
+        }
+      });
+
+      let runtime = {
+        toMap: function () {
+          return this;
+        }
+      };
+      const res = await this.client.callApi(params, request, runtime);
+      if (res.statusCode === 200 && res.body) {
+        const ret: CreateRoutineCodeDeploymentRes = {
+          code: res.statusCode,
+          data: {
+            RequestId: res.body.RequestId,
+            Strategy: res.body.Strategy,
+            DeploymentId: res.body.DeploymentId,
+            CodeVersions: res.body.CodeVersions
+          }
+        };
+        return ret;
+      }
+    } catch (error) {
+      console.log(error);
+    }
+    return null;
+  }
+
+  async getRoutineCodeVersionInfo(
+    requestParams: GetRoutineCodeVersionInfoReq
+  ): Promise<GetRoutineCodeVersionInfoRes | null> {
+    try {
+      let params = {
+        action: 'GetRoutineCodeVersionInfo',
+        version: '2024-09-10',
+        protocol: 'https',
+        method: 'GET',
+        authType: 'AK',
+        bodyType: 'json',
+        reqBodyType: 'json',
+        style: 'RPC',
+        pathname: '/',
+        toMap: function () {
+          return this;
+        }
+      };
+
+      let request = new $OpenApi.OpenApiRequest({
+        query: {
+          Name: requestParams.Name,
+          CodeVersion: requestParams.CodeVersion
+        }
+      });
+
+      let runtime = {
+        toMap: function () {
+          return this;
+        }
+      };
+      const res = await this.client.callApi(params, request, runtime);
+      if (res.statusCode === 200 && res.body) {
+        const ret: GetRoutineCodeVersionInfoRes = {
+          code: res.statusCode,
+          data: res.body
         };
         return ret;
       }

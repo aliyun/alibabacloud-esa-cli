@@ -1,10 +1,11 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
-import * as fileUtils from '../../src/utils/fileUtils/index.js';
 import inquirer from 'inquirer';
-import { ApiService } from '../../src/libs/apiService.js';
+import { describe, expect, it, vi } from 'vitest';
+
 import { handleLogin } from '../../src/commands/login/index.js';
-import { mockConsoleMethods } from '../helper/mockConsole.js';
+import { ApiService } from '../../src/libs/apiService.js';
 import logger from '../../src/libs/logger.js';
+import * as fileUtils from '../../src/utils/fileUtils/index.js';
+import { mockConsoleMethods } from '../helper/mockConsole.js';
 
 vi.mock('inquirer');
 

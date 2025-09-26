@@ -1,14 +1,12 @@
-import path from 'path';
-import { createEdgeRoutine } from '../commands/commit/index.js';
-import { displaySelectSpec } from '../commands/deploy/index.js';
+import { exit } from 'process';
+
+import { log } from '@clack/prompts';
+import chalk from 'chalk';
+
+import t from '../i18n/index.js';
 import { ApiService } from '../libs/apiService.js';
-import { readEdgeRoutineFile } from './fileUtils/index.js';
 import { GetRoutineReq } from '../libs/interface.js';
 import logger from '../libs/logger.js';
-import t from '../i18n/index.js';
-import prodBuild from '../commands/commit/prodBuild.js';
-import { exit } from 'process';
-import chalk from 'chalk';
 
 export async function isRoutineExist(name: string) {
   const server = await ApiService.getInstance();
@@ -22,39 +20,37 @@ export async function validRoutine(name: string) {
   if (!isCreatedRoutine) {
     logger.warn(
       `${t('routine_not_exist').d(
-        'Routine does not exist, please create a new one. Run command:'
-      )} ${chalk.greenBright('esa deploy')}`
+        'Project does not exist, please create a new one. Run command:'
+      )} ${chalk.greenBright('esa-cli deploy')}`
     );
-    exit(0);
+    exit(1);
   }
 }
 
-export async function checkRoutineExist(name: string, entry?: string) {
-  const isCreatedRoutine = await isRoutineExist(name);
-  if (!isCreatedRoutine) {
-    logger.log(
-      t('first_deploy').d(
-        'This is the first time to deploy, we will create a new routine for you.'
-      )
-    );
+/**
+ * Ensure routine exists, if not, create a new routine
+ * @param name - Routine name
+ */
+export async function ensureRoutineExists(name: string) {
+  const isExist = await isRoutineExist(name);
 
-    const entryFile = path.resolve(entry ?? '', 'src/index.js');
-    await prodBuild(false, entryFile, entry);
-    const code = readEdgeRoutineFile(entry) || '';
+  // If routine does not exist, create a new routine
+  if (!isExist) {
+    logger.startSubStep(`Creating routine ${chalk.gray(name)}`);
     const server = await ApiService.getInstance();
-    const specList = (
-      (await server.ListRoutineOptionalSpecs())?.data.Specs ?? []
-    ).reduce((acc, item) => {
-      if (item.IsAvailable) {
-        acc.push(item.SpecName);
-      }
-      return acc;
-    }, [] as string[]);
-    const spec = await displaySelectSpec(specList);
-    await createEdgeRoutine({
+    const createRes = await server.createRoutine({
       name: name,
-      specName: spec,
-      code: code
+      description: '',
+      hasAssets: true
     });
+    const isSuccess = createRes?.data.Status === 'OK';
+    if (isSuccess) {
+      logger.endSubStep('Routine created successfully');
+    } else {
+      logger.endSubStep('Routine created failed');
+      exit();
+    }
+  } else {
+    log.step('Routine has already exists');
   }
 }

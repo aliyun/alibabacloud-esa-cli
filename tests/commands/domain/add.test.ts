@@ -1,4 +1,5 @@
 import { it, describe, expect, vi } from 'vitest';
+
 import { handleAddDomain } from '../../../src/commands/domain/add.js';
 import {
   checkDirectory,
@@ -30,7 +31,8 @@ describe('handleAddDomain', () => {
       [MockFunction log] {
         "calls": [
           [
-            "🎉  SUCCESS  Binding domain test.com to routine successfully",
+            "
+      🎉  SUCCESS  Binding domain test.com to routine successfully",
           ],
         ],
         "results": [

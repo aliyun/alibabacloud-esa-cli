@@ -1,12 +1,15 @@
 import { CommandModule, Argv } from 'yargs';
-import routineList from './list.js';
-import routineDelete from './delete.js';
+
 import t from '../../i18n/index.js';
+
+import routineDelete from './delete.js';
+import routineList from './list.js';
 
 let yargsIns: Argv;
 const routineCommand: CommandModule<{}> = {
-  command: 'routine [script]',
-  describe: `🚀 ${t('routine_describe').d('Manage your routine')}`,
+  command: 'project [script]',
+  aliases: ['routine'],
+  describe: `🧭 ${t('routine_describe').d('Manage your project')}`,
   builder: (yargs) => {
     yargsIns = yargs;
     return yargs
@@ -18,7 +21,9 @@ const routineCommand: CommandModule<{}> = {
         type: 'boolean',
         default: false
       })
-      .usage(`${t('common_usage').d('Usage')}: esa routine [list | delete]`);
+      .usage(
+        `${t('common_usage').d('Usage')}: esa-cli project [list | delete]`
+      );
   },
   handler: (argv) => {
     if (yargsIns && (argv.help || argv._.length < 2)) {

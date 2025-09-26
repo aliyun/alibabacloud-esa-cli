@@ -1,23 +1,27 @@
-import { CommandModule, ArgumentsCamelCase, Argv } from 'yargs';
-import { checkDirectory, checkIsLoginSuccess } from '../utils.js';
-import logger from '../../libs/logger.js';
-import { getProjectConfig } from '../../utils/fileUtils/index.js';
-import { GetRoutineReq, RelatedRecordProps } from '../../libs/interface.js';
-import { ApiService } from '../../libs/apiService.js';
+import { CommandModule } from 'yargs';
+
 import t from '../../i18n/index.js';
+import { ApiService } from '../../libs/apiService.js';
+import {
+  ListRoutineRelatedRecordsReq,
+  RelatedRecordProps
+} from '../../libs/interface.js';
+import logger from '../../libs/logger.js';
 import { validRoutine } from '../../utils/checkIsRoutineCreated.js';
+import { getProjectConfig } from '../../utils/fileUtils/index.js';
+import { checkDirectory, checkIsLoginSuccess } from '../utils.js';
 
 const listDomain: CommandModule = {
   command: 'list',
   describe: `🔍 ${t('domain_list_describe').d('List all related domains')}`,
-  handler: async (argv: ArgumentsCamelCase) => {
-    handleListDomains(argv);
+  handler: async () => {
+    handleListDomains();
   }
 };
 
 export default listDomain;
 
-export async function handleListDomains(argv: ArgumentsCamelCase) {
+export async function handleListDomains() {
   if (!checkDirectory()) {
     return;
   }
@@ -32,12 +36,11 @@ export async function handleListDomains(argv: ArgumentsCamelCase) {
 
   const server = await ApiService.getInstance();
 
-  const req: GetRoutineReq = { Name: projectConfig.name };
-  const routineDetail = await server.getRoutine(req);
+  const req: ListRoutineRelatedRecordsReq = { Name: projectConfig.name };
+  const res = await server.listRoutineRelatedRecords(req);
 
-  if (!routineDetail) return;
-  const relatedRecords: RelatedRecordProps[] =
-    routineDetail.data?.RelatedRecords ?? [];
+  if (!res) return;
+  const relatedRecords: RelatedRecordProps[] = res.data?.RelatedRecords ?? [];
 
   if (relatedRecords.length === 0) {
     logger.log(`🙅 ${t('domain_list_empty').d('No related domains found')}`);

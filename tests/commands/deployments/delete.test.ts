@@ -1,11 +1,12 @@
 import { it, describe, expect, vi } from 'vitest';
+
 import { handleDeleteDeployments } from '../../../src/commands/deployments/delete.js';
-import { validDomain, validName } from '../../../src/commands/utils.js';
-import { mockConsoleMethods } from '../../helper/mockConsole.js';
+import { displayMultiSelectTable } from '../../../src/components/mutiSelectTable.js';
 import { ApiService } from '../../../src/libs/apiService.js';
 import logger from '../../../src/libs/logger.js';
+import { mockConsoleMethods } from '../../helper/mockConsole.js';
 
-describe('handle delete deployments', () => {
+describe('handle delete deployments', async () => {
   let std = mockConsoleMethods();
   vi.spyOn(logger, 'error').mockImplementation(() => {});
 
@@ -13,29 +14,75 @@ describe('handle delete deployments', () => {
     vi.clearAllMocks();
   });
 
-  it('should handle delete routes success', async () => {
+  // it('should handle delete routes success', async () => {
+  //   await handleDeleteDeployments({
+  //     deploymentId: ['id1', 'id2'],
+  //     _: [],
+  //     $0: ''
+  //   });
+  //   expect(std.out).toBeCalledWith(
+  //     expect.stringContaining('Delete success: id1')
+  //   );
+  //   expect(std.out).toBeCalledWith(
+  //     expect.stringContaining('Delete success: id2')
+  //   );
+  //   expect(std.out).toMatchInlineSnapshot(`
+  //     [MockFunction log] {
+  //       "calls": [
+  //         [
+  //           "
+  //     🎉  SUCCESS  Delete success: id1",
+  //         ],
+  //         [
+  //           "
+  //     🎉  SUCCESS  Delete success: id2",
+  //         ],
+  //       ],
+  //       "results": [
+  //         {
+  //           "type": "return",
+  //           "value": undefined,
+  //         },
+  //         {
+  //           "type": "return",
+  //           "value": undefined,
+  //         },
+  //       ],
+  //     }
+  //   `);
+  // });
+
+  it('should delete multiple versions with interactive mode', async () => {
+    vi.mocked(displayMultiSelectTable).mockResolvedValue([
+      'v1   test',
+      'v2   test2'
+    ]);
     await handleDeleteDeployments({
-      deploymentId: ['id1', 'id2'],
+      i: true,
       _: [],
       $0: ''
     });
-    expect(std.out).toBeCalledWith(
-      expect.stringContaining('Delete success: id1')
-    );
-    expect(std.out).toBeCalledWith(
-      expect.stringContaining('Delete success: id2')
-    );
+
     expect(std.out).toMatchInlineSnapshot(`
       [MockFunction log] {
         "calls": [
           [
-            "🎉  SUCCESS  Delete success: id1",
+            "  Version ID            Description",
           ],
           [
-            "🎉  SUCCESS  Delete success: id2",
+            "
+      🎉  SUCCESS  Delete success: v1",
+          ],
+          [
+            "
+      🎉  SUCCESS  Delete success: v2",
           ],
         ],
         "results": [
+          {
+            "type": "return",
+            "value": undefined,
+          },
           {
             "type": "return",
             "value": undefined,

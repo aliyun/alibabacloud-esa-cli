@@ -1,12 +1,15 @@
-import { CommandModule, ArgumentsCamelCase, Argv } from 'yargs';
-import { getProjectConfig } from '../../utils/fileUtils/index.js';
-import { GetRoutineReq, RelatedRouteProps } from '../../libs/interface.js';
 import Table from 'cli-table3';
-import { checkDirectory, checkIsLoginSuccess } from '../utils.js';
-import { ApiService } from '../../libs/apiService.js';
-import logger from '../../libs/logger.js';
+import { CommandModule } from 'yargs';
+
 import t from '../../i18n/index.js';
+import api from '../../libs/api.js';
+import { RelatedRouteProps } from '../../libs/interface.js';
+import logger from '../../libs/logger.js';
 import { validRoutine } from '../../utils/checkIsRoutineCreated.js';
+import { getProjectConfig } from '../../utils/fileUtils/index.js';
+import { checkDirectory, checkIsLoginSuccess } from '../utils.js';
+
+import { transferRuleStringToRoute } from './helper.js';
 
 const listRoute: CommandModule = {
   command: 'list',
@@ -30,30 +33,72 @@ export async function handleListRoutes() {
 
   await validRoutine(projectConfig.name);
 
-  const server = await ApiService.getInstance();
-  const req: GetRoutineReq = { Name: projectConfig.name };
+  const req = {
+    routineName: projectConfig.name
+  };
 
-  const routineDetail = await server.getRoutine(req);
-  if (!routineDetail) return;
-  const relatedRoutes: RelatedRouteProps[] =
-    routineDetail.data?.RelatedRoutes ?? [];
+  const res = await api.listRoutineRoutes(req as any);
+  const configs = res.body?.configs || [];
 
-  if (relatedRoutes.length === 0) {
+  if (configs.length === 0) {
     logger.warn(`🙅 ${t('route_list_empty').d('No related routes found')}`);
     return;
   }
-  logger.log(`📃 ${t('route_list_title').d('Related routes')}:`);
-  displayRelatedRouteList(relatedRoutes);
+  const simpleRoutes = configs
+    .filter((item) => item.mode !== 'custom')
+    .map((config) => {
+      return {
+        RouteName: config.routeName ?? '',
+        Route: transferRuleStringToRoute(config.rule ?? ''),
+        SiteName: config.siteName ?? ''
+      };
+    });
+  if (simpleRoutes.length > 0) {
+    logger.log(
+      `📃 ${t('route_list_simple_title').d('Related simple mode routes')}:`
+    );
+    displayRelatedRouteList(simpleRoutes);
+  }
+
+  const customRoutes = configs
+    .filter((item) => item.mode === 'custom')
+    .map((config) => {
+      return {
+        RouteName: config.routeName ?? '',
+        Route: config.rule ?? '',
+        SiteName: config.siteName ?? ''
+      };
+    });
+  if (customRoutes.length > 0) {
+    logger.log(
+      `📃 ${t('route_list_custom_title').d('Related custom mode routes')}:`
+    );
+    displayRelatedRouteRuleList(customRoutes);
+  }
 }
 
 export async function displayRelatedRouteList(routeList: RelatedRouteProps[]) {
   const table = new Table({
-    head: ['Route', 'Site'],
-    colWidths: [30, 30]
+    head: ['Route Name', 'Route', 'Site'],
+    colWidths: [20]
   });
   for (let i = 0; i < routeList.length; i++) {
     const route = routeList[i];
-    table.push([route.Route, route.SiteName]);
+    table.push([route.RouteName, route.Route, route.SiteName]);
+  }
+  console.log(table.toString());
+}
+
+export async function displayRelatedRouteRuleList(
+  routeList: RelatedRouteProps[]
+) {
+  const table = new Table({
+    head: ['Route Name', 'Rule', 'Site'],
+    colWidths: [20]
+  });
+  for (let i = 0; i < routeList.length; i++) {
+    const route = routeList[i];
+    table.push([route.RouteName, route.Route, route.SiteName]);
   }
   console.log(table.toString());
 }

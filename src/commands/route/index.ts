@@ -1,13 +1,15 @@
 import { CommandModule, Argv } from 'yargs';
+
+import t from '../../i18n/index.js';
+
+import addRoute from './add.js';
 import deleteRoute from './delete.js';
 import listRoute from './list.js';
-import addRoute from './add.js';
-import t from '../../i18n/index.js';
 
 let yargsIns: Argv;
 const routeCommand: CommandModule<{}> = {
   command: 'route [script]',
-  describe: `🚀 ${t('route_describe').d('Manage the routes bound to your routine')}`,
+  describe: `🚄 ${t('route_describe').d('Manage the routes bound to your project')}`,
   builder: (yargs) => {
     yargsIns = yargs;
     return yargs
@@ -21,7 +23,7 @@ const routeCommand: CommandModule<{}> = {
         default: false
       })
       .usage(
-        `${t('common_usage').d('Usage')}: esa route <add | list | delete>`
+        `${t('common_usage').d('Usage')}: esa-cli route <add | list | delete>`
       );
   },
   handler: (argv) => {

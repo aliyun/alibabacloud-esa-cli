@@ -1,37 +1,32 @@
-import { CommandModule, ArgumentsCamelCase, Argv } from 'yargs';
-import { displayVersionList } from '../deploy/index.js';
-import {
-  checkDirectory,
-  checkIsLoginSuccess,
-  getRoutineVersionList
-} from '../utils.js';
-import { getProjectConfig } from '../../utils/fileUtils/index.js';
+import chalk from 'chalk';
+import { CommandModule } from 'yargs';
+
+import t from '../../i18n/index.js';
+import { ApiService } from '../../libs/apiService.js';
 import {
   GetRoutineReq,
   GetRoutineRes,
   GetRoutineStagingEnvIpRes
 } from '../../libs/interface.js';
-import chalk from 'chalk';
-import { ApiService } from '../../libs/apiService.js';
-import t from '../../i18n/index.js';
 import logger from '../../libs/logger.js';
 import { validRoutine } from '../../utils/checkIsRoutineCreated.js';
+import { getProjectConfig } from '../../utils/fileUtils/index.js';
+import { displayVersionList } from '../deploy/helper.js';
+import { checkIsLoginSuccess, getRoutineCodeVersions } from '../utils.js';
 
 const deploymentsList: CommandModule = {
   command: 'list',
   describe: `🔍 ${t('deployments_list_describe').d('List all deployments')}`,
-  handler: async (argv: ArgumentsCamelCase) => {
-    handleListDeployments(argv);
+  handler: async () => {
+    handleListDeployments();
   }
 };
 
 export default deploymentsList;
 
-export async function handleListDeployments(argv: ArgumentsCamelCase) {
-  if (!checkDirectory()) {
-    return;
-  }
+export async function handleListDeployments() {
   const projectConfig = getProjectConfig();
+
   if (!projectConfig) return logger.notInProject();
 
   const isSuccess = await checkIsLoginSuccess();
@@ -40,28 +35,26 @@ export async function handleListDeployments(argv: ArgumentsCamelCase) {
   await validRoutine(projectConfig.name);
 
   const server = await ApiService.getInstance();
-
-  const versionList = await getRoutineVersionList(projectConfig.name);
   const req: GetRoutineReq = { Name: projectConfig.name };
   const routineDetail = await server.getRoutine(req);
-
   if (!routineDetail) return;
 
-  //测试环境版本
-  const stagingVersion = routineDetail?.data?.Envs[1]?.CodeVersion;
-  //生产环境版本
-  const productionVersion = routineDetail?.data?.Envs[0]?.CodeVersion;
+  const { allVersions, stagingVersions, productionVersions } =
+    await getRoutineCodeVersions(projectConfig.name);
 
-  await displayListPrompt(routineDetail);
-  await displayVersionList(versionList, stagingVersion, productionVersion);
+  await displayDeployingVersions(
+    routineDetail,
+    stagingVersions,
+    productionVersions
+  );
+  await displayVersionList(allVersions, stagingVersions, productionVersions);
 }
 
-async function displayListPrompt(routineDetail: GetRoutineRes) {
-  const isCanary =
-    (routineDetail.data.Envs[0].CanaryAreaList ?? []).length !== 0;
-  const canaryEnv = routineDetail.data.Envs[0];
-  const stagingEnv = routineDetail.data.Envs[1];
-
+async function displayDeployingVersions(
+  routineDetail: GetRoutineRes,
+  stagingVersions: string[],
+  productionVersions: string[]
+) {
   const server = await ApiService.getInstance();
   const res: GetRoutineStagingEnvIpRes | null =
     await server.getRoutineStagingEnvIp();
@@ -71,15 +64,8 @@ async function displayListPrompt(routineDetail: GetRoutineRes) {
     return chalk.green(ip);
   });
 
-  const showEnvTable = (version: string, spec: string, region?: string) => {
-    const data: Record<string, string>[] = [
-      { Version: version },
-      { Specification: spec }
-    ];
-
-    if (region) {
-      data.push({ Region: region });
-    }
+  const showEnvTable = (version: string) => {
+    const data: Record<string, string>[] = [{ Version: version }];
 
     logger.table([], data);
   };
@@ -88,25 +74,21 @@ async function displayListPrompt(routineDetail: GetRoutineRes) {
   if (stagingIpList.length > 0) {
     logger.log(`Staging IP: ${coloredStagingIpList.join(', ')}`);
   }
-  showEnvTable(stagingEnv.CodeVersion, stagingEnv.SpecName);
+  if (stagingVersions.length > 0) {
+    showEnvTable(stagingVersions.join(','));
+  }
+
   logger.block();
   logger.log(
-    `${chalk.bold(`${t('deploy_env_production').d('Production')} ${!isCanary ? chalk.green('●') : ''}`)}`
+    `${chalk.bold(`${t('deploy_env_production').d('Production')} ${chalk.green('●')}`)}`
   );
-  showEnvTable(canaryEnv.CodeVersion, canaryEnv.SpecName);
-  logger.block();
+  if (productionVersions.length > 0) {
+    showEnvTable(productionVersions.join(','));
+  }
 
   logger.log(
-    `${chalk.bold(`${t('deploy_env_canary').d('Canary')} ${isCanary ? chalk.green('●') : ''}`)}`
-  );
-
-  showEnvTable(
-    canaryEnv.CanaryCodeVersion ?? '',
-    canaryEnv.SpecName,
-    canaryEnv.CanaryAreaList?.join(', ')
-  );
-  logger.info(
     `${t('show_default_url').d(`You can visit:`)} ${chalk.yellowBright(routineDetail.data.DefaultRelatedRecord)}`
   );
+  logger.info(routineDetail.data.DefaultRelatedRecord);
   logger.block();
 }

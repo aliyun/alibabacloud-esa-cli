@@ -1,9 +1,10 @@
 import { it, describe, expect, vi } from 'vitest';
+
 import { handleDeleteRoute } from '../../../src/commands/route/delete.js';
 import { validDomain, validName } from '../../../src/commands/utils.js';
-import { mockConsoleMethods } from '../../helper/mockConsole.js';
-import { ApiService } from '../../../src/libs/apiService.js';
+import api from '../../../src/libs/api.js';
 import logger from '../../../src/libs/logger.js';
+import { mockConsoleMethods } from '../../helper/mockConsole.js';
 
 describe('handle delete routes', () => {
   let std = mockConsoleMethods();
@@ -18,34 +19,46 @@ describe('handle delete routes', () => {
     vi.mocked(validName).mockResolvedValue(true);
 
     await handleDeleteRoute({
-      route: 'test.com/1',
+      routeName: 'test2',
       _: [],
       $0: ''
     });
-    expect(std.out).toBeCalledWith(
-      expect.stringContaining('Delete route success')
-    );
+    expect(std.out).toMatchInlineSnapshot(`
+      [MockFunction log] {
+        "calls": [
+          [
+            "
+      🎉  SUCCESS  Delete route success!",
+          ],
+        ],
+        "results": [
+          {
+            "type": "return",
+            "value": undefined,
+          },
+        ],
+      }
+    `);
   });
 
   it('should handle routes does not exist', async () => {
     await handleDeleteRoute({
-      route: 'test2.com/1',
+      routeName: 'noExist',
       _: [],
       $0: ''
     });
-    expect(logger.error).toBeCalledWith('Route not exist!');
+    expect(logger.error).toBeCalledWith(
+      'No route found! Please check the route name.'
+    );
   });
 
   it('should handle delete routes fail', async () => {
-    vi.mocked(
-      (await ApiService.getInstance()).deleteRoutineRelatedRoute
-    ).mockResolvedValue({
-      data: {
-        Status: 'Error'
-      }
+    vi.mocked(api.deleteRoutineRoute).mockResolvedValue({
+      statusCode: 500
     } as any);
+
     await handleDeleteRoute({
-      route: 'test.com/1',
+      routeName: 'test2',
       _: [],
       $0: ''
     });

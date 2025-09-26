@@ -1,13 +1,15 @@
 import { CommandModule, Argv } from 'yargs';
-import addDomain from './add.js';
-import listDomain from './list.js';
-import deleteDomain from './delete.js';
+
 import t from '../../i18n/index.js';
+
+import addDomain from './add.js';
+import deleteDomain from './delete.js';
+import listDomain from './list.js';
 
 let yargsIns: Argv;
 const domainCommand: CommandModule<{}> = {
   command: 'domain [script]',
-  describe: `🚀 ${t('domain_describe').d('Manage the domain names bound to your routine')}`,
+  describe: `🔗 ${t('domain_describe').d('Manage the domain names bound to your project')}`,
   builder: (yargs) => {
     yargsIns = yargs;
     return yargs
@@ -21,7 +23,7 @@ const domainCommand: CommandModule<{}> = {
         default: false
       })
       .usage(
-        `${t('common_usage').d('Usage')}: esa domain <add | list | delete>`
+        `${t('common_usage').d('Usage')}: esa-cli domain <add | list | delete>`
       );
   },
   handler: (argv) => {

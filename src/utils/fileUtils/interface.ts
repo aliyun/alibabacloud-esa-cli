@@ -1,5 +1,3 @@
-import { CodeVersionProps } from '../../libs/interface.js';
-
 export interface AuthConfig {
   accessKeyId: string;
   accessKeySecret: string;
@@ -9,9 +7,11 @@ export interface ProjectConfig {
   name: string;
   description?: string;
   endpoint?: string;
-  routes?: string[];
-  domains?: string[];
-  codeVersions?: CodeVersionProps[];
+  entry?: string;
+  assets?: {
+    directory: string;
+    notFoundStrategy?: string;
+  };
   dev?: DevToolProps;
   [key: string]: any;
 }

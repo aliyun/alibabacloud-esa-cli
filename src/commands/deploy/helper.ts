@@ -1,46 +1,34 @@
-import SelectItems, { SelectItem } from '../../components/selectInput.js';
-import { yesNoPrompt } from '../../components/yesNoPrompt.js';
-import {
-  CodeVersionProps,
-  CreateRoutineReq,
-  GetRoutineReq,
-  PublishType
-} from '../../libs/interface.js';
-import { ApiService } from '../../libs/apiService.js';
-import { descriptionInput } from '../../components/descriptionInput.js';
-import { readEdgeRoutineFile } from '../../utils/fileUtils/index.js';
-import { displaySelectSpec } from './index.js';
-import {
-  createEdgeRoutine,
-  releaseOfficialVersion,
-  uploadEdgeRoutineCode
-} from '../commit/index.js';
-import logger from '../../libs/logger.js';
-import t from '../../i18n/index.js';
-import { ProjectConfig } from './../../utils/fileUtils/interface.js';
-import prodBuild from '../commit/prodBuild.js';
+import { ListRoutineCodeVersionsResponseBodyCodeVersions } from '@alicloud/esa20240910/dist/models/ListRoutineCodeVersionsResponseBodyCodeVersions.js';
+import chalk from 'chalk';
+import moment from 'moment';
 
-export function yesNoPromptAndExecute(
+import SelectItems, { SelectItem } from '../../components/selectInput.js';
+import t from '../../i18n/index.js';
+import { PublishType } from '../../libs/interface.js';
+import logger from '../../libs/logger.js';
+import promptParameter from '../../utils/prompt.js';
+
+export async function yesNoPromptAndExecute(
   message: string,
   execute: () => Promise<boolean>
 ): Promise<boolean> {
-  return new Promise((resolve) => {
-    yesNoPrompt(async (item: SelectItem) => {
-      if (item.value === 'yes') {
-        const result = await execute();
-        resolve(result);
-      } else {
-        resolve(false);
-      }
-    }, message);
-  });
+  const confirmed = (await promptParameter<boolean>({
+    type: 'confirm',
+    question: message,
+    label: 'Confirm',
+    defaultValue: true
+  })) as boolean;
+  if (!confirmed) return false;
+  return await execute();
 }
 
-export function promptSelectVersion(versionList: CodeVersionProps[]) {
+export function promptSelectVersion(
+  versionList: ListRoutineCodeVersionsResponseBodyCodeVersions[]
+) {
   const items = versionList
-    .filter((version) => version.CodeVersion !== 'unstable')
+    .filter((version) => version.codeVersion !== 'unstable')
     .map((version, index) => ({
-      label: version.CodeVersion,
+      label: version.codeVersion ?? '',
       value: String(index)
     }));
   return new Promise<string>((resolve) => {
@@ -52,7 +40,7 @@ export function promptSelectVersion(versionList: CodeVersionProps[]) {
   });
 }
 
-export function displaySelectDeployType(): Promise<PublishType> {
+export function displaySelectDeployEnv(): Promise<PublishType> {
   logger.log(
     `📃 ${t('deploy_env_select_description').d('Please select which environment you want to deploy')}`
   );
@@ -61,8 +49,7 @@ export function displaySelectDeployType(): Promise<PublishType> {
     {
       label: t('deploy_env_production').d('Production'),
       value: PublishType.Production
-    },
-    { label: t('deploy_env_canary').d('Canary'), value: PublishType.Canary }
+    }
   ];
   return new Promise<PublishType>((resolve) => {
     const handleSelection = async (item: SelectItem) => {
@@ -72,62 +59,44 @@ export function displaySelectDeployType(): Promise<PublishType> {
   });
 }
 
-export async function createAndDeployVersion(
-  projectConfig: ProjectConfig,
-  createUnstable = false,
-  customEntry?: string
+export async function displayVersionList(
+  allVersions: ListRoutineCodeVersionsResponseBodyCodeVersions[],
+  stagingVersions: string[],
+  productionVersions: string[]
 ) {
-  try {
-    const server = await ApiService.getInstance();
+  logger.log(
+    `${chalk.bgYellow('Active')} ${t('deploy_env_staging').d('Staging')}`
+  );
+  logger.log(
+    `${chalk.bgGreen('Active')} ${t('deploy_env_production').d('Production')}`
+  );
 
-    const description = await descriptionInput(
-      createUnstable
-        ? `🖊️ ${t('deploy_description_routine').d('Enter the description of the routine')}:`
-        : `🖊️ ${t('deploy_description_version').d('Enter the description of the code version')}:`,
-      false
-    );
-    await prodBuild(false, customEntry);
-    const code = readEdgeRoutineFile();
+  const data: string[][] = [];
+  for (let i = 0; i < allVersions.length; i++) {
+    const version = allVersions[i];
+    const createTime = moment(version.createTime).format('YYYY/MM/DD HH:mm:ss');
+    const tags = [
+      stagingVersions.includes(version.codeVersion ?? '')
+        ? chalk.bgYellow('Active')
+        : '',
+      productionVersions.includes(version.codeVersion ?? '')
+        ? chalk.bgGreen('Active')
+        : ''
+    ];
 
-    const specList = (
-      (await server.ListRoutineOptionalSpecs())?.data.Specs ?? []
-    ).reduce((acc, item) => {
-      if (item.IsAvailable) {
-        acc.push(item.SpecName);
-      }
-      return acc;
-    }, [] as string[]);
-
-    let specName;
-    if (createUnstable) {
-      specName = await displaySelectSpec(specList);
-    } else {
-      const req: GetRoutineReq = { Name: projectConfig.name ?? '' };
-      const response = await server.getRoutine(req);
-      specName = response?.data.Envs[0].SpecName ?? '50ms';
-    }
-
-    const edgeRoutine: CreateRoutineReq = {
-      name: projectConfig.name,
-      code: code || '',
-      description: description,
-      specName: specName
-    };
-
-    if (createUnstable) {
-      return await createEdgeRoutine(edgeRoutine);
-    } else {
-      const uploadResult = await uploadEdgeRoutineCode(edgeRoutine);
-      if (!uploadResult) {
-        return false;
-      }
-      return await releaseOfficialVersion(edgeRoutine);
-    }
-  } catch (error) {
-    logger.error(`
-      ${t('deploy_error').d(
-        'An error occurred during the creation or publishing process'
-      )}: ${error}`);
-    return false;
+    data.push([
+      `${version.codeVersion} ${tags.join(' ')}`,
+      createTime,
+      version.codeDescription ?? ''
+    ]);
   }
+
+  logger.table(
+    [
+      t('deploy_table_header_version').d('Version'),
+      t('deploy_table_header_created').d('Created'),
+      t('deploy_table_header_description').d('Description')
+    ],
+    data
+  );
 }

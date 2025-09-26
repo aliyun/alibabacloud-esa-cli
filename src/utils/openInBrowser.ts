@@ -1,6 +1,7 @@
 import open from 'open';
-import logger from '../libs/logger.js';
+
 import t from '../i18n/index.js';
+import logger from '../libs/logger.js';
 
 /**
  * Open url in browser

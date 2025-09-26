@@ -1,21 +1,24 @@
-import fs from 'fs';
 import { execSync } from 'child_process';
+import fs from 'fs';
+
+import { ListRoutineCodeVersionsResponseBodyCodeVersions } from '@alicloud/esa20240910/dist/models/ListRoutineCodeVersionsResponseBodyCodeVersions.js';
+import chalk from 'chalk';
+
+import { Option } from '../components/filterSelector.js';
+import t from '../i18n/index.js';
+import api from '../libs/api.js';
+import { ApiService } from '../libs/apiService.js';
 import { isInstalledGit } from '../libs/git/index.js';
 import {
-  CodeVersionProps,
   CreateRoutineRelatedRecordReq,
   GetMatchSiteReq,
-  GetRoutineReq,
-  GetRoutineRes,
   ListSitesReq
 } from '../libs/interface.js';
-import { getCliConfig, projectConfigPath } from '../utils/fileUtils/index.js';
-import { getRoot } from '../utils/fileUtils/base.js';
-import chalk from 'chalk';
-import t from '../i18n/index.js';
-import { ApiService } from '../libs/apiService.js';
 import logger from '../libs/logger.js';
-import { Option } from '../components/filterSelector.js';
+import { getRoot } from '../utils/fileUtils/base.js';
+import { getCliConfig, projectConfigPath } from '../utils/fileUtils/index.js';
+
+import { getRoutineDetails } from './common/utils.js';
 
 export const checkDirectory = (isCheckGit = false): boolean => {
   const root = getRoot();
@@ -67,13 +70,13 @@ export const bindRoutineWithDomain = async (name: string, domain: string) => {
     if (isBindSuccess) {
       logger.success(
         t('utils_bind_success', { domain }).d(
-          `Binding domain ${domain} to routine successfully`
+          `Binding domain ${domain} to project successfully`
         )
       );
     } else {
       logger.error(
         t('utils_bind_error', { domain }).d(
-          `Binding domain ${domain} to routine failed`
+          `Binding domain ${domain} to project failed`
         )
       );
     }
@@ -82,20 +85,11 @@ export const bindRoutineWithDomain = async (name: string, domain: string) => {
   }
 };
 
-export const getRoutineVersionList = async (
-  name: string
-): Promise<CodeVersionProps[]> => {
-  const server = await ApiService.getInstance();
-  const req: GetRoutineReq = { Name: name };
-  const res: GetRoutineRes | null = await server.getRoutine(req);
-  return res?.data?.CodeVersions || [];
-};
-
 export function validName(name: any): boolean {
   return /^[a-zA-Z0-9-_]+$/.test(name);
 }
 
-// 校验域名是否有效
+// Validate if domain is valid
 export function validDomain(domain: any): boolean {
   return /^(?:[a-z0-9-](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/.test(
     domain
@@ -103,12 +97,21 @@ export function validDomain(domain: any): boolean {
 }
 
 export async function checkIsLoginSuccess(): Promise<boolean> {
+  let accessKeyId = process.env.ESA_ACCESS_KEY_ID;
+  let accessKeySecret = process.env.ESA_ACCESS_KEY_SECRET;
+  let endpoint = process.env.ESA_ENDPOINT;
   const cliConfig = getCliConfig();
-  const namedCommand = chalk.green('esa login');
-  if (!cliConfig || !cliConfig.auth) {
-    return false;
+  if (!accessKeyId || !accessKeySecret) {
+    accessKeyId = cliConfig?.auth?.accessKeyId;
+    accessKeySecret = cliConfig?.auth?.accessKeySecret;
   }
-  if (!cliConfig.auth.accessKeyId || !cliConfig.auth.accessKeySecret) {
+
+  if (!endpoint) {
+    endpoint = cliConfig?.endpoint;
+  }
+
+  const namedCommand = chalk.green('esa-cli login');
+  if (!accessKeyId || !accessKeySecret) {
     logger.log(
       `❌ ${t('utils_login_error').d('Maybe you are not logged in yet.')}`
     );
@@ -117,31 +120,66 @@ export async function checkIsLoginSuccess(): Promise<boolean> {
     );
     return false;
   }
+
+  return await validateLoginCredentials(
+    accessKeyId,
+    accessKeySecret,
+    endpoint,
+    namedCommand
+  );
+}
+
+/**
+ * 验证登录凭据的公共函数
+ * @param accessKeyId AccessKey ID
+ * @param accessKeySecret AccessKey Secret
+ * @param namedCommand 命令名称（用于错误提示）
+ * @param showError 是否显示错误信息
+ * @returns 登录是否成功
+ */
+export async function validateLoginCredentials(
+  accessKeyId: string,
+  accessKeySecret: string,
+  endpoint?: string,
+  namedCommand?: string,
+  showError = true
+): Promise<boolean> {
   const server = await ApiService.getInstance();
-  server.updateConfig(cliConfig);
+  server.updateConfig({
+    auth: {
+      accessKeyId,
+      accessKeySecret
+    },
+    endpoint: endpoint
+  });
   const res = await server.checkLogin();
 
   if (res.success) {
     return true;
   }
-  logger.log(res.message || '');
-  logger.log(
-    `❌ ${t('utils_login_error').d('Maybe you are not logged in yet.')}`
-  );
-  logger.log(
-    `🔔 ${t('utils_login_error_config', { namedCommand }).d(`Please run command to login: ${namedCommand}`)}`
-  );
+
+  if (showError) {
+    logger.log(res.message || '');
+    logger.log(
+      `❌ ${t('utils_login_error').d('Maybe you are not logged in yet.')}`
+    );
+    if (namedCommand) {
+      logger.log(
+        `🔔 ${t('utils_login_error_config', { namedCommand }).d(`Please run command to login: ${namedCommand}`)}`
+      );
+    }
+  }
   return false;
 }
 
 export function isValidRouteForDomain(route: string, domain: string): boolean {
-  // 构建一个允许子域和任意路径的正则表达式
-  // 例如，匹配形式如 *.example.com/* 的URL
+  // Build a regex that allows subdomains and arbitrary paths
+  // For example, match URLs like *.example.com/*
   return route.includes(domain);
 }
 
 export function escapeRegExp(string: string) {
-  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& 表示整个被匹配的字符串
+  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& represents the entire matched string
 }
 
 export const getAllSites = async (): Promise<Option[]> => {
@@ -168,4 +206,27 @@ export const getAllSites = async (): Promise<Option[]> => {
       value: site.SiteId
     };
   });
+};
+
+export const getRoutineCodeVersions = async (
+  projectName: string
+): Promise<{
+  allVersions: ListRoutineCodeVersionsResponseBodyCodeVersions[];
+  stagingVersions: string[];
+  productionVersions: string[];
+}> => {
+  const routineDetail = await getRoutineDetails(projectName);
+  const req = { name: projectName };
+  const res = await api.listRoutineCodeVersions(req);
+  const allVersions = res.body?.codeVersions ?? [];
+
+  const stagingVersions =
+    routineDetail?.data?.Envs?.find(
+      (item) => item.Env === 'staging'
+    )?.CodeDeploy?.CodeVersions?.map((item) => item.CodeVersion) || [];
+  const productionVersions =
+    routineDetail?.data?.Envs?.find(
+      (item) => item.Env === 'production'
+    )?.CodeDeploy?.CodeVersions?.map((item) => item.CodeVersion) || [];
+  return { allVersions, stagingVersions, productionVersions };
 };

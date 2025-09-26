@@ -1,5 +1,5 @@
 {
-  "exclude": ["tests", "template"],
+  "exclude": ["tests", "template", "**/snippets"],
   "compilerOptions": {
     "jsx": "react",
 

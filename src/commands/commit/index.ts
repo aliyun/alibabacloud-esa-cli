@@ -1,25 +1,20 @@
-import { CommandModule, Argv, ArgumentsCamelCase } from 'yargs';
-import {
-  getProjectConfig,
-  readEdgeRoutineFile
-} from '../../utils/fileUtils/index.js';
-import { checkDirectory, checkIsLoginSuccess } from '../utils.js';
-import {
-  CreateRoutineReq,
-  EdgeRoutineProps,
-  GetRoutineReq
-} from '../../libs/interface.js';
-import { displaySelectSpec } from '../deploy/index.js';
-import { descriptionInput } from '../../components/descriptionInput.js';
-import { ApiService } from '../../libs/apiService.js';
-import prodBuild from './prodBuild.js';
-import logger from '../../libs/logger.js';
-import t from '../../i18n/index.js';
 import { exit } from 'process';
+
+import { intro, outro } from '@clack/prompts';
+import chalk from 'chalk';
+import { CommandModule, Argv, ArgumentsCamelCase } from 'yargs';
+
+import t from '../../i18n/index.js';
+import logger from '../../libs/logger.js';
+import promptParameter from '../../utils/prompt.js';
+import {
+  validateAndInitializeProject,
+  generateCodeVersion
+} from '../common/utils.js';
 
 const commit: CommandModule = {
   command: 'commit [entry]',
-  describe: `📥 ${t('commit_describe').d('Commit your code, save as a new version')}`,
+  describe: `📦 ${t('commit_describe').d('Commit your code, save as a new version')}`,
   builder: (yargs: Argv) => {
     return yargs
       .option('minify', {
@@ -28,158 +23,68 @@ const commit: CommandModule = {
         type: 'boolean',
         default: false
       })
-      .positional('entry', {
-        describe: t('dev_entry_describe').d('Entry file of the Routine'),
-        type: 'string',
-        demandOption: false
+      .option('assets', {
+        alias: 'a',
+        describe: t('commit_option_assets').d('Assets directory'),
+        type: 'string'
+      })
+      .option('description', {
+        alias: 'd',
+        describe: t('commit_option_description').d(
+          'Description for Functions& Pages/version (skip interactive input)'
+        ),
+        type: 'string'
+      })
+      .option('name', {
+        alias: 'n',
+        describe: t('commit_option_name').d('Functions& Pages name'),
+        type: 'string'
       });
   },
   handler: async (argv: ArgumentsCamelCase) => {
-    handleCommit(argv);
+    await handleCommit(argv);
+    exit();
   }
 };
 
 export default commit;
 
 export async function handleCommit(argv: ArgumentsCamelCase) {
-  if (!checkDirectory()) return;
-
-  const projectConfig = getProjectConfig();
-  if (!projectConfig) return logger.notInProject();
-
-  if (!(await checkIsLoginSuccess())) return;
-
-  await prodBuild(!!argv.minify, argv?.entry as string);
-
-  try {
-    const server = await ApiService.getInstance();
-    const req: GetRoutineReq = { Name: projectConfig.name };
-    const response = await server.getRoutine(req, false);
-    let specName = response?.data.Envs[0].SpecName ?? '50ms';
-    let action = 'Creating';
-    let description;
-
-    if (!response) {
-      logger.log(
-        `🙅 ${t('commit_er_not_exist').d('No routine found, creating a new one')}`
-      );
-      description = await descriptionInput(
-        `🖊️ ${t('commit_er_description').d('Enter a description for the routine')}:`,
-        false
-      );
-      const specList = (
-        (await server.ListRoutineOptionalSpecs())?.data.Specs ?? []
-      ).reduce((acc, item) => {
-        if (item.IsAvailable) {
-          acc.push(item.SpecName);
-        }
-        return acc;
-      }, [] as string[]);
-      specName = await displaySelectSpec(specList);
-    } else {
-      logger.log(
-        `🔄 ${t('commit_er_exist').d('Routine exists, updating the code')}`
-      );
-      description = await descriptionInput(
-        `🖊️ ${t('commit_version_description').d('Enter a description for the version')}:`,
-        false
-      );
-      action = 'Updating';
-    }
-
-    const code = readEdgeRoutineFile() || '';
-    const edgeRoutine: CreateRoutineReq = {
-      name: projectConfig.name,
-      code,
-      description,
-      specName
-    };
-
-    if (action === 'Creating') {
-      await createEdgeRoutine(edgeRoutine);
-    } else {
-      if (!(await uploadEdgeRoutineCode(edgeRoutine))) return;
-      await releaseOfficialVersion(edgeRoutine);
-    }
-    exit(0);
-  } catch (error) {
-    logger.error(
-      `${t('common_error_occurred').d('An error occurred:')} ${error}`
-    );
-  }
-}
-
-export async function createEdgeRoutine(
-  edgeRoutine: CreateRoutineReq
-): Promise<boolean> {
-  try {
-    const server = await ApiService.getInstance();
-    const res = await server.createRoutine(edgeRoutine);
-    const createResult = res?.data.Status === 'OK';
-    if (!createResult) {
-      logger.error(
-        t('commit_create_er_fail').d(
-          'An error occurred while trying to create a routine'
-        )
-      );
-      return false;
-    }
-    logger.success(
-      t('commit_create_er_success').d('Routine created successfully.')
-    );
-    return await uploadEdgeRoutineCode(edgeRoutine);
-  } catch (error) {
-    logger.error(
-      `${t('common_error_occurred').d('An error occurred:')} ${error}`
-    );
-    return false;
-  }
-}
-
-export async function uploadEdgeRoutineCode(
-  edgeRoutine: EdgeRoutineProps
-): Promise<boolean> {
-  try {
-    const server = await ApiService.getInstance();
-    const uploadResult =
-      await server.getRoutineStagingCodeUploadInfo(edgeRoutine);
-    if (!uploadResult) {
-      logger.error(
-        t('commit_upload_fail').d(
-          'An error occurred while trying to upload your code'
-        )
-      );
-      return false;
-    }
-    logger.success(t('commit_upload_success').d('Code uploaded successfully.'));
-    return true;
-  } catch (error) {
-    logger.error(
-      `${t('common_error_occurred').d('An error occurred:')} ${error}`
-    );
-    return false;
-  }
-}
-
-export async function releaseOfficialVersion(
-  edgeRoutine: EdgeRoutineProps
-): Promise<boolean> {
-  const param = {
-    Name: edgeRoutine.name,
-    CodeDescription: edgeRoutine.description ?? ''
-  };
-  const server = await ApiService.getInstance();
-  const commitResult = await server.commitRoutineStagingCode(param);
-
-  if (commitResult) {
-    logger.success(
-      t('commit_success').d('Code version committed successfully.')
-    );
-    return true;
+  intro(`Commit an application with ESA`);
+  const projectInfo = await validateAndInitializeProject(argv?.name as string);
+  if (!projectInfo) return;
+  const { projectName } = projectInfo;
+  let description;
+  if (argv.description) {
+    description = argv.description as string;
   } else {
-    logger.error(
-      t('commit_fail').d('An error occurred while trying to commit your code.')
-    );
+    description = (await promptParameter<string>({
+      type: 'text',
+      question: t('commit_version_description').d(
+        'Enter a description for the version'
+      ),
+      label: 'Description',
+      defaultValue: ''
+    })) as string;
+  }
+  logger.startSubStep('Generating code version');
+  const res = await generateCodeVersion(
+    projectName,
+    description,
+    argv?.entry as string,
+    argv?.assets as string,
+    argv?.minify as boolean
+  );
+  const { isSuccess } = res || {};
+  if (!isSuccess) {
+    logger.endSubStep('Generate version failed');
+    exit(1);
+  }
+  const codeVersion = res?.res?.data?.CodeVersion;
+  if (!codeVersion) {
+    logger.endSubStep('Missing CodeVersion in response');
     return false;
   }
+  logger.endSubStep(`Version generated: ${codeVersion}`);
+  outro(`Code version ${chalk.bold(codeVersion)} generated successfully`);
 }

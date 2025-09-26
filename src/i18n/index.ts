@@ -1,9 +1,9 @@
 import { resolve } from 'path';
 
-import { getCliConfig } from '../utils/fileUtils/index.js';
 import logger from '../libs/logger.js';
-import { readJson } from '../utils/readJson.js';
 import { getDirName } from '../utils/fileUtils/base.js';
+import { getCliConfig } from '../utils/fileUtils/index.js';
+import { readJson } from '../utils/readJson.js';
 
 const localesJson = readJson(
   resolve(getDirName(import.meta.url), './locales.json')

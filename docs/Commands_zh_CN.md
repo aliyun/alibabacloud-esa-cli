@@ -1,224 +1,272 @@
-# Commands
+## 命令一览
 
-### init
+### esa-cli init [name]
 
-选择模版初始化项目。
-
-```bash
-$ esa init [OPTIONS]
-```
-
-- -c, --config `boolean` `optional`
-- 在您的项目中生成一个esa.toml配置文件。
-
-### routine [script]
-
-管理边缘函数。
-
-#### delete <routineName>
-
-删除一个边缘函数。
+初始化一个函数和Pages项目（支持框架或模板）。
 
 ```bash
-$ esa routine delete <routineName>
+esa-cli init [name]
 ```
 
-- routineName `string` `required`
-- 要删除的边缘函数名称。
+- 位置参数：
+  - name：项目名
 
-#### list
+- 选项：
+  - -f, --framework string：选择前端框架（react/vue/nextjs...）
+  - -l, --language string：选择语言（typescript/javascript）。可选：typescript | javascript
+  - -t, --template string：指定模板名称
+  - -y, --yes boolean：对所有交互询问选择“是”（默认 false），模版采用helloworld
+  - --git boolean：在项目中初始化 git
+  - --deploy boolean：初始化完成后自动部署
 
-查看所有边缘函数。
+---
+
+### esa-cli dev [entry]
+
+启动本地开发服务器。
 
 ```bash
-$ esa routine list
+esa-cli dev [entry]
 ```
 
-### route [script]
+- 位置参数：
+  - entry：函数和Pages入口文件
 
-管理绑定到边缘函数的路由。
+- 选项：
+  - -p, --port number：监听端口
+  - -m, --minify boolean：开发模式下压缩代码（默认 false）
+  - --refresh-command string：保存自动刷新前执行的命令
+  - --local-upstream string：在本地开发中作为源站的主机
+  - --debug boolean：输出调试日志（默认 false）
 
-#### add [route] [site]
+---
 
-将路由绑定到边缘函数。
+### esa-cli commit [entry]
+
+提交代码并保存为新版本。
 
 ```bash
-$ esa route add [route] [site]
+esa-cli commit [entry]
 ```
 
-#### delete <route>
+- 选项：
+  - -m, --minify boolean：提交前压缩代码（默认 false）
+  - -a, --assets string：静态资源目录
+  - -d, --description string：版本/例程描述（跳过交互输入）
+  - -n, --name string：函数和Pages名称
 
-删除一个绑定路由。
+---
+
+### esa-cli deploy [entry]
+
+生成一个代码版本，并同时部署项目到仿真和线上环境
 
 ```bash
-$ esa route delete <route>
+esa-cli deploy [entry]
 ```
 
-- route `string` `required`
-- 要删除的路由名称。
+- 选项：
+  - entry 可选参数，默认以 `esa.jsonc`中entry配置为准
+  - -v, --version string：指定要部署的版本（跳过交互选择）
+  - -e, --environment string：部署环境。可选：staging | production
+  - -n, --name string：函数和Pages名称
+  - -a, --assets string：静态资源目录（例如：./dist）
+  - -d, --description string：版本描述
+  - -m, --minify boolean：是否压缩代码
 
-#### list
+---
 
-查看所有绑定路由。
+### esa-cli deployments list
+
+列出当前函数和Pages下所有代码版本。
 
 ```bash
-$ esa route list
+esa-cli deployments list
 ```
 
-### login
+无额外选项。
+
+---
+
+### esa-cli deployments delete [deploymentId...]
+
+删除当前函数和Pages的一个或多个代码版本。
+
+```bash
+esa-cli deployments delete [deploymentId...]
+```
+
+- 位置参数：
+  - deploymentId...：要删除的部署版本ID（可一次传多个）
+
+---
+
+### esa-cli project list
+
+列出账号下所有的函数和Pages。
+
+```bash
+esa-cli project list
+```
+
+无额外选项。
+
+---
+
+### esa-cli project delete <projectName>
+
+删除指定函数和Pages。
+
+```bash
+esa-cli project delete <projectName>
+```
+
+- 位置参数：
+  - projectName：要删除的函数或Pages名称
+
+---
+
+### esa-cli site list
+
+列出账号下所有已激活站点。
+
+```bash
+esa-cli site list
+```
+
+无额外选项。
+
+---
+
+### esa-cli domain add <domain>
+
+绑定域名到当前函数和Pages。
+
+```bash
+esa-cli domain add <domain>
+```
+
+- 位置参数：
+  - domain：要绑定的域名
+
+---
+
+### esa-cli domain list
+
+查看当前函数和Pages所有已绑定域名。
+
+```bash
+esa-cli domain list
+```
+
+无额外选项。
+
+---
+
+### esa-cli domain delete <domain>
+
+删除当前函数和Pages下已绑定域名。
+
+```bash
+esa-cli domain delete <domain>
+```
+
+- 位置参数：
+  - domain：要删除绑定的域名
+
+---
+
+#### esa-cli route add
+
+为当前函数和Pages绑定一个路由。
+
+```bash
+esa-cli route add [route] [site] [--alias <routeName>] [--route <route>] [--site <site>]
+```
+
+- 位置参数（可选）：
+  - route：路由值，例如：example.com/_ 或 _.example.com/\*
+  - site：站点名称，例如：example.com
+
+- 选项：
+  - -r, --route string：路由值，例如：example.com/\*
+    - 主机名支持以 `*` 开头表示后缀匹配（如：`*.example.com`）
+    - 路径支持以 `*` 结尾表示前缀匹配（如：`/api/*`）
+  - -s, --site string：站点名称（需为已激活站点）
+  - -a, --alias string：路由名称（别名） 例如：apple、orange等
+
+---
+
+### esa-cli route list
+
+查看函数和Pages所有已绑定路由。
+
+```bash
+esa-cli route list
+```
+
+无额外选项。
+
+---
+
+### esa-cli route delete <routeName>
+
+删除函数和Pages下已绑定路由。
+
+```bash
+esa-cli route delete <routeName>
+```
+
+- 位置参数：
+  - routeName：要删除的路由名称
+
+---
+
+### esa-cli login
 
 登录。
 
 ```bash
-$ esa login
+esa-cli login
 ```
 
-### dev [entry]
+- 选项：
+  - --access-key-id, --ak string：AccessKey ID (AK)
+  - --access-key-secret, --sk string：AccessKey Secret (SK)
+- 从环境变量中读取process.env
+  - ESA_ACCESS_KEY_ID
+  - ESA_ACCESS_KEY_SECRET
 
-启动本地调试。
+---
+
+### esa-cli logout
+
+退出登录。
 
 ```bash
-$ esa dev [entry] [OPTIONS]
+esa-cli logout
 ```
 
-- entry `string` `optional`
-- 入口文件路径。
+---
 
-- -port, --p `number` `optional`
-- 监听端口。
+### esa-cli config [-l | -g]
 
-- --inspect-port `number` `optional`
-- 用于 Chrome inspect 调试工具的端口。
-
-- -minify, --m `boolean` `optional`
-- 开发打包时压缩代码。
-
-- --local-upstream `string` `optional`
-- 在开发时作为源站的域名。
-
-- --refresh-command `string` `optional`
-- 提供一个在保存自动刷新前执行的命令。
-
-### deploy [entry]
-
-部署您的项目。
+修改本地或全局配置。
 
 ```bash
-$ esa deploy [entry]
+esa-cli config [--local] [--global]
 ```
 
-- entry `string` `optional`
-- 入口文件路径。
+- 选项：
+  - -l, --local boolean：编辑本地配置文件（默认 false）
+  - -g, --global boolean：编辑全局配置文件（默认 false）
 
-### domain [script]
+---
 
-管理绑定到边缘函数的域名。
+### esa-cli lang
 
-#### add <domain>
-
-绑定域名到边缘函数。
-
-```bash
-$ esa domain add <domain>
-```
-
-- domain `string` `required`
-- 需要添加的域名。
-
-#### delete <domain>
-
-删除一个绑定域名。
+设置 CLI 语言。
 
 ```bash
-$ esa domain delete <domain>
-```
-
-- domains `string` `required`
-- 要删除的绑定域名。
-
-#### list
-
-查看所有绑定域名。
-
-```bash
-$ esa domain list
-```
-
-### deployments [script]
-
-管理您的部署。
-
-#### delete <deploymentId>
-
-删除一个部署版本。
-
-```bash
-$ esa deployments delete <deploymentId>
-```
-
-- deploymentId `string` `required`
-- 要删除的部署版本ID。
-
-#### list
-
-查看所有部署。
-
-```bash
-$ esa deployments list
-```
-
-### commit [entry]
-
-提交代码，保存为一个版本。
-
-```bash
-$ esa commit [entry] [OPTIONS]
-```
-
-- entry `string` `optional`
-- 入口文件路径。
-
-- -m, --minify `boolean` `optional`
-- 上传前压缩代码。
-
-### logout
-
-注销登录。
-
-```bash
-$ esa logout
-```
-
-### config
-
-使用 -l 或 -g 修改本地或全局配置。
-
-```bash
-$ esa config [OPTIONS]
-```
-
-- -g, --global `boolean` `optional`
-- 编辑全局配置文件。
-
-- -l, --local `boolean` `optional`
-- 编辑本地配置文件。
-
-### lang
-
-选择语言。
-
-```bash
-$ esa lang
-```
-
-### site [script]
-
-管理站点。
-
-#### list
-
-列出站点。
-
-```bash
-$ esa site list
+esa-cli lang
 ```

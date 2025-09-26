@@ -1,12 +1,14 @@
 import { CommandModule, Argv } from 'yargs';
-import deploymentsList from './list.js';
-import deploymentsDelete from './delete.js';
+
 import t from '../../i18n/index.js';
+
+import deploymentsDelete from './delete.js';
+import deploymentsList from './list.js';
 
 let yargsIns: Argv;
 const deploymentsCommand: CommandModule<{}> = {
   command: 'deployments [script]',
-  describe: `🚀 ${t('deployments_describe').d('Manage your deployments')}`,
+  describe: `📜 ${t('deployments_describe').d('Manage your deployments')}`,
   builder: (yargs) => {
     yargsIns = yargs;
     return yargs
@@ -19,7 +21,7 @@ const deploymentsCommand: CommandModule<{}> = {
         default: false
       })
       .usage(
-        `${t('common_usage').d('Usage')}: esa deployments [list | delete]`
+        `${t('common_usage').d('Usage')}: esa-cli deployments [list | delete]`
       );
   },
   handler: (argv) => {

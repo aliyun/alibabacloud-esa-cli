@@ -1,7 +1,7 @@
 export default function debounce<T extends (...args: any[]) => void>(
   func: T,
   wait: number,
-  immediate: boolean = false
+  immediate = false
 ) {
   let timeoutId: ReturnType<typeof setTimeout> | null = null;
 

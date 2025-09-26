@@ -4,11 +4,11 @@
     "zh_CN": "提交代码，保存为一个版本"
   },
   "commit_er_not_exist": {
-    "en": "No routine found, creating a new one",
+    "en": "No Functions& Pages found, creating a new one",
     "zh_CN": "没有找到任何函数，正在创建新函数"
   },
   "commit_er_description": {
-    "en": "Enter a description for the routine",
+    "en": "Enter a description for Functions& Pages",
     "zh_CN": "请输入函数的描述"
   },
   "commit_version_description": {
@@ -20,15 +20,15 @@
     "zh_CN": "发生错误"
   },
   "commit_create_er_success": {
-    "en": "Routine created successfully.",
-    "zh_CN": "Routine 创建成功。"
+    "en": "Functions& Pages created successfully.",
+    "zh_CN": "函数和Pages创建成功。"
   },
   "commit_upload_success": {
     "en": "Code uploaded successfully.",
     "zh_CN": "代码上传成功。"
   },
   "commit_success": {
-    "en": "Code version committed successfully.",
+    "en": "Generate code version success!",
     "zh_CN": "代码版本提交成功。"
   },
   "commit_fail": {
@@ -36,8 +36,8 @@
     "zh_CN": "提交代码时发生错误。"
   },
   "summery_cd": {
-    "en": "Enter your routine project folder",
-    "zh_CN": "进入您的 routine 项目文件夹"
+    "en": "Enter your project folder",
+    "zh_CN": "进入您的项目文件夹"
   },
   "summery_commit": {
     "en": "Save a new version of code",
@@ -75,13 +75,9 @@
     "en": "Production",
     "zh_CN": "生产环境"
   },
-  "deploy_env_canary": {
-    "en": "Canary",
-    "zh_CN": "灰度环境"
-  },
   "deploy_description_routine": {
-    "en": "Enter the description of the routine",
-    "zh_CN": "请输入边缘函数的描述"
+    "en": "Enter the description of Functions& Pages",
+    "zh_CN": "请输入函数和Pages的描述"
   },
   "deploy_description_version": {
     "en": "Enter the description of the code version",
@@ -96,23 +92,19 @@
     "zh_CN": "请选择您要发布的版本"
   },
   "deploy_spec_select": {
-    "en": "Please select the spec of the routine you want to create",
+    "en": "Please select the spec of Functions& Pages you want to create",
     "zh_CN": "请选择您要创建的函数规格"
   },
   "deploy_create_formal_version_ques": {
     "en": "Do you want to create a formal version to deploy on production environment?",
     "zh_CN": "是否创建正式版本以部署到生产环境？"
   },
-  "deploy_select_canary": {
-    "en": "Please select the canary area(s) you want to deploy to",
-    "zh_CN": "请选择您要部署的灰度区域"
-  },
   "deploy_success": {
     "en": "Your code has been successfully deployed",
     "zh_CN": "您的代码已成功部署"
   },
   "deploy_success_guide": {
-    "en": "Run this command to add domains",
+    "en": "Add a custom domain",
     "zh_CN": "运行此命令以添加域名"
   },
   "deploy_table_header_version": {
@@ -144,8 +136,8 @@
     "zh_CN": "显示帮助"
   },
   "commit_create_er_fail": {
-    "en": "An error occurred while trying to create a routine",
-    "zh_CN": "创建边缘函数时发生错误"
+    "en": "An error occurred while trying to create Functions& Pages",
+    "zh_CN": "创建函数和Pages时发生错误"
   },
   "commit_upload_fail": {
     "en": "An error occurred while trying to upload your code",
@@ -172,8 +164,8 @@
     "zh_CN": "帮助"
   },
   "common_sub_command_fail": {
-    "en": "Use esa <command> -h to see help",
-    "zh_CN": "使用 esa <command> -h 查看帮助"
+    "en": "Use esa-cli <command> -h to see help",
+    "zh_CN": "使用 esa-cli <command> -h 查看帮助"
   },
   "deployments_delete_describe": {
     "en": "Delete one or more deployment versions",
@@ -200,7 +192,7 @@
     "zh_CN": "构建完成"
   },
   "dev_describe": {
-    "en": "Start a local server for developing your routine",
+    "en": "Start a local server for developing your project",
     "zh_CN": "启动本地调试"
   },
   "dev_port_describe": {
@@ -212,8 +204,8 @@
     "zh_CN": "读取 CLI 配置错误"
   },
   "dev_error_no_project_config": {
-    "en": "Error reading project configuration esa.toml file.",
-    "zh_CN": "读取项目配置 esa.toml 文件错误"
+    "en": "Error reading project configuration esa.jsonc (recommended) or esa.toml file.",
+    "zh_CN": "读取项目配置 esa.jsonc (推荐) 或 esa.toml 文件错误"
   },
   "dev_build_start": {
     "en": "Starting build process",
@@ -232,20 +224,20 @@
     "zh_CN": "Worker server 已重启"
   },
   "domain_add_describe": {
-    "en": "Bind a domain to a routine",
-    "zh_CN": "绑定域名到边缘函数"
+    "en": "Bind a domain to your project",
+    "zh_CN": "绑定域名到函数和Pages"
   },
   "domain_describe": {
-    "en": "Manage the domain names bound to your routine",
-    "zh_CN": "管理绑定到边缘函数的域名"
+    "en": "Manage the domain names bound to your project",
+    "zh_CN": "管理绑定到函数和Pages的域名"
   },
   "delete_describe": {
-    "en": "Delete a routine",
-    "zh_CN": "删除一个边缘函数"
+    "en": "Delete a project",
+    "zh_CN": "删除一个函数和Pages"
   },
   "delete_routineName_positional_describe": {
-    "en": "The name of the routine to delete",
-    "zh_CN": "要删除的边缘函数名称"
+    "en": "The name of the project to delete",
+    "zh_CN": "要删除的函数和Pages名称"
   },
   "delete_success": {
     "en": "Delete success!",
@@ -284,12 +276,12 @@
     "zh_CN": "绑定域名："
   },
   "init_describe": {
-    "en": "Initialize a routine with a template",
+    "en": "Initialize a project with a template",
     "zh_CN": "选择模版初始化项目"
   },
   "init_input_name": {
-    "en": "Enter the name of edgeRoutine:",
-    "zh_CN": "输入 edgeRoutine 的名称："
+    "en": "Enter the name of project:",
+    "zh_CN": "输入项目的名称"
   },
   "init_skip_git": {
     "en": "Git installation was skipped.",
@@ -300,8 +292,8 @@
     "zh_CN": "切换为中文"
   },
   "list_describe": {
-    "en": "List all your routines",
-    "zh_CN": "查看所有边缘函数"
+    "en": "List all your projects",
+    "zh_CN": "查看所有函数和Pages"
   },
   "list_deployment_positional_describe": {
     "en": "(Optional) ID or URL of the deployment to tail. Specify by environment if deployment ID is unknown.",
@@ -316,8 +308,8 @@
     "zh_CN": "查看所有站点名称"
   },
   "list_routine_name_title": {
-    "en": "List all of routine",
-    "zh_CN": "查看所有边缘函数"
+    "en": "List all of Functions and Pages",
+    "zh_CN": "查看所有函数和Pages项目"
   },
   "login_describe": {
     "en": "Login to the server",
@@ -360,12 +352,24 @@
     "zh_CN": "注销成功"
   },
   "route_add_describe": {
-    "en": "Bind a Route to a routine",
-    "zh_CN": "将路由绑定到边缘函数"
+    "en": "Bind a Route to a project",
+    "zh_CN": "将路由绑定到函数和Pages"
   },
   "route_add_route_describe": {
     "en": "The name of route to add",
     "zh_CN": "要添加的路由名称"
+  },
+  "route_add_site_describe": {
+    "en": "The site to bind the route to. For example: example.com",
+    "zh_CN": "要绑定路由的站点"
+  },
+  "route_add_route_name_option": {
+    "en": "Route name (aliases)",
+    "zh_CN": "路由名称（别名）"
+  },
+  "route_add_route_value_option": {
+    "en": "The route value. For example: example.com/*",
+    "zh_CN": "路由值"
   },
   "route_add_invalid": {
     "en": "The route does not correspond to the domain.",
@@ -400,8 +404,8 @@
     "zh_CN": "路由删除失败！"
   },
   "route_describe": {
-    "en": "Manage the routes bound to your routine",
-    "zh_CN": "管理绑定到边缘函数的路由"
+    "en": "Manage the routes bound to your project",
+    "zh_CN": "管理绑定到函数和Pages的路由"
   },
   "route_list_describe": {
     "en": "List all related routes",
@@ -444,11 +448,11 @@
     "zh_CN": "Git状态检查错误"
   },
   "utils_bind_success": {
-    "en": "Binding domain ${domain} to routine successfully",
+    "en": "Binding domain ${domain} to project successfully",
     "zh_CN": "域名 ${domain} 绑定成功"
   },
   "utils_bind_error": {
-    "en": "Binding domain ${domain} to routine failed",
+    "en": "Binding domain ${domain} to project failed",
     "zh_CN": "域名 ${domain} 绑定失败"
   },
   "utils_domain_error": {
@@ -464,8 +468,8 @@
     "zh_CN": "用这个命令登录：${namedCommand}"
   },
   "routine_describe": {
-    "en": "Manage your routine",
-    "zh_CN": "管理边缘函数"
+    "en": "Manage your project",
+    "zh_CN": "管理函数和Pages"
   },
   "route_input": {
     "en": "Enter a Route:",
@@ -476,12 +480,12 @@
     "zh_CN": "route不合法"
   },
   "install_runtime_explain": {
-    "en": "Under the beta phase, we are temporarily using Deno as the local development runtime. It needs to be installed first.",
-    "zh_CN": "在Beta阶段，我们使用了Deno暂时作为本地开发运行时，需要先安装才可以dev。"
+    "en": "Our runtime does not yet support this OS. We are temporarily using Deno as the local development runtime, which needs to be installed first.",
+    "zh_CN": "我们的Runtime还不支持此操作系统，我们暂时使用Deno作为本地开发runtime，需要先安装。"
   },
   "install_runtime_tip": {
-    "en": "🔔 Runtime must be installed to use esa dev. Installing...",
-    "zh_CN": "必须安装运行时才能使用 esa dev。正在安装..."
+    "en": "🔔 Runtime must be installed to use esa-cli dev. Installing...",
+    "zh_CN": "必须安装Runtime才能使用 esa-cli dev。正在安装..."
   },
   "install_runtime_success": {
     "en": "Runtime installed.",
@@ -489,7 +493,7 @@
   },
   "route_validate": {
     "en": "You can add an asterisk (*) as the prefix or suffix to match more URLs, such as \"*.example.com/*\".",
-    "zh_CN": "您可以通过添加前缀或后缀通配符（*）来匹配更多的URL，例如: “*.example.com/*”。"
+    "zh_CN": "您可以通过添加前缀或后缀通配符（*）来匹配更多的URL，例如: \"*.example.com/*\"."
   },
   "domain_input": {
     "en": "Enter the name of domain (Support fuzzy matching on tab press):",
@@ -501,7 +505,7 @@
   },
   "deploy_first_time": {
     "en": "This is first time to deploy. Let's create a version first!",
-    "zh_CN": "这是您第一次部署此边缘函数，请先创建一个版本"
+    "zh_CN": "这是您第一次部署此函数和Pages，请先创建一个版本"
   },
   "deploy_select_version": {
     "en": "Select which version you'd like to deploy",
@@ -513,22 +517,66 @@
   },
   "init_config_file": {
     "en": "Generate a config file for your project",
-    "zh_CN": "在您的项目中生成一个esa.toml配置文件"
+    "zh_CN": "在您的项目中生成一个配置文件"
+  },
+  "init_config_format_select": {
+    "en": "Select configuration file format:",
+    "zh_CN": "选择配置文件格式："
+  },
+  "init_config_format_jsonc": {
+    "en": "JSONC (.jsonc) - JSON with comments, recommended",
+    "zh_CN": "JSONC (.jsonc) - 带注释的JSON，推荐"
+  },
+  "init_config_format_toml": {
+    "en": "TOML (.toml) - Traditional format",
+    "zh_CN": "TOML (.toml) - 传统格式"
+  },
+  "init_language_select": {
+    "en": "Select programming language:",
+    "zh_CN": "选择编程语言："
+  },
+  "init_language_typescript": {
+    "en": "TypeScript (.ts) - Type-safe JavaScript, recommended",
+    "zh_CN": "TypeScript (.ts) - 类型安全的JavaScript，推荐"
+  },
+  "init_language_javascript": {
+    "en": "JavaScript (.js) - Traditional JavaScript",
+    "zh_CN": "JavaScript (.js) - 传统JavaScript"
+  },
+  "init_language_selected": {
+    "en": "Language",
+    "zh_CN": "语言"
+  },
+  "init_project_name": {
+    "en": "Project name",
+    "zh_CN": "项目名称"
+  },
+  "init_template_name": {
+    "en": "Template name to use",
+    "zh_CN": "要使用的模板名称"
+  },
+  "init_template_not_found": {
+    "en": "Template \"${templateName}\" not found. Please check the template name and try again.",
+    "zh_CN": "未找到模板 \"${templateName}\"。请检查模板名称并重试。"
   },
   "generate_config_error": {
-    "en": "esa.toml already exists",
-    "zh_CN": "esa.toml 文件已经存在"
+    "en": "already exists",
+    "zh_CN": "配置文件已经存在"
   },
   "generate_config_success": {
-    "en": "Generated esa.toml",
-    "zh_CN": "生成esa.toml成功"
+    "en": "Generated ${path.basename(newFilePath)}",
+    "zh_CN": "配置文件生成成功"
   },
   "commit_option_minify": {
     "en": "Minify code before committing",
     "zh_CN": "上传前压缩代码"
   },
+  "commit_option_description": {
+    "en": "Description for Functions& Pages/version (skip interactive input)",
+    "zh_CN": "函数/版本的描述（跳过交互式输入）"
+  },
   "dev_entry_describe": {
-    "en": "Entry file of the Routine",
+    "en": "Entry file of Functions& Pages",
     "zh_CN": "入口文件路径"
   },
   "dev_option_minify": {
@@ -604,7 +652,7 @@
     "zh_CN": "然后就可以用新的端口在Chrome inspect中调试了😉"
   },
   "dev_port_used": {
-    "en": "Port ${stringDenoPort} already in use",
+    "en": "Port ${stringPort} already in use.",
     "zh_CN": "端口 ${stringDenoPort} 被占用"
   },
   "dev_port_used_ask": {
@@ -628,7 +676,7 @@
     "zh_CN": "可以使用 ${option} 指定另外的端口"
   },
   "dev_inspect_port_used": {
-    "en": "Inspect port ${stringInspectPort} already in use",
+    "en": "Inspect port ${stringInspectPort} already in use.",
     "zh_CN": "Inspect 端口 ${stringInspectPort} 已被占用"
   },
   "dev_inspect_port_used_ask": {
@@ -684,7 +732,7 @@
     "zh_CN": "  版本ID                版本描述"
   },
   "commit_er_exist": {
-    "en": "Routine exists, updating the code",
+    "en": "Functions& Pages exists, updating the code",
     "zh_CN": "边缘函数已存在，已更新代码"
   },
   "domain_add_invalid_name": {
@@ -712,8 +760,8 @@
     "zh_CN": "无权限：Access Key 或 Secret 错误，或没有必要的权限。"
   },
   "init_skip": {
-    "en": "Initialization was skipped.",
-    "zh_CN": "初始化已被跳过。"
+    "en": "Answer \"No\" to any prompts for new projects.",
+    "zh_CN": "回答 \"否\" 到所有提示。"
   },
   "quick_deploy_success": {
     "en": "Your code has been successfully deployed",
@@ -727,12 +775,24 @@
     "en": "Quick deploy failed",
     "zh_CN": "快速部署失败。"
   },
+  "quick_deploy_assets_detected": {
+    "en": "Static assets detected, deploying with assets support",
+    "zh_CN": "检测到静态资源，正在使用资源支持进行部署"
+  },
+  "quick_deploy_assets_success": {
+    "en": "A new version has been successfully generated",
+    "zh_CN": "您的代码和静态资源已成功部署"
+  },
+  "quick_deploy_assets_failed": {
+    "en": "Quick deploy with assets failed",
+    "zh_CN": "带静态资源的快速部署失败"
+  },
   "auto_deploy": {
     "en": "Do you want to deploy your project?",
     "zh_CN": "您想要部署您的项目吗？"
   },
   "first_deploy": {
-    "en": "This is the first time to deploy, we will create a new routine for you.",
+    "en": "This is the first time to deploy, we will create a new project for you.",
     "zh_CN": "这是第一次部署，我们将为您创建一个新的函数。"
   },
   "no_formal_version_found": {
@@ -740,7 +800,7 @@
     "zh_CN": "未找到正式版本，您需要先创建一个版本。"
   },
   "init_deploy_success": {
-    "en": "Project deployment completed. Visit: ",
+    "en": "Deploy Success",
     "zh_CN": "项目部署完成。访问："
   },
   "show_default_url": {
@@ -748,8 +808,8 @@
     "zh_CN": "访问："
   },
   "routine_not_exist": {
-    "en": "Routine does not exist, please create a new one. Run command:",
-    "zh_CN": "函数不存在，请创建一个新函数。运行命令："
+    "en": "Project does not exist, please create a new one. Run command:",
+    "zh_CN": "函数和Pages不存在，请创建一个新函数和Pages项目。运行命令："
   },
   "dev_input_inspect_tip1": {
     "en": "👉 Please visit ${inspectLink} in the Chrome browser",
@@ -762,6 +822,30 @@
   "deploy_url_warn": {
     "en": "The domain may take some time to take effect, please try again later.",
     "zh_CN": "域名生效可能需要一段时间，请稍后再试。"
+  },
+  "deploy_quick_describe": {
+    "en": "Quick deploy Functions& Pages to production environment",
+    "zh_CN": "快速部署到生产环境"
+  },
+  "deploy_option_version": {
+    "en": "Version to deploy (skip interactive selection)",
+    "zh_CN": "要部署的版本（跳过交互式选择）"
+  },
+  "deploy_option_environment": {
+    "en": "Environment to deploy to: staging or production (skip interactive selection)",
+    "zh_CN": "部署环境：staging 或 production（跳过交互式选择）"
+  },
+  "deploy_version_not_found": {
+    "en": "Version '${argv.version}' not found",
+    "zh_CN": "版本 '${version}' 未找到"
+  },
+  "deploy_using_version": {
+    "en": "Using version",
+    "zh_CN": "使用版本"
+  },
+  "deploy_using_environment": {
+    "en": "Using environment",
+    "zh_CN": "使用环境"
   },
   "init_install_dependence": {
     "en": "⌛️ Installing dependencies...",
@@ -779,8 +863,452 @@
     "en": "Project built successfully.",
     "zh_CN": "项目构建成功。"
   },
-  "test": {
-    "en": "test",
+  "dev_server_start": {
+    "en": "Dev server starting...",
+    "zh_CN": "Dev 服务启动中..."
+  },
+  "dev_server_started": {
+    "en": "Dev server started successfully",
+    "zh_CN": "Dev 服务已启动"
+  },
+  "dev_checking_runtime": {
+    "en": "Checking runtime",
+    "zh_CN": "检查运行时环境"
+  },
+  "dev_process_fail": {
+    "en": "Dev server start failed.",
+    "zh_CN": "Dev 服务启动失败"
+  },
+  "dev_worker_timeout": {
+    "en": "Worker start timeout",
+    "zh_CN": "Worker 启动超时"
+  },
+  "upload_code_failed": {
+    "en": "An error occurred while trying to upload the code.",
+    "zh_CN": "上传代码时发生错误。"
+  },
+  "oss_config_not_found": {
+    "en": "Failed to retrieve OSS configuration information.",
+    "zh_CN": "无法获取OSS配置信息。"
+  },
+  "oss_upload_failed": {
+    "en": "Failed to upload to OSS",
+    "zh_CN": "上传到OSS失败"
+  },
+  "publish_success": {
+    "en": "Publish success!",
+    "zh_CN": "发布成功！"
+  },
+  "start_quick_deploy": {
+    "en": "Starting quick deploy...",
+    "zh_CN": "开始快速部署..."
+  },
+  "upload_oss_success": {
+    "en": "Upload code success!",
+    "zh_CN": "上传代码成功！"
+  },
+  "upload_code": {
+    "en": "Uploading code...",
+    "zh_CN": "正在上传代码..."
+  },
+  "commit_code": {
+    "en": "Generating code version...",
+    "zh_CN": "生成代码版本..."
+  },
+  "publish_code": {
+    "en": "Publishing code to production environment...",
+    "zh_CN": "正在将代码发布到生产环境..."
+  },
+  "init_update_info": {
+    "en": "Updating template...",
+    "zh_CN": "模版更新中..."
+  },
+  "init_update_success": {
+    "en": "Template update complete.",
+    "zh_CN": "模版更新完成"
+  },
+  "exit_select_init_template": {
+    "en": "Exit",
+    "zh_CN": "退出"
+  },
+  "return_select_init_template": {
+    "en": "Return",
+    "zh_CN": "返回"
+  },
+  "display_current_esa_template_version": {
+    "en": "Current esa-template version:",
+    "zh_CN": "当前esa-template版本："
+  },
+  "display_latest_esa_template_version": {
+    "en": "Latest esa-template version:",
+    "zh_CN": "最新esa-template版本："
+  },
+  "is_update_to_latest_version": {
+    "en": "Do you want to update templates to latest version?",
+    "zh_CN": "是否更新模版到最新版本？"
+  },
+  "updating_esa_template_to_latest_version": {
+    "en": "Updating ${packageName} to the latest version...",
+    "zh_CN": "更新 ${packageName} 到最新版本..."
+  },
+  "updated_esa_template_to_latest_version": {
+    "en": "${packageName} updated successfully",
+    "zh_CN": "${packageName} 更新完成!"
+  },
+  "esa_template_is_latest_version": {
+    "en": "${packageName} is latest.",
+    "zh_CN": "${packageName} 已是最新版本."
+  },
+  "not_login_auto_deploy": {
+    "en": "You are not logged in, automatic deployment cannot be performed. Please log in later and manually deploy.",
+    "zh_CN": "因为您未登陆，不能自动部署。请稍后登陆后，手动进行部署"
+  },
+  "dev_option_debugger": {
+    "en": "Output debug logs",
+    "zh_CN": "输出debug日志"
+  },
+  "install_runtime_update_tip": {
+    "en": "🔔 Runtime must be update to use esa-cli dev. Installing...",
+    "zh_CN": "必须更新Runtime才能使用 esa-cli dev。正在安装..."
+  },
+  "dev_ip_not_allowed": {
+    "en": "Direct access to IP addresses is not allowed when setting local-upstream: ${url}",
+    "zh_CN": "不允许直接设置 local-upstream 为 IP 地址：${url}"
+  },
+  "dev_url_invalid": {
+    "en": "Invalid URL: ${url}. Please enter a valid URL.",
+    "zh_CN": "不是正确的URL: ${url}. 请输入正确的URL."
+  },
+  "deno_download_failed": {
+    "en": "Download failed",
+    "zh_CN": "下载失败"
+  },
+  "deno_unzip_failed": {
+    "en": "Unzip failed",
+    "zh_CN": "解压失败"
+  },
+  "deno_add_path_failed": {
+    "en": "Add BinDir to Path failed",
+    "zh_CN": "添加环境变量失败"
+  },
+  "deno_install_success": {
+    "en": "Runtime install success!",
+    "zh_CN": "Runtime 安装成功！"
+  },
+  "deno_download_success": {
+    "en": "Download success",
+    "zh_CN": "下载成功"
+  },
+  "deno_install_success_tips": {
+    "en": "Please run ${dev} again",
+    "zh_CN": "请重新运行 ${dev}"
+  },
+  "no_build_script": {
+    "en": "No build script found in package.json, skipping build step.",
+    "zh_CN": "在 package.json 中未找到构建脚本，跳过构建步骤。"
+  },
+  "init_cancel": {
+    "en": "User canceled the operation.",
+    "zh_CN": "用户取消了操作。"
+  },
+  "routine_create_success": {
+    "en": "Project created successfully.",
+    "zh_CN": "函数和Pages创建成功"
+  },
+  "routine_create_fail": {
+    "en": "Project created failed.",
+    "zh_CN": "函数和Pages创建失败"
+  },
+  "create_route_route": {
+    "en": "Enter a Route (e.g., example.com/*):",
+    "zh_CN": "输入路由:"
+  },
+  "route_name_input_required": {
+    "en": "Route name is required",
+    "zh_CN": "路由名称是必需的"
+  },
+  "create_route_mode": {
+    "en": "Which mode of route do you want to use?",
+    "zh_CN": "您想要使用哪种路由模式？"
+  },
+  "create_route_site": {
+    "en": "Select a site that is active in your account:",
+    "zh_CN": "选择您账户中已激活的站点:"
+  },
+  "route_input_required": {
+    "en": "Route is required",
+    "zh_CN": "路由是必需的"
+  },
+  "create_route_rule": {
+    "en": "Enter a Rule Expression:",
+    "zh_CN": "输入规则表达式:"
+  },
+  "rule_input_required": {
+    "en": "Rule is required",
+    "zh_CN": "规则是必需的"
+  },
+  "route_list_simple_title": {
+    "en": "Related simple mode routes",
+    "zh_CN": "相关简单模式路由"
+  },
+  "route_list_custom_title": {
+    "en": "Related custom mode routes",
+    "zh_CN": "相关自定义模式路由"
+  },
+  "create_route_route_name": {
+    "en": "Enter a Route Name (Aliases):",
+    "zh_CN": "输入路由名称（别名）:"
+  },
+  "no_route_found": {
+    "en": "No route found! Please check the route name.",
+    "zh_CN": "未找到路由！请检查路由名称。"
+  },
+  "init_template_not_ready": {
+    "en": "Template is not ready. We will install it for you now.",
+    "zh_CN": "模版未准备好，我们为您安装模版。"
+  },
+  "login_option_access_key_id": {
+    "en": "AccessKey ID (AK)",
+    "zh_CN": "AccessKey ID (AK)"
+  },
+  "login_option_access_key_secret": {
+    "en": "AccessKey Secret (SK)",
+    "zh_CN": "AccessKey Secret (SK)"
+  },
+  "login_option_skip_login": {
+    "en": "Skip login",
+    "zh_CN": "跳过登录"
+  },
+  "check_and_update_package_error": {
+    "en": "Error: An error occurred while checking and updating the package, skipping template update",
+    "zh_CN": "检测和更新包时发生错误，跳过更新模版"
+  },
+  "init_yes": {
+    "en": "Answer \"Yes\" to all prompts.",
+    "zh_CN": "回答 \"是\" 到所有提示。"
+  },
+  "init_no_templates": {
+    "en": "No templates available.",
+    "zh_CN": "没有可用的模版。"
+  },
+  "no_active_sites": {
+    "en": "No active sites found in your account",
+    "zh_CN": "没有找到已激活的站点"
+  },
+  "route_format_invalid": {
+    "en": "Invalid route format",
+    "zh_CN": "无效的路由格式"
+  },
+  "creating_route": {
+    "en": "Creating route...",
+    "zh_CN": "创建路由..."
+  },
+  "site_not_found": {
+    "en": "Site \"${siteName}\" not found in your account",
+    "zh_CN": "站点 \"${siteName}\" 未找到"
+  },
+  "commit_assets_exist": {
+    "en": "This is a Functions& Pages with assets project",
+    "zh_CN": "这是一个带静态资源的函数和Pages项目"
+  },
+  "commit_routine_with_assets_success": {
+    "en": "Functions& Pages with assets code version committed successfully.",
+    "zh_CN": "带静态资源的函数和Pages代码版本提交成功。"
+  },
+  "commit_routine_with_assets_fail": {
+    "en": "An error occurred while trying to commit your Functions& Pages with assets.",
+    "zh_CN": "提交带静态资源的函数和Pages时发生错误。"
+  },
+  "commit_option_assets": {
+    "en": "Assets directory",
+    "zh_CN": "静态资源目录"
+  },
+  "commit_option_name": {
+    "en": "Functions& Pages name",
+    "zh_CN": "边缘函数名称"
+  },
+  "deploy_option_name": {
+    "en": "Name of Functions& Pages",
+    "zh_CN": "边缘函数名称"
+  },
+  "deploy_option_assets": {
+    "en": "Deploy assets",
+    "zh_CN": "部署静态资源"
+  },
+  "deploy_invalid_environment": {
+    "en": "Invalid environment",
+    "zh_CN": "无效的环境"
+  },
+  "deploy_success_guide_2": {
+    "en": "Add routes for a site",
+    "zh_CN": "运行此命令以添加路由"
+  },
+  "login_get_from_env": {
+    "en": "Get AccessKey ID and AccessKey Secret from environment variables.",
+    "zh_CN": "从环境变量中获取 AccessKey ID 和 AccessKey Secret。"
+  },
+  "deploy_option_description": {
+    "en": "Description of the version",
+    "zh_CN": "版本描述"
+  },
+  "deploy_option_minify": {
+    "en": "Minify the code",
+    "zh_CN": "压缩代码"
+  },
+  "error_reading_project_config_file": {
+    "en": "Error reading project configuration file.",
+    "zh_CN": "读取项目配置文件错误"
+  },
+  "checking_template_update": {
+    "en": "Checking esa-template updates...",
+    "zh_CN": "检查 esa-template 更新..."
+  },
+  "template_updating": {
+    "en": "Updating templates to latest...",
+    "zh_CN": "正在更新模板到最新版本..."
+  },
+  "template_updated_to_latest": {
+    "en": "Templates updated to latest.",
+    "zh_CN": "模板已更新到最新版本。"
+  },
+  "checking_esa_template_finished": {
+    "en": "Checking esa-template finished.",
+    "zh_CN": "检查 esa-template 完成。"
+  },
+  "git_installed_success": {
+    "en": "Git has been installed successfully.",
+    "zh_CN": "Git 已成功安装。"
+  },
+  "compress_not_specified": {
+    "en": "Not specified",
+    "zh_CN": "未指定"
+  },
+  "compress_not_configured": {
+    "en": "Not configured",
+    "zh_CN": "未配置"
+  },
+  "compress_check_file_exists": {
+    "en": "(Check if file exists)",
+    "zh_CN": "（检查文件是否存在）"
+  },
+  "compress_check_directory_exists": {
+    "en": "(Check if directory exists)",
+    "zh_CN": "（检查目录是否存在）"
+  },
+  "deploy_success_cd": {
+    "en": "Enter project directory",
     "zh_CN": ""
+  },
+  "init_abort": {
+    "en": "Initialization aborted",
+    "zh_CN": ""
+  },
+  "reason": {
+    "en": "Reason:",
+    "zh_CN": ""
+  },
+  "dir_already_exists": {
+    "en": "Target directory already exists",
+    "zh_CN": ""
+  },
+  "path": {
+    "en": "Path:",
+    "zh_CN": ""
+  },
+  "try": {
+    "en": "Try one of the following:",
+    "zh_CN": ""
+  },
+  "try_diff_name": {
+    "en": "Choose a different project name",
+    "zh_CN": ""
+  },
+  "try_remove": {
+    "en": "Remove the directory:",
+    "zh_CN": ""
+  },
+  "try_another_dir": {
+    "en": "Run the command in another directory",
+    "zh_CN": ""
+  },
+  "step": {
+    "en": "Step:",
+    "zh_CN": ""
+  },
+  "version_title_update_available": {
+    "en": "ESA CLI Update Available",
+    "zh_CN": "ESA CLI 有新版本可用"
+  },
+  "version_current": {
+    "en": "Current",
+    "zh_CN": "当前版本"
+  },
+  "version_latest": {
+    "en": "Latest",
+    "zh_CN": "最新版本"
+  },
+  "version_note": {
+    "en": "Note",
+    "zh_CN": "提示"
+  },
+  "version_note_incompatible": {
+    "en": "This version may have incompatibilities, please upgrade soon.",
+    "zh_CN": "当前版本可能存在不兼容，建议尽快升级至最新版本。"
+  },
+  "version_update": {
+    "en": "Update",
+    "zh_CN": "升级"
+  },
+  "version_continue": {
+    "en": "You can continue using the current version; commands will proceed.",
+    "zh_CN": "你可以继续使用当前版本；命令将继续执行。"
+  },
+  "version_prompt_update_now": {
+    "en": "Update now to the latest version?",
+    "zh_CN": "是否立即更新到最新版本？"
+  },
+  "version_update_failed": {
+    "en": "Global update failed. You may need elevated permissions (sudo) or use yarn/pnpm:",
+    "zh_CN": "全局更新失败。你可能需要更高权限（sudo）或使用 yarn/pnpm："
+  },
+  "deploy_option_keyword": {
+    "en": "Keyword to search for projects",
+    "zh_CN": ""
+  },
+  "route_input_method": {
+    "en": "How would you like to input the route?",
+    "zh_CN": "您希望如何输入路由？"
+  },
+  "route_input_builder": {
+    "en": "Use route builder (prefix + suffix)",
+    "zh_CN": "使用路由构建器（前缀 + 后缀）"
+  },
+  "route_input_manual": {
+    "en": "Enter route manually",
+    "zh_CN": "手动输入路由"
+  },
+  "route_build_cancelled": {
+    "en": "Route building cancelled",
+    "zh_CN": "路由构建已取消"
+  },
+  "route_builder_prefix_prompt": {
+    "en": "Enter route prefix for ${siteName} (e.g., api, v1):",
+    "zh_CN": "为 ${siteName} 输入路由前缀（例如：api, v1）："
+  },
+  "route_builder_suffix_prompt": {
+    "en": "Enter route suffix for ${siteName} (e.g., *, users/*):",
+    "zh_CN": "为 ${siteName} 输入路由后缀（例如：*, users/*）："
+  },
+  "route_builder_preview": {
+    "en": "Preview: ${siteName}${prefix}${suffix}",
+    "zh_CN": "预览：{route}"
+  },
+  "route_builder_instructions": {
+    "en": "Press Enter to continue, Ctrl+C to cancel",
+    "zh_CN": "按回车键继续，Ctrl+C 取消"
+  },
+  "kv_parse_failed": {
+    "en": "kv.json parse failed, use empty local kv store.",
+    "zh_CN": "kv.json 解析失败，使用空本地 kv 存储。"
   }
 }

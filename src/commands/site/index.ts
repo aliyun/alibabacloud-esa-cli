@@ -1,11 +1,13 @@
 import { CommandModule, Argv } from 'yargs';
-import siteList from './list.js';
+
 import t from '../../i18n/index.js';
+
+import siteList from './list.js';
 
 let yargsIns: Argv;
 const siteCommand: CommandModule<{}> = {
   command: 'site [script]',
-  describe: `🚀 ${t('site_describe').d('Manage your sites')}`,
+  describe: `📈 ${t('site_describe').d('Manage your sites')}`,
   builder: (yargs) => {
     yargsIns = yargs;
     return yargs
@@ -16,7 +18,7 @@ const siteCommand: CommandModule<{}> = {
         type: 'boolean',
         default: false
       })
-      .usage(`${t('common_usage').d('Usage')}: esa site [list]`);
+      .usage(`${t('common_usage').d('Usage')}: esa-cli site [list]`);
   },
   handler: (argv) => {
     if (yargsIns && (argv.help || argv._.length < 2)) {

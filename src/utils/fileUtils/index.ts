@@ -1,24 +1,52 @@
-import fs from 'fs';
+import fs, { promises as fsPromises } from 'fs';
 import os from 'os';
 import path from 'path';
-import toml from '@iarna/toml';
-import { promises as fsPromises } from 'fs';
-import { CliConfig, DevToolProps, ProjectConfig } from './interface.js';
-import { getDirName, getRoot } from './base.js';
-import logger from '../../libs/logger.js';
-import t from '../../i18n/index.js';
 
-const projectConfigFile = 'esa.toml';
+import toml from '@iarna/toml';
+
+import t from '../../i18n/index.js';
+import logger from '../../libs/logger.js';
+
+import { getDirName, getRoot } from './base.js';
+import { CliConfig, DevToolProps, ProjectConfig } from './interface.js';
 
 const __dirname = getDirName(import.meta.url);
 
 const root = getRoot();
 
-export const projectConfigPath = path.join(root, projectConfigFile);
+// Function to get the actual project config file path (supports both .jsonc and .toml)
+export const getProjectConfigPath = (filePath: string = root): string => {
+  const configFormats = ['esa.jsonc', 'esa.toml'];
+
+  for (const format of configFormats) {
+    const configPath = path.join(filePath, format);
+    if (fs.existsSync(configPath)) {
+      return configPath;
+    }
+  }
+
+  // Default to .jsonc if no config file exists
+  return path.join(filePath, 'esa.jsonc');
+};
+
+export const projectConfigPath = getProjectConfigPath();
 export const cliConfigPath = path.join(
   os.homedir(),
   '.esa/config/default.toml'
 );
+
+// Function to get the actual config file path (supports both .toml and .jsonc)
+export const getCliConfigPath = (): string => {
+  const configDir = path.join(os.homedir(), '.esa/config');
+  const jsoncPath = path.join(configDir, 'default.jsonc');
+  const tomlPath = path.join(configDir, 'default.toml');
+
+  // Check if JSONC file exists first, then fallback to TOML
+  if (fs.existsSync(jsoncPath)) {
+    return jsoncPath;
+  }
+  return tomlPath;
+};
 export const hiddenConfigDir = path.join(os.homedir(), '.esa/config');
 
 export const generateHiddenConfigDir = () => {
@@ -30,7 +58,7 @@ export const generateHiddenConfigDir = () => {
 export const generateToml = (path: string) => {
   if (!fs.existsSync(path)) {
     fs.writeFileSync(path, '', 'utf-8');
-    // 添加默认的endpoint
+    // Add default endpoint
     const defaultConfig = {
       endpoint: 'esa.cn-hangzhou.aliyuncs.com'
     };
@@ -40,37 +68,73 @@ export const generateToml = (path: string) => {
 
 export const generateDefaultConfig = () => {
   generateHiddenConfigDir();
-  generateToml(cliConfigPath);
+  const configPath = getCliConfigPath();
+  generateToml(configPath);
 };
 
 export async function updateProjectConfigFile(
   configUpdate: Partial<CliConfig>,
   filePath: string = root
 ): Promise<void> {
-  const configPath = path.join(filePath, projectConfigFile);
+  const configPath = getProjectConfigPath(filePath);
   try {
     let configFileContent = await fsPromises.readFile(configPath, 'utf8');
-    let config = toml.parse(configFileContent);
-    config = { ...config, ...configUpdate };
-    const updatedConfigString = toml.stringify(config);
+    let config: any;
+    let updatedConfigString: string;
+
+    // Detect file format based on file extension
+    if (configPath.endsWith('.jsonc') || configPath.endsWith('.json')) {
+      // Handle JSONC format
+      const jsonContent = configFileContent.replace(
+        /\/\*[\s\S]*?\*\/|\/\/.*$/gm,
+        ''
+      );
+      config = JSON.parse(jsonContent);
+      config = { ...config, ...configUpdate };
+      updatedConfigString = JSON.stringify(config, null, 2) + '\n';
+    } else {
+      // Handle TOML format (default)
+      config = toml.parse(configFileContent);
+      config = { ...config, ...configUpdate };
+      updatedConfigString = toml.stringify(config);
+    }
+
     await fsPromises.writeFile(configPath, updatedConfigString);
   } catch (error) {
-    logger.error(`Error updating TOML file: ${error}`);
+    logger.error(`Error updating config file: ${error}`);
     logger.pathEacces(__dirname);
   }
 }
 
 export async function updateCliConfigFile(configUpdate: Partial<CliConfig>) {
   try {
-    let configFileContent = await fsPromises.readFile(cliConfigPath, 'utf8');
-    let config = toml.parse(configFileContent);
-    config = { ...config, ...configUpdate };
-    const updatedConfigString = toml.stringify(config);
-    await fsPromises.writeFile(cliConfigPath, updatedConfigString);
+    const configPath = getCliConfigPath();
+    let configFileContent = await fsPromises.readFile(configPath, 'utf8');
+    let config: any;
+    let updatedConfigString: string;
+
+    // Detect file format based on file extension
+    if (configPath.endsWith('.jsonc') || configPath.endsWith('.json')) {
+      // Handle JSONC format
+      const jsonContent = configFileContent.replace(
+        /\/\*[\s\S]*?\*\/|\/\/.*$/gm,
+        ''
+      );
+      config = JSON.parse(jsonContent);
+      config = { ...config, ...configUpdate };
+      updatedConfigString = JSON.stringify(config, null, 2) + '\n';
+    } else {
+      // Handle TOML format (default)
+      config = toml.parse(configFileContent);
+      config = { ...config, ...configUpdate };
+      updatedConfigString = toml.stringify(config);
+    }
+
+    await fsPromises.writeFile(configPath, updatedConfigString);
   } catch (error) {
-    logger.error(`Error updating TOML file: ${error}`);
+    logger.error(`Error updating config file: ${error}`);
     logger.pathEacces(__dirname);
-    throw new Error('Login error');
+    throw new Error('Config update error');
   }
 }
 
@@ -80,17 +144,29 @@ export function readConfigFile(
   if (fs.existsSync(configPath)) {
     const configFileContent = fs.readFileSync(configPath, 'utf-8');
     try {
-      const config = toml.parse(configFileContent);
-      return config as CliConfig | ProjectConfig;
+      if (configPath.endsWith('.jsonc') || configPath.endsWith('.json')) {
+        // Remove comments for JSON parsing
+        const jsonContent = configFileContent.replace(
+          /\/\*[\s\S]*?\*\/|\/\/.*$/gm,
+          ''
+        );
+        const config = JSON.parse(jsonContent);
+        return config as CliConfig | ProjectConfig;
+      } else {
+        // TOML format
+        const config = toml.parse(configFileContent);
+        return config as CliConfig | ProjectConfig;
+      }
     } catch (error) {
-      logger.error(`Error parsing TOML file: ${error}`);
+      logger.error(`Error parsing config file: ${error}`);
       return null;
     }
   }
   return null;
 }
 export function getCliConfig() {
-  const res = readConfigFile(cliConfigPath);
+  const configPath = getCliConfigPath();
+  const res = readConfigFile(configPath);
   if (!res) {
     return null;
   }
@@ -98,18 +174,21 @@ export function getCliConfig() {
 }
 
 export function getProjectConfig(filePath: string = root) {
-  const res = readConfigFile(path.join(filePath, projectConfigFile));
-  if (!res) {
-    return null;
+  // Try to find config file in order of preference: .jsonc, .toml
+  const configFormats = ['esa.jsonc', 'esa.toml'];
+
+  for (const format of configFormats) {
+    const configPath = path.join(filePath, format);
+    const config = readConfigFile(configPath);
+    if (config) {
+      return config as ProjectConfig;
+    }
   }
-  return res as ProjectConfig;
+
+  return null;
 }
 
 export function readEdgeRoutineFile(projectPath: string = root): string | null {
-  const projectConfig = getProjectConfig(projectPath);
-  if (!projectConfig) {
-    return null;
-  }
   const pubFilePath = `.dev/pub.js`;
   const edgeRoutinePath = path.join(projectPath, pubFilePath);
   if (fs.existsSync(edgeRoutinePath)) {
@@ -130,25 +209,60 @@ export function getConfigurations() {
 
 export async function generateConfigFile(
   projectName?: string,
-  initConfigs?: Partial<ProjectConfig>
+  initConfigs?: Partial<ProjectConfig>,
+  targetDir?: string,
+  configFormat: 'toml' | 'jsonc' = 'jsonc',
+  notFoundStrategy?: string
 ) {
-  const newFilePath = path.join(process.cwd(), 'esa.toml');
-  const currentDirName = path.basename(process.cwd());
-  const entry = initConfigs?.dev?.entry || 'src/index.js';
+  const outputDir = targetDir ?? process.cwd();
+  const currentDirName = path.basename(outputDir);
+  const entry = initConfigs?.dev?.entry;
   const port = initConfigs?.port || 18080;
   const name = projectName || currentDirName;
+  const assetsDirectory = initConfigs?.assets?.directory;
+
+  let newFilePath: string;
+  let genConfig: string;
+
+  if (configFormat === 'jsonc') {
+    newFilePath = path.join(outputDir, 'esa.jsonc');
+    const configObj: Record<string, any> = { name };
+    if (entry) configObj.entry = entry;
+    if (assetsDirectory) {
+      configObj.assets = { directory: assetsDirectory };
+      if (notFoundStrategy) {
+        (configObj.assets as Record<string, any>).notFoundStrategy =
+          notFoundStrategy;
+      }
+    }
+    configObj.dev = { port };
+    genConfig = JSON.stringify(configObj, null, 2) + '\n';
+  } else {
+    // Default to TOML format
+    newFilePath = path.join(outputDir, 'esa.toml');
+    const configObj: Record<string, any> = {
+      name,
+      dev: { port }
+    };
+    if (entry) configObj.entry = entry;
+    if (assetsDirectory) {
+      configObj.assets = { directory: assetsDirectory };
+      if (notFoundStrategy) {
+        (configObj.assets as Record<string, any>).notFoundStrategy =
+          notFoundStrategy;
+      }
+    }
+    genConfig = toml.stringify(configObj);
+  }
 
   if (fs.existsSync(newFilePath)) {
-    logger.error(t('generate_config_error').d('esa.toml already exists'));
+    logger.error(
+      `${path.basename(newFilePath)}` +
+        t('generate_config_error').d('already exists')
+    );
     return;
   } else {
-    const genConfig = `name = "${name}"
-entry = "${entry}"
-[dev]
-port = ${port}
-  `;
     await fsPromises.writeFile(newFilePath, genConfig, 'utf-8');
-    logger.success(t('generate_config_success').d('Generated esa.toml'));
   }
 }
 
@@ -217,12 +331,13 @@ export const templateHubPath = path.join(
   '../../../node_modules/esa-template/src'
 );
 
-interface TemplateItem {
+export interface TemplateItem {
   Title_EN: string;
   Title_ZH: string;
   Desc_EN: string;
   Desc_ZH: string;
   URL: string;
+  children: TemplateItem[];
 }
 
 export const getTemplatesConfig = (): TemplateItem[] => {

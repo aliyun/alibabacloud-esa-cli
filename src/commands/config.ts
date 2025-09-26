@@ -1,9 +1,11 @@
 import fs from 'fs';
+
 import spawn from 'cross-spawn';
 import { CommandModule, ArgumentsCamelCase, Argv } from 'yargs';
-import { projectConfigPath, cliConfigPath } from '../utils/fileUtils/index.js';
+
 import t from '../i18n/index.js';
 import logger from '../libs/logger.js';
+import { projectConfigPath, cliConfigPath } from '../utils/fileUtils/index.js';
 
 const editConfigFile = (configPath: string) => {
   const editor = process.env.EDITOR || 'vi';
@@ -29,7 +31,7 @@ const check: CommandModule = {
         type: 'boolean',
         default: false
       })
-      .usage(`${t('common_usage').d('Usage')}: esa config [-l | -g]`)
+      .usage(`${t('common_usage').d('Usage')}: esa-cli config [-l | -g]`)
       .check((argv: ArgumentsCamelCase) => {
         if (!argv.local && !argv.global) {
           yargs.showHelp();

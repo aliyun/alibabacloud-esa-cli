@@ -1,224 +1,271 @@
-# Commands
+## Commands
 
-### init
+### esa-cli init [name]
 
-Initialize a routine with a template.
-    
-```bash
-$ esa init [OPTIONS]
-```
-
-- -c, --config `boolean` `optional`
-- Generate a config file for your project.
-
-### routine [script]
-
-Manage your routine.
-    
-#### delete <routineName>
-
-Delete a routine.
+Initialize a project with a template or a framework.
 
 ```bash
-$ esa routine delete <routineName>
+esa-cli init [name]
 ```
 
-- routineName `string` `required`
-- The name of the routine to delete.
+- Positionals:
+  - name: Project name
 
-#### list
+- Options:
+  - -f, --framework string: Choose a frontend framework (react/vue/nextjs...)
+  - -l, --language string: Choose programming language (typescript/javascript). Choices: typescript | javascript
+  - -t, --template string: Template name to use
+  - -y, --yes boolean: Answer "Yes" to all prompts (default: false)
+  - --git boolean: Initialize git repository
+  - --deploy boolean: Deploy after initialization
 
-List all your routines.
+---
+
+### esa-cli dev [entry]
+
+Start a local server for developing your project.
 
 ```bash
-$ esa routine list
+esa-cli dev [entry]
 ```
 
-### route [script]
+- Positionals:
+  - entry: Entry file of Functions& Pages
 
-Manage the routes bound to your routine.
-    
-#### add [route] [site]
+- Options:
+  - -p, --port number: Port to listen on
+  - -m, --minify boolean: Minify code during development (default: false)
+  - --refresh-command string: Command to run before auto-refresh on save
+  - --local-upstream string: Host to act as origin in development
+  - --debug boolean: Output debug logs (default: false)
 
-Bind a Route to a routine.
+---
+
+### esa-cli commit [entry]
+
+Commit your code and save as a new version.
 
 ```bash
-$ esa route add [route] [site]
+esa-cli commit [entry]
 ```
 
-#### delete <route>
+- Options:
+  - -m, --minify boolean: Minify code before committing (default: false)
+  - -a, --assets string: Assets directory
+  - -d, --description string: Description for Functions& Pages/version (skip interactive input)
+  - -n, --name string: Functions& Pages name
 
-Delete a related route.
+---
+
+### esa-cli deploy [entry]
+
+Deploy your project.
 
 ```bash
-$ esa route delete <route>
+esa-cli deploy [entry]
 ```
 
-- route `string` `required`
-- The name of the routes to delete.
+- Positionals:
+  - entry: Entry file of Functions& Pages
 
-#### list
+- Options:
+  - -v, --version string: Version to deploy (skip interactive selection)
+  - -e, --environment string: Environment to deploy to. Choices: staging | production
+  - -n, --name string: Name of Functions& Pages
+  - -a, --assets string: Assets directory (e.g., ./dist)
+  - -d, --description string: Description of the version
+  - -m, --minify boolean: Minify the code
 
-List all related routes.
+---
 
-```bash
-$ esa route list
-```
-
-### login
-
-Login to the server.
-    
-```bash
-$ esa login
-```
-
-### dev [entry]
-
-Start a local server for developing your routine.
-    
-```bash
-$ esa dev [entry] [OPTIONS]
-```
-
-- entry `string` `optional`
-- Entry file of the Routine.
-
-- -port, --p `number` `optional`
-- Port to listen on.
-
-- --inspect-port `number` `optional`
-- Chrome inspect devTool port.
-
-- -minify, --m `boolean` `optional`
-- Minify code during development.
-
-- --local-upstream `string` `optional`
-- Host to act as origin in development.
-
-- --refresh-command `string` `optional`
-- Provide a command to be executed before the auto-refresh on save.
-
-### deployments [script]
-
-Manage your deployments.
-    
-#### delete <deploymentId>
-
-Delete one or more deployment versions.
-
-```bash
-$ esa deployments delete <deploymentId>
-```
-
-- deploymentId `string` `required`
-- The ID of the deployments to delete.
-
-#### list
+### esa-cli deployments list
 
 List all deployments.
 
 ```bash
-$ esa deployments list
+esa-cli deployments list
 ```
 
-### deploy [entry]
+No additional options.
 
-Deploy your project.
-    
-```bash
-$ esa deploy [entry]
-```
+---
 
-- entry `string` `optional`
-- Entry file of the Routine.
+### esa-cli deployments delete [deploymentId...]
 
-### domain [script]
-
-Manage the domain names bound to your routine.
-    
-#### add <domain>
-
-Bind a domain to a routine.
+Delete one or more deployment versions.
 
 ```bash
-$ esa domain add <domain>
+esa-cli deployments delete [deploymentId...]
 ```
 
-- domain `string` `required`
-- The name of domain to add.
+- Positionals:
+  - deploymentId...: Deployment version IDs to delete (one or more)
 
-#### delete <domain>
+---
 
-Delete a related domain.
+### esa-cli project list
+
+List all your projects.
 
 ```bash
-$ esa domain delete <domain>
+esa-cli project list
 ```
 
-- domains `string` `required`
-- The names of the related domains to delete.
+No additional options.
 
-#### list
+---
 
-List all related domains.
+### esa-cli project delete <projectName>
+
+Delete a project.
 
 ```bash
-$ esa domain list
+esa-cli project delete <projectName>
 ```
 
-### commit [entry]
+- Positionals:
+  - projectName: The name of the project to delete
 
-Commit your code, save as a new version.
-    
-```bash
-$ esa commit [entry] [OPTIONS]
-```
+---
 
-- entry `string` `optional`
-- Entry file of the Routine.
-
-- -m, --minify `boolean` `optional`
-- Minify code before committing.
-
-### logout
-
-Logout.
-    
-```bash
-$ esa logout
-```
-
-### config
-
-Modify your local or global configuration using -l, -g.
-    
-```bash
-$ esa config [OPTIONS]
-```
-
-- -g, --global `boolean` `optional`
-- Edit global config file.
-
-- -l, --local `boolean` `optional`
-- Edit local config file.
-
-### lang
-
-Set the language of the CLI.
-    
-```bash
-$ esa lang
-```
-
-### site [script]
-
-Manage your sites.
-    
-#### list
+### esa-cli site list
 
 List all your sites.
 
 ```bash
-$ esa site list
+esa-cli site list
+```
+
+No additional options.
+
+---
+
+### esa-cli domain add <domain>
+
+Bind a domain to your project.
+
+```bash
+esa-cli domain add <domain>
+```
+
+- Positionals:
+  - domain: The domain name to bind
+
+---
+
+### esa-cli domain list
+
+List all related domains.
+
+```bash
+esa-cli domain list
+```
+
+No additional options.
+
+---
+
+### esa-cli domain delete <domain>
+
+Delete a related domain.
+
+```bash
+esa-cli domain delete <domain>
+```
+
+- Positionals:
+  - domain: The domain name to delete
+
+---
+
+### esa-cli route add
+
+Bind a route to the current project.
+
+```bash
+esa-cli route add [route] [site] [--alias <routeName>] [--route <route>] [--site <site>]
+```
+
+- Positionals (optional):
+  - route: The route value, e.g. example.com/_ or _.example.com/\*
+  - site: The site name, e.g. example.com
+
+- Options:
+  - -r, --route string: Route value, e.g. example.com/\*
+    - Host supports leading `*` for suffix match (e.g., `*.example.com`)
+    - Path supports trailing `*` for prefix match (e.g., `/api/*`)
+  - -s, --site string: Site name (must be an active site)
+  - -a, --alias string: Route name (alias)
+
+---
+
+### esa-cli route list
+
+List all related routes.
+
+```bash
+esa-cli route list
+```
+
+No additional options.
+
+---
+
+### esa-cli route delete <routeName>
+
+Delete a related route.
+
+```bash
+esa-cli route delete <routeName>
+```
+
+- Positionals:
+  - routeName: The name of the route to delete
+
+---
+
+### esa-cli login
+
+Login to the server.
+
+```bash
+esa-cli login
+```
+
+- Options:
+  - --access-key-id, --ak string: AccessKey ID (AK)
+  - --access-key-secret, --sk string: AccessKey Secret (SK)
+
+---
+
+### esa-cli logout
+
+Logout.
+
+```bash
+esa-cli logout
+```
+
+---
+
+### esa-cli config [-l | -g]
+
+Modify your local or global configuration.
+
+```bash
+esa-cli config [--local] [--global]
+```
+
+- Options:
+  - -l, --local boolean: Edit local config file (default: false)
+  - -g, --global boolean: Edit global config file (default: false)
+
+---
+
+### esa-cli lang
+
+Set the language of the CLI.
+
+```bash
+esa-cli lang
 ```

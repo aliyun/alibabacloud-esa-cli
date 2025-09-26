@@ -551,29 +551,16 @@ export const applyFileEdits = async (
         if (edit.when.language !== initParams.language) continue;
       }
 
-      const createIfMissing = edit.createIfMissing !== false;
-
       let matchedFiles: string[] = [];
       if (edit.matchType === 'exact') {
-        matchedFiles = [edit.match];
+        const absExact = path.join(targetPath, edit.match);
+        matchedFiles = fs.existsSync(absExact) ? [edit.match] : [];
       } else if (edit.matchType === 'glob') {
         const regex = toRegexFromGlob(edit.match);
         matchedFiles = listRootFiles().filter((name) => regex.test(name));
       } else if (edit.matchType === 'regex') {
         const regex = new RegExp(edit.match);
         matchedFiles = listRootFiles().filter((name) => regex.test(name));
-      }
-
-      // if no matched files and allowed to create, provide a reasonable default for common patterns
-      if (!matchedFiles.length && createIfMissing) {
-        if (edit.matchType === 'exact') {
-          matchedFiles = [edit.match];
-        } else if (
-          edit.matchType === 'glob' &&
-          /next\.config\.\{.*\}/.test(edit.match)
-        ) {
-          matchedFiles = ['next.config.ts'];
-        }
       }
 
       if (!matchedFiles.length) continue;
@@ -592,6 +579,7 @@ export const applyFileEdits = async (
       for (const rel of matchedFiles) {
         const abs = path.join(targetPath, rel);
         if (payload == null) continue;
+        if (!fs.existsSync(abs)) continue; // Only overwrite existing files
         fs.ensureDirSync(path.dirname(abs));
         fs.writeFileSync(abs, payload, 'utf-8');
       }

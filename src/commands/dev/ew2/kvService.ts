@@ -1,7 +1,8 @@
-import path from 'path';
 import fs from 'fs';
-import { getRoot } from '../../../utils/fileUtils/base.js';
+import path from 'path';
+
 import t from '../../../i18n/index.js';
+import { getRoot } from '../../../utils/fileUtils/base.js';
 
 class EdgeKV {
   static store: Map<string, any> = new Map();

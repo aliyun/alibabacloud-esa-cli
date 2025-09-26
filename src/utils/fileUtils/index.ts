@@ -10,8 +10,6 @@ import logger from '../../libs/logger.js';
 import { getDirName, getRoot } from './base.js';
 import { CliConfig, DevToolProps, ProjectConfig } from './interface.js';
 
-const projectConfigFile = 'esa.toml';
-
 const __dirname = getDirName(import.meta.url);
 
 const root = getRoot();

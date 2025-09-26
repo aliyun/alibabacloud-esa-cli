@@ -1,6 +1,7 @@
 import inquirer from 'inquirer';
 import { CommandModule, ArgumentsCamelCase, Argv } from 'yargs';
 
+import { routeBuilder } from '../../components/routeBuilder.js';
 import t from '../../i18n/index.js';
 import { ApiService } from '../../libs/apiService.js';
 import { ListSitesReq } from '../../libs/interface.js';
@@ -8,7 +9,6 @@ import logger from '../../libs/logger.js';
 import { validRoutine } from '../../utils/checkIsRoutineCreated.js';
 import { getProjectConfig } from '../../utils/fileUtils/index.js';
 import { checkDirectory, checkIsLoginSuccess } from '../utils.js';
-import { routeBuilder } from '../../components/routeBuilder.js';
 
 import { transferRouteToRuleString } from './helper.js';
 

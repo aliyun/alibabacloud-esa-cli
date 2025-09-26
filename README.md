@@ -27,6 +27,12 @@ To ensure consistent collaboration across your team, we recommend installing `es
 npm i -D esa-cli@latest
 ```
 
+Alternatively, install globally to use the `esa-cli` command system-wide:
+
+```bash
+npm i -g esa-cli@latest
+```
+
 > [!TIP]
 > When `esa-cli` is not previously installed, `npx` will fetch and run the latest version from the registry.
 

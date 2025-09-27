@@ -1310,5 +1310,9 @@
   "kv_parse_failed": {
     "en": "kv.json parse failed, use empty local kv store.",
     "zh_CN": "kv.json 解析失败，使用空本地 kv 存储。"
+  },
+  "not_active": {
+    "en": "Functions and Pages is not active, please activate it first. Visit: https://esa.console.aliyun.com/edge/pages to activate.",
+    "zh_CN": "函数和 Pages 未激活，请先激活。访问：https://esa.console.aliyun.com/edge/pages 激活。"
   }
 }

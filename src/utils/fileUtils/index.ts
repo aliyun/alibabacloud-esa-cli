@@ -159,7 +159,7 @@ export function readConfigFile(
       }
     } catch (error) {
       logger.error(`Error parsing config file: ${error}`);
-      return null;
+      process.exit(1);
     }
   }
   return null;

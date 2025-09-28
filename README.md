@@ -3,10 +3,10 @@
 ESA CLI is a command-line tool for building with Alibaba Cloud ESA Functions and Pages.
 
 <p>
-  <a href="https://discord.gg/xygV6MYx">
+  <a href="https://discord.gg/BxcRVEeh">
     <img alt="Discord CN" src="https://img.shields.io/badge/Discord-中文-5865F2?logo=discord&logoColor=white" />
   </a>
-  <a href="https://discord.gg/YeFg4yUA" style="margin-left:8px;">
+  <a href="https://discord.gg/SHYe5926" style="margin-left:8px;">
     <img alt="Discord EN" src="https://img.shields.io/badge/Discord-English-5865F2?logo=discord&logoColor=white" />
   </a>
  </p>

@@ -113,7 +113,7 @@ esa-cli project list
 
 ---
 
-### esa-cli project delete <projectName>
+### esa-cli project delete `<projectName>`
 
 删除指定函数和Pages。
 
@@ -138,7 +138,7 @@ esa-cli site list
 
 ---
 
-### esa-cli domain add <domain>
+### esa-cli domain add `<domain>`
 
 绑定域名到当前函数和Pages。
 
@@ -163,7 +163,7 @@ esa-cli domain list
 
 ---
 
-### esa-cli domain delete <domain>
+### esa-cli domain delete `<domain>`
 
 删除当前函数和Pages下已绑定域名。
 
@@ -209,7 +209,7 @@ esa-cli route list
 
 ---
 
-### esa-cli route delete <routeName>
+### esa-cli route delete `<routeName>`
 
 删除函数和Pages下已绑定路由。
 
@@ -233,9 +233,11 @@ esa-cli login
 - 选项：
   - --access-key-id, --ak string：AccessKey ID (AK)
   - --access-key-secret, --sk string：AccessKey Secret (SK)
+  - --endpoint, -e string：API 端点 URL 例子: esa.cn-hangzhou.aliyuncs.com
 - 从环境变量中读取process.env
   - ESA_ACCESS_KEY_ID
   - ESA_ACCESS_KEY_SECRET
+  - ESA_ENDPOINT
 
 ---
 

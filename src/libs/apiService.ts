@@ -113,7 +113,16 @@ export class ApiService {
       const response = await this.client.callApi(params, request, runtime);
 
       if (response.statusCode === 200) {
-        return { success: true };
+        if (response.body.Status === 'Running') {
+          return { success: true };
+        } else {
+          return {
+            success: false,
+            message: t('not_active').d(
+              'Functions and Pages is not active, please activate it first. Visit: https://esa.console.aliyun.com/edge/pages to activate.'
+            )
+          };
+        }
       } else if (response.statusCode === 403) {
         return {
           success: false,

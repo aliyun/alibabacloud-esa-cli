@@ -30,6 +30,11 @@ const login: CommandModule = {
         alias: 'sk',
         describe: t('login_option_access_key_secret')?.d('AccessKey Secret'),
         type: 'string'
+      })
+      .option('endpoint', {
+        alias: 'e',
+        describe: t('login_option_endpoint')?.d('Endpoint'),
+        type: 'string'
       });
   },
   handler: async (argv: ArgumentsCamelCase) => {
@@ -44,8 +49,14 @@ export async function handleLogin(argv?: ArgumentsCamelCase): Promise<void> {
 
   const accessKeyId = argv?.['access-key-id'];
   const accessKeySecret = argv?.['access-key-secret'];
+  const endpoint =
+    (argv?.['endpoint'] as string | undefined) || process.env.ESA_ENDPOINT;
   if (accessKeyId && accessKeySecret) {
-    await handleLoginWithAKSK(accessKeyId as string, accessKeySecret as string);
+    await handleLoginWithAKSK(
+      accessKeyId as string,
+      accessKeySecret as string,
+      endpoint
+    );
     return;
   }
 
@@ -56,7 +67,8 @@ export async function handleLogin(argv?: ArgumentsCamelCase): Promise<void> {
 
     await handleLoginWithAKSK(
       process.env.ESA_ACCESS_KEY_ID,
-      process.env.ESA_ACCESS_KEY_SECRET
+      process.env.ESA_ACCESS_KEY_SECRET,
+      endpoint
     );
     return;
   }
@@ -90,7 +102,7 @@ export async function handleLogin(argv?: ArgumentsCamelCase): Promise<void> {
       if (isCancel(selected) || selected === 'exit') {
         return;
       }
-      await getUserInputAuthInfo();
+      await getUserInputAuthInfo(endpoint);
     } else {
       logger.error(
         t('pre_login_failed').d(
@@ -98,26 +110,31 @@ export async function handleLogin(argv?: ArgumentsCamelCase): Promise<void> {
         )
       );
       logger.log(`${t('login_logging').d('Logging in')}...`);
-      await getUserInputAuthInfo();
+      await getUserInputAuthInfo(endpoint);
     }
   } else {
     logger.log(`${t('login_logging').d('Logging in')}...`);
-    await getUserInputAuthInfo();
+    await getUserInputAuthInfo(endpoint);
   }
 }
 
 async function handleLoginWithAKSK(
   accessKeyId: string,
-  accessKeySecret: string
+  accessKeySecret: string,
+  endpoint?: string
 ): Promise<void> {
   let apiConfig = getApiConfig();
   apiConfig.auth = {
     accessKeyId,
     accessKeySecret
   };
+  if (endpoint) {
+    apiConfig.endpoint = endpoint;
+  }
   try {
     await updateCliConfigFile({
-      auth: apiConfig.auth
+      auth: apiConfig.auth,
+      ...(endpoint ? { endpoint } : {})
     });
     const service = await ApiService.getInstance();
     service.updateConfig(apiConfig);
@@ -134,7 +151,7 @@ async function handleLoginWithAKSK(
   }
 }
 
-export async function getUserInputAuthInfo(): Promise<void> {
+export async function getUserInputAuthInfo(endpoint?: string): Promise<void> {
   const styledUrl = chalk.underline.blue(
     'https://ram.console.aliyun.com/manage/ak'
   );
@@ -154,10 +171,14 @@ export async function getUserInputAuthInfo(): Promise<void> {
     accessKeyId,
     accessKeySecret
   };
+  if (endpoint) {
+    apiConfig.endpoint = endpoint;
+  }
 
   try {
     await updateCliConfigFile({
-      auth: apiConfig.auth
+      auth: apiConfig.auth,
+      ...(endpoint ? { endpoint } : {})
     });
     const service = await ApiService.getInstance();
     service.updateConfig(apiConfig);

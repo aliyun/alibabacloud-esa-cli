@@ -115,7 +115,7 @@ No additional options.
 
 ---
 
-### esa-cli project delete <projectName>
+### esa-cli project delete `<projectName>`
 
 Delete a project.
 
@@ -140,7 +140,7 @@ No additional options.
 
 ---
 
-### esa-cli domain add <domain>
+### esa-cli domain add `<domain>`
 
 Bind a domain to your project.
 
@@ -165,7 +165,7 @@ No additional options.
 
 ---
 
-### esa-cli domain delete <domain>
+### esa-cli domain delete `<domain>`
 
 Delete a related domain.
 
@@ -211,7 +211,7 @@ No additional options.
 
 ---
 
-### esa-cli route delete <routeName>
+### esa-cli route delete `<routeName>`
 
 Delete a related route.
 
@@ -235,6 +235,7 @@ esa-cli login
 - Options:
   - --access-key-id, --ak string: AccessKey ID (AK)
   - --access-key-secret, --sk string: AccessKey Secret (SK)
+  - --endpoint, -e string: API endpoint URL Example: esa.cn-hangzhou.aliyuncs.com
 
 ---
 

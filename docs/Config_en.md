@@ -8,13 +8,15 @@ This document describes the structure, parameters, and example of the ESA (Edge 
 
 ### Parameter description
 
-| **Parameter**   | **Description**                                                                                                                              |
-| --------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| **name**        | Target project name. If it exists, deployment goes into it; otherwise, a new project is created.                                             |
-| **description** | Project description. Optional, used to briefly document the purpose or functionality.                                                        |
-| **entry**       | Dynamic function entry file path, e.g.,`./src/index.ts`. Optional, set only when using a function.                                           |
-| **assets**      | Static asset hosting configuration (each Pages project supports only one set of static assets). Includes `directory` and `notFoundStrategy`. |
-| **dev**         | Local development configuration. Optional; used to set dev server port and proxy.                                                            |
+| **Parameter**      | **Description**                                                                                                                              |
+| ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| **name**           | Target project name. If it exists, deployment goes into it; otherwise, a new project is created.                                             |
+| **description**    | Project description. Optional, used to briefly document the purpose or functionality.                                                        |
+| **buildCommand**   | Build command for the project, e.g.,`npm run build`. Only effective when importing from ESA console GitHub repository, not when using CLI.   |
+| **installCommand** | Install dependencies command, e.g.,`npm install`. Only effective when importing from ESA console GitHub repository, not when using CLI.      |
+| **entry**          | Dynamic function entry file path, e.g.,`./src/index.ts`. Optional, set only when using a function.                                           |
+| **assets**         | Static asset hosting configuration (each Pages project supports only one set of static assets). Includes `directory` and `notFoundStrategy`. |
+| **dev**            | Local development configuration. Optional; used to set dev server port and proxy.                                                            |
 
 #### Field structure
 
@@ -22,6 +24,10 @@ This document describes the structure, parameters, and example of the ESA (Edge 
   - Project name. Required.
 - **description**: `string`
   - Project description. Optional.
+- **buildCommand**: `string`
+  - Build command for the project, e.g., `npm run build`. Only effective when importing from ESA console GitHub repository, not when using CLI.
+- **installCommand**: `string`
+  - Install dependencies command, e.g., `npm install`. Only effective when importing from ESA console GitHub repository, not when using CLI.
 - **entry**: `string`
   - Dynamic function entry file path, e.g., `./src/index.ts`. Optional.
 - **assets**: `object`

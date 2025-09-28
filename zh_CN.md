@@ -3,10 +3,10 @@
 ESA CLI 是用于构建阿里云 ESA Functions 与 Pages 的命令行工具。
 
 <p>
-  <a href="https://discord.gg/xygV6MYx">
+  <a href="https://discord.gg/BxcRVEeh">
     <img alt="Discord 中文" src="https://img.shields.io/badge/Discord-中文-5865F2?logo=discord&logoColor=white" />
   </a>
-  <a href="https://discord.gg/YeFg4yUA" style="margin-left:8px;">
+  <a href="https://discord.gg/SHYe5926" style="margin-left:8px;">
     <img alt="Discord English" src="https://img.shields.io/badge/Discord-English-5865F2?logo=discord&logoColor=white" />
   </a>
  </p>

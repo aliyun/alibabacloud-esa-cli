@@ -1,272 +1,392 @@
-## Commands
+## ESA CLI Commands
 
-### esa-cli init [name]
+ESA CLI offers a number of commands to manage your Alibaba Cloud ESA Functions & Pages.
 
-Initialize a project with a template or a framework.
+**init** - Create a new project from a variety of web frameworks and templates.
+**dev** - Start a local server for developing your Functions & Pages.
+**commit** - Commit your code and save as a new version.
+**deploy** - Deploy your Functions & Pages to Alibaba Cloud.
+**deployments** - Manage your deployments and versions.
+**project** - Manage your Functions & Pages projects.
+**site** - List your activated sites.
+**domain** - Manage domain bindings for your Functions & Pages.
+**route** - Manage route bindings for your Functions & Pages.
+**login** - Authorize ESA CLI with your Alibaba Cloud account.
+**logout** - Remove ESA CLI's authorization for accessing your account.
+**config** - Modify your local or global configuration.
+**lang** - Set the language of the CLI.
 
-```bash
-esa-cli init [name]
+### How to run ESA CLI commands
+
+If you have installed esa-cli globally, please refer to the following commands for execution.
+
+**Installation**
+
+```
+npm i esa-cli@latest -g
 ```
 
-- Positionals:
-  - name: Project name
+**Execute commands**
 
-- Options:
-  - -f, --framework string: Choose a frontend framework (react/vue/nextjs...)
-  - -l, --language string: Choose programming language (typescript/javascript). Choices: typescript | javascript
-  - -t, --template string: Template name to use
-  - -y, --yes boolean: Answer "Yes" to all prompts (default: false)
-  - --git boolean: Initialize git repository
-  - --deploy boolean: Deploy after initialization
+```
+esa-cli <COMMAND> <SUBCOMMAND> [PARAMETERS] [OPTIONS]
+```
 
 ---
 
-### esa-cli dev [entry]
+If you have installed ESA CLI locally in your project (rather than globally), the way to run ESA CLI will depend on your specific setup and package manager.
 
-Start a local server for developing your project.
-
-```bash
-esa-cli dev [entry]
+```
+npx esa-cli <COMMAND> <SUBCOMMAND> [PARAMETERS] [OPTIONS]
 ```
 
-- Positionals:
-  - entry: Entry file of Functions& Pages
+**You can add ESA CLI commands that you use often as scripts in your project's package.json file:**
 
-- Options:
-  - -p, --port number: Port to listen on
-  - -m, --minify boolean: Minify code during development (default: false)
-  - --refresh-command string: Command to run before auto-refresh on save
-  - --local-upstream string: Host to act as origin in development
-  - --debug boolean: Output debug logs (default: false)
+```json
+{
+  ...
+  "scripts": {
+    "deploy": "esa-cli deploy",
+    "dev": "esa-cli dev"
+  }
+  ...
+}
+```
+
+**Then you can run them using your package manager of choice:**
+
+```
+npm run deploy
+```
 
 ---
 
-### esa-cli commit [entry]
+## init
+
+Create a new project via templates. A variety of web frameworks are available to choose from as well as templates. Dependencies are installed by default, with the option to deploy your project immediately.
+
+```
+esa-cli init [<NAME>] [OPTIONS]
+```
+
+**NAME** _optional (default: name of working directory)_  
+The name of the Functions & Pages project. This is both the directory name and name property in the generated ESA CLI configuration.
+
+**--framework, -f** _optional_  
+Choose a frontend framework (react/vue/nextjs...)
+
+**--language, -l** _optional_  
+Choose programming language (typescript/javascript). Choices: typescript | javascript
+
+**--template, -t** _optional_  
+Template name to use
+
+**--yes, -y** _optional_  
+Answer "Yes" to all prompts (default: false), template uses helloworld
+
+**--git** _optional_  
+Initialize git repository
+
+**--deploy** _optional_  
+Deploy after initialization
+
+---
+
+## dev
+
+Start a local server for developing your Functions & Pages.
+
+```
+esa-cli dev [<ENTRY>] [OPTIONS]
+```
+
+**ENTRY** _optional_  
+Entry file of Functions & Pages
+
+**--port, -p** _optional_  
+Port to listen on
+
+**--minify, -m** _optional_  
+Minify code during development (default: false)
+
+**--refresh-command** _optional_  
+Command to run before auto-refresh on save
+
+**--local-upstream** _optional_  
+Host to act as origin in development
+
+**--debug** _optional_  
+Output debug logs (default: false)
+
+---
+
+## commit
 
 Commit your code and save as a new version.
 
-```bash
-esa-cli commit [entry]
+```
+esa-cli commit [<ENTRY>] [OPTIONS]
 ```
 
-- Options:
-  - -m, --minify boolean: Minify code before committing (default: false)
-  - -a, --assets string: Assets directory
-  - -d, --description string: Description for Functions& Pages/version (skip interactive input)
-  - -n, --name string: Functions& Pages name
+**ENTRY** _optional_  
+Entry file of Functions & Pages
+
+**--minify, -m** _optional_  
+Minify code before committing (default: false)
+
+**--assets, -a** _optional_  
+Assets directory
+
+**--description, -d** _optional_  
+Description for Functions & Pages/version (skip interactive input)
+
+**--name, -n** _optional_  
+Functions & Pages name
 
 ---
 
-### esa-cli deploy [entry]
+## deploy
 
-Deploy your project.
+Generate a code version and deploy the project to both staging and production environments.
 
-```bash
-esa-cli deploy [entry]
+```
+esa-cli deploy [<ENTRY>] [OPTIONS]
 ```
 
-- Positionals:
-  - entry: Entry file of Functions& Pages
+**ENTRY** _optional_  
+Entry file of Functions & Pages, defaults to entry configuration in `esa.jsonc`
 
-- Options:
-  - -v, --version string: Version to deploy (skip interactive selection)
-  - -e, --environment string: Environment to deploy to. Choices: staging | production
-  - -n, --name string: Name of Functions& Pages
-  - -a, --assets string: Assets directory (e.g., ./dist)
-  - -d, --description string: Description of the version
-  - -m, --minify boolean: Minify the code
+**--version, -v** _optional_  
+Version to deploy (skip interactive selection)
+
+**--environment, -e** _optional_  
+Environment to deploy to. Choices: staging | production
+
+**--name, -n** _optional_  
+Name of Functions & Pages
+
+**--assets, -a** _optional_  
+Assets directory (e.g., ./dist)
+
+**--description, -d** _optional_  
+Description of the version
+
+**--minify, -m** _optional_  
+Whether to minify the code
 
 ---
 
-### esa-cli deployments list
+## deployments
 
-List all deployments.
+Manage your deployments and versions.
 
-```bash
+### deployments list
+
+List all code versions under the current Functions & Pages.
+
+```
 esa-cli deployments list
 ```
 
-No additional options.
+### deployments delete
 
----
+Delete one or more code versions of the current Functions & Pages.
 
-### esa-cli deployments delete [deploymentId...]
-
-Delete one or more deployment versions.
-
-```bash
-esa-cli deployments delete [deploymentId...]
+```
+esa-cli deployments delete [<DEPLOYMENT_ID>...] [OPTIONS]
 ```
 
-- Positionals:
-  - deploymentId...: Deployment version IDs to delete (one or more)
+**DEPLOYMENT_ID** _required_  
+Deployment version IDs to delete (can pass multiple at once)
 
 ---
 
-### esa-cli project list
+## project
 
-List all your projects.
+Manage your Functions & Pages projects.
 
-```bash
+### project list
+
+List all Functions & Pages under the account.
+
+```
 esa-cli project list
 ```
 
-No additional options.
+### project delete
 
----
+Delete specified Functions & Pages.
 
-### esa-cli project delete `<projectName>`
-
-Delete a project.
-
-```bash
-esa-cli project delete <projectName>
+```
+esa-cli project delete <PROJECT_NAME> [OPTIONS]
 ```
 
-- Positionals:
-  - projectName: The name of the project to delete
+**PROJECT_NAME** _required_  
+Name of the Functions or Pages to delete
 
 ---
 
-### esa-cli site list
+## site
 
-List all your sites.
+List your activated sites.
 
-```bash
+### site list
+
+List all activated sites under the account.
+
+```
 esa-cli site list
 ```
 
-No additional options.
-
 ---
 
-### esa-cli domain add `<domain>`
+## domain
 
-Bind a domain to your project.
+Manage domain bindings for your Functions & Pages.
 
-```bash
-esa-cli domain add <domain>
+### domain add
+
+Bind a domain to the current Functions & Pages.
+
+```
+esa-cli domain add <DOMAIN> [OPTIONS]
 ```
 
-- Positionals:
-  - domain: The domain name to bind
+**Only sites activated under this account can be bound**
 
----
+**DOMAIN** _required_  
+The domain name to bind (must be activated under the account's sites)
 
-### esa-cli domain list
+### domain list
 
-List all related domains.
+View all bound domains for the current Functions & Pages.
 
-```bash
+```
 esa-cli domain list
 ```
 
-No additional options.
+### domain delete
 
----
+Delete bound domains under the current Functions & Pages.
 
-### esa-cli domain delete `<domain>`
-
-Delete a related domain.
-
-```bash
-esa-cli domain delete <domain>
+```
+esa-cli domain delete <DOMAIN> [OPTIONS]
 ```
 
-- Positionals:
-  - domain: The domain name to delete
+**DOMAIN** _required_  
+The domain name to delete binding
 
 ---
 
-### esa-cli route add
+## route
 
-Bind a route to the current project.
+Manage route bindings for your Functions & Pages.
 
-```bash
-esa-cli route add [route] [site] [--alias <routeName>] [--route <route>] [--site <site>]
+### route add
+
+Bind a route to the current Functions & Pages.
+
+```
+esa-cli route add [<ROUTE>] [<SITE>] [OPTIONS]
 ```
 
-- Positionals (optional):
-  - route: The route value, e.g. example.com/_ or _.example.com/\*
-  - site: The site name, e.g. example.com
+**ROUTE** _optional_  
+Route value, e.g. example.com/_ or _.example.com/\*
 
-- Options:
-  - -r, --route string: Route value, e.g. example.com/\*
-    - Host supports leading `*` for suffix match (e.g., `*.example.com`)
-    - Path supports trailing `*` for prefix match (e.g., `/api/*`)
-  - -s, --site string: Site name (must be an active site)
-  - -a, --alias string: Route name (alias)
+**SITE** _optional_  
+Site name, e.g. example.com
 
----
+**Only sites activated under this account can be bound**
 
-### esa-cli route list
+**--route, -r** _optional_  
+Route value, e.g. example.com/\*
 
-List all related routes.
+- Host supports leading `*` for suffix match (e.g., `*.example.com`)
+- Path supports trailing `*` for prefix match (e.g., `/api/*`)
 
-```bash
+**--site, -s** _optional_  
+Site name (must be an activated site under the account)
+
+**--alias, -a** _optional_  
+Route name (alias) e.g. apple, orange, etc.
+
+### route list
+
+View all bound routes under the current Functions & Pages.
+
+```
 esa-cli route list
 ```
 
-No additional options.
+### route delete
 
----
+Delete bound routes under Functions & Pages.
 
-### esa-cli route delete `<routeName>`
-
-Delete a related route.
-
-```bash
-esa-cli route delete <routeName>
+```
+esa-cli route delete <ROUTE_NAME> [OPTIONS]
 ```
 
-- Positionals:
-  - routeName: The name of the route to delete
+**ROUTE_NAME** _required_  
+The name of the route to delete
 
 ---
 
-### esa-cli login
+## login
 
-Login to the server.
+Authorize ESA CLI with your Alibaba Cloud account.
 
-```bash
-esa-cli login
+```
+esa-cli login [OPTIONS]
 ```
 
-- Options:
-  - --access-key-id, --ak string: AccessKey ID (AK)
-  - --access-key-secret, --sk string: AccessKey Secret (SK)
-  - --endpoint, -e string: API endpoint URL Example: esa.cn-hangzhou.aliyuncs.com
+**--access-key-id, --ak** _optional_  
+AccessKey ID (AK)
+
+**--access-key-secret, --sk** _optional_  
+AccessKey Secret (SK)
+
+**--endpoint, -e** _optional_  
+API endpoint URL Example: esa.cn-hangzhou.aliyuncs.com
+
+**Environment Variables**  
+Read from environment variables:
+
+- **ESA_ACCESS_KEY_ID**
+- **ESA_ACCESS_KEY_SECRET**
+- **ESA_ENDPOINT**
 
 ---
 
-### esa-cli logout
+## logout
 
-Logout.
+Remove ESA CLI's authorization for accessing your account.
 
-```bash
+```
 esa-cli logout
 ```
 
 ---
 
-### esa-cli config [-l | -g]
+## config
 
 Modify your local or global configuration.
 
-```bash
-esa-cli config [--local] [--global]
+```
+esa-cli config [OPTIONS]
 ```
 
-- Options:
-  - -l, --local boolean: Edit local config file (default: false)
-  - -g, --global boolean: Edit global config file (default: false)
+**--local, -l** _optional_  
+Edit local config file (default: false)
+
+**--global, -g** _optional_  
+Edit global config file (default: false)
 
 ---
 
-### esa-cli lang
+## lang
 
 Set the language of the CLI.
 
-```bash
+```
 esa-cli lang
 ```

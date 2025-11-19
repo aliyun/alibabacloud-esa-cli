@@ -1318,5 +1318,9 @@
   "login_option_endpoint": {
     "en": "Endpoint",
     "zh_CN": "Endpoint"
+  },
+  "login_get_credentials_from_environment_variables": {
+    "en": "Get credentials from environment variables",
+    "zh_CN": ""
   }
 }

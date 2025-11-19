@@ -145,7 +145,8 @@ export async function generateCodeVersion(
   entry?: string,
   assets?: string,
   minify = false,
-  projectPath?: string
+  projectPath?: string,
+  noBundle = false
 ): Promise<{
   isSuccess: boolean;
   res: CreateRoutineWithAssetsCodeVersionRes | null;
@@ -154,7 +155,8 @@ export async function generateCodeVersion(
     entry,
     assets,
     minify,
-    projectPath
+    projectPath,
+    noBundle
   );
 
   // Pretty print upload directory tree
@@ -330,7 +332,8 @@ export async function commitAndDeployVersion(
   projectPath?: string,
   env: 'staging' | 'production' | 'all' = 'production',
   minify = false,
-  version?: string
+  version?: string,
+  noBundle = false
 ): Promise<boolean> {
   const projectInfo = await validateAndInitializeProject(
     projectName,
@@ -360,7 +363,8 @@ export async function commitAndDeployVersion(
     scriptEntry || projectConfig?.entry,
     assets || projectConfig?.assets?.directory,
     minify || projectConfig?.minify,
-    projectPath
+    projectPath,
+    noBundle
   );
   const isCommitSuccess = res?.isSuccess;
   if (!isCommitSuccess) {
@@ -413,6 +417,39 @@ export async function deployCodeVersion(
   } else {
     return false;
   }
+}
+
+/**
+ * Deploy specified multiple versions and their percentages
+ */
+export async function deployCodeVersions(
+  name: string,
+  versions: { codeVersion: string; percentage: number }[],
+  env: 'staging' | 'production' | 'all'
+): Promise<boolean> {
+  const server = await ApiService.getInstance();
+
+  const doDeploy = async (
+    targetEnv: 'staging' | 'production'
+  ): Promise<boolean> => {
+    const res = await server.createRoutineCodeDeployment({
+      Name: name,
+      CodeVersions: versions.map((v) => ({
+        Percentage: v.percentage,
+        CodeVersion: v.codeVersion
+      })),
+      Strategy: 'percentage',
+      Env: targetEnv
+    });
+    return !!res;
+  };
+
+  if (env === 'all') {
+    const s = await doDeploy('staging');
+    const p = await doDeploy('production');
+    return s && p;
+  }
+  return await doDeploy(env);
 }
 
 /**
@@ -551,4 +588,68 @@ export async function displayDeploySuccess(
   logger.block();
   boxLines.forEach((l) => logger.log(l));
   logger.block();
+}
+
+/**
+ * Parse --versions parameter and execute distributed deployment by percentage; print display and percentage allocation after successful deployment
+ */
+export async function deployWithVersionPercentages(
+  nameArg: string | undefined,
+  versionsArg: (string | number)[] | undefined,
+  env: 'staging' | 'production' | 'all',
+  projectPath?: string
+): Promise<boolean> {
+  const raw = (versionsArg || [])
+    .flatMap((v) => String(v).split(','))
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const pairs = raw.map((s) => {
+    const [codeVersion, percentStr] = s.split(':');
+    return {
+      codeVersion: codeVersion?.trim(),
+      percentage: Number((percentStr || '').trim())
+    };
+  });
+
+  if (pairs.length > 2) {
+    logger.error('Deploy failed: at most two versions are supported');
+    return false;
+  }
+  if (
+    pairs.some(
+      (p) => !p.codeVersion || Number.isNaN(p.percentage) || p.percentage < 0
+    )
+  ) {
+    logger.error('Deploy failed: invalid --versions format. Use v1:80,v2:20');
+    return false;
+  }
+  if (pairs.length === 1) {
+    if (pairs[0].percentage !== 100) {
+      logger.error('Deploy failed: single version must be 100%');
+      return false;
+    }
+  } else if (pairs.length === 2) {
+    const sum = pairs[0].percentage + pairs[1].percentage;
+    if (sum !== 100) {
+      logger.error('Deploy failed: percentages must sum to 100');
+      return false;
+    }
+  }
+
+  const projectInfo = await validateAndInitializeProject(nameArg, projectPath);
+  if (!projectInfo) {
+    return false;
+  }
+
+  const ok = await deployCodeVersions(projectInfo.projectName, pairs, env);
+  if (!ok) return false;
+
+  await displayDeploySuccess(projectInfo.projectName, true, true);
+  logger.block();
+  logger.log('📦 Versions rollout:');
+  pairs.forEach((p) => {
+    logger.log(`- ${p.codeVersion}: ${p.percentage}%`);
+  });
+  logger.block();
+  return true;
 }

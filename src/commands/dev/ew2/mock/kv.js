@@ -163,4 +163,6 @@ class EdgeKV {
   }
 }
 
+globalThis.mockKV = EdgeKV;
+
 export default EdgeKV;

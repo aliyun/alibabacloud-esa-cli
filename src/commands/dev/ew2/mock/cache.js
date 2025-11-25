@@ -1,7 +1,7 @@
 class MockCache {
-  constructor(port) {
-    this.port = port;
-  }
+  static port = 0;
+
+  constructor() {}
 
   async put(reqOrUrl, response) {
     if (arguments.length < 2) {
@@ -30,7 +30,7 @@ class MockCache {
 
       const key = this.normalizeKey(reqOrUrl);
       const fetchRes = await fetch(
-        `http://localhost:${this.port}/mock_cache/put`,
+        `http://localhost:${MockCache.port}/mock_cache/put`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -58,7 +58,7 @@ class MockCache {
   async get(reqOrUrl) {
     const key = this.normalizeKey(reqOrUrl);
     const fetchRes = await fetch(
-      `http://localhost:${this.port}/mock_cache/get`,
+      `http://localhost:${MockCache.port}/mock_cache/get`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -85,7 +85,7 @@ class MockCache {
   async delete(reqOrUrl) {
     const key = this.normalizeKey(reqOrUrl);
     const fetchRes = await fetch(
-      `http://localhost:${this.port}/mock_cache/delete`,
+      `http://localhost:${MockCache.port}/mock_cache/delete`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -112,5 +112,8 @@ class MockCache {
     return maxAgeMatch ? parseInt(maxAgeMatch[1]) : 3600;
   }
 }
+
+var mock_cache = new MockCache();
+globalThis.mockCache = mock_cache;
 
 export default MockCache;

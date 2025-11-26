@@ -2,13 +2,31 @@
 
 **ESA CLI 提供多种命令来管理您的阿里云 ESA Functions & Pages。**
 
-**init** - 从各种 Web 框架和模板创建新项目。**
-\*\***dev** - 启动本地开发服务器。** \***\*commit** - 提交代码并保存为新版本。**
-\*\***deploy** - 将您的 Functions & Pages 部署到阿里云。** \***\*deployments** - 管理您的部署和版本。**
-\*\***project** - 管理您的 Functions & Pages 项目。** \***\*site** - 列出您已激活的站点。**
-\*\***domain** - 管理您的 Functions & Pages 的域名绑定。** \***\*route** - 管理您的 Functions & Pages 的路由绑定。**
-\*\***login** - 使用您的阿里云账户授权 ESA CLI。** \***\*logout** - 移除 ESA CLI 访问您账户的授权。**
-\*\***config** - 修改您的本地或全局配置。** \***\*lang** - 设置 CLI 的语言。
+**init** - 从各种 Web 框架和模板创建新项目。
+
+**dev** - 启动本地开发服务器。
+
+**commit** - 提交代码并保存为新版本。
+
+**deploy** - 将您的 Functions & Pages 部署到阿里云。
+
+**deployments** - 管理您的部署和版本。
+
+**project** - 管理您的 Functions & Pages 项目。
+
+**site** - 列出您已激活的站点。
+
+**domain** - 管理您的 Functions & Pages 的域名绑定。
+
+**route** - 管理您的 Functions & Pages 的路由绑定。
+
+**login** - 使用您的阿里云账户授权 ESA CLI。
+
+**logout** - 移除 ESA CLI 访问您账户的授权。
+
+**config** - 修改您的本地或全局配置。
+
+**lang** - 设置 CLI 的语言。
 
 ### 如何运行 ESA CLI 命令
 
@@ -63,25 +81,25 @@ npm run deploy
 esa-cli init [<NAME>] [OPTIONS]
 ```
 
-**NAME\***可选（默认：工作目录名称）\*
+**NAME** _可选（默认：工作目录名称）_
 **Functions & Pages 项目的名称。这既是目录名称，也是生成的 ESA CLI 配置中的 name 属性。**
 
-**--framework, -f\***可选\*
+**--framework, -f** _可选_
 **选择前端框架（react/vue/nextjs...）**
 
-**--language, -l\***可选\*
+**--language, -l** _可选_
 **选择编程语言（typescript/javascript）。可选：typescript | javascript**
 
-**--template, -t\***可选\*
+**--template, -t** _可选_
 **指定模板名称**
 
-**--yes, -y\***可选\*
+**--yes, -y** _可选_
 **对所有交互询问选择"是"（默认 false），模版采用helloworld**
 
-**--git\***可选\*
+**--git** _可选_
 **在项目中初始化 git**
 
-**--deploy\***可选\*
+**--deploy** _可选_
 **初始化完成后自动部署**
 
 ---
@@ -94,22 +112,22 @@ esa-cli init [<NAME>] [OPTIONS]
 esa-cli dev [<ENTRY>] [OPTIONS]
 ```
 
-**ENTRY\***可选\*
+**ENTRY** _可选_
 **函数和Pages入口文件**
 
-**--port, -p\***可选\*
+**--port, -p** _可选_
 **监听端口**
 
-**--minify, -m\***可选\*
+**--minify, -m** _可选_
 **开发模式下压缩代码（默认 false）**
 
-**--refresh-command\***可选\*
+**--refresh-command** _可选_
 **保存自动刷新前执行的命令**
 
-**--local-upstream\***可选\*
+**--local-upstream** _可选_
 **在本地开发中作为源站的主机**
 
-**--debug\***可选\*
+**--debug** _可选_
 **输出调试日志（默认 false）**
 
 ---
@@ -122,19 +140,19 @@ esa-cli dev [<ENTRY>] [OPTIONS]
 esa-cli commit [<ENTRY>] [OPTIONS]
 ```
 
-**ENTRY\***可选\*
+**ENTRY** _可选_
 **函数和Pages入口文件**
 
-**--minify, -m\***可选\*
+**--minify, -m** _可选_
 **提交前压缩代码（默认 false）**
 
-**--assets, -a\***可选\*
+**--assets, -a** _可选_
 **静态资源目录**
 
-**--description, -d\***可选\*
+**--description, -d** _可选_
 **版本/例程描述（跳过交互输入）**
 
-**--name, -n\***可选\*
+**--name, -n** _可选_
 **函数和Pages名称**
 
 ---
@@ -147,25 +165,25 @@ esa-cli commit [<ENTRY>] [OPTIONS]
 esa-cli deploy [<ENTRY>] [OPTIONS]
 ```
 
-**ENTRY\***可选\*
-**函数和Pages入口文件，默认以 **`esa.jsonc`中entry配置为准
+**ENTRY** _可选_
+**函数和Pages入口文件，默认以 `esa.jsonc`中entry配置为准**
 
-**--version, -v\***可选\*
+**--version, -v** _可选_
 **指定要部署的版本（跳过交互选择）**
 
-**--environment, -e\***可选\*
+**--environment, -e** _可选_
 **部署环境。可选：staging | production**
 
-**--name, -n\***可选\*
+**--name, -n** _可选_
 **函数和Pages名称**
 
-**--assets, -a\***可选\*
+**--assets, -a** _可选_
 **静态资源目录（例如：./dist）**
 
-**--description, -d\***可选\*
+**--description, -d** _可选_
 **版本描述**
 
-**--minify, -m\***可选\*
+**--minify, -m** _可选_
 **是否压缩代码**
 
 ---
@@ -190,7 +208,7 @@ esa-cli deployments list
 esa-cli deployments delete [<DEPLOYMENT_ID>...] [OPTIONS]
 ```
 
-**DEPLOYMENT_ID\***必需\*
+**DEPLOYMENT_ID** _必需_
 **要删除的部署版本ID（可一次传多个）**
 
 ---
@@ -215,7 +233,7 @@ esa-cli project list
 esa-cli project delete <PROJECT_NAME> [OPTIONS]
 ```
 
-**PROJECT_NAME\***必需\*
+**PROJECT_NAME** _必需_
 **要删除的函数或Pages名称**
 
 ---
@@ -248,7 +266,7 @@ esa-cli domain add <DOMAIN> [OPTIONS]
 
 **只有在该账号下激活的站点才能绑定**
 
-**DOMAIN\***必需\*
+**DOMAIN** _必需_
 **要绑定的域名（在该账号站点下已激活）**
 
 ### domain list
@@ -267,7 +285,7 @@ esa-cli domain list
 esa-cli domain delete <DOMAIN> [OPTIONS]
 ```
 
-**DOMAIN\***必需\*
+**DOMAIN** _必需_
 **要删除绑定的域名**
 
 ---
@@ -284,23 +302,24 @@ esa-cli domain delete <DOMAIN> [OPTIONS]
 esa-cli route add [<ROUTE>] [<SITE>] [OPTIONS]
 ```
 
-**ROUTE\***可选\*
+**ROUTE** _可选_
 **路由值，例如：example.com/_ 或 _.example.com/\***
 
-**SITE\***可选\*
+**SITE** _可选_
 **站点名称，例如：example.com**
 
 **只有在该账号下激活的站点才能绑定**
 
-**--route, -r\***可选*路由值，例如：example.com/*
+**--route, -r** _可选_
+**路由值，例如：example.com/\***
 
-- **主机名支持以 **`*` 开头表示后缀匹配（如：`*.example.com`）
-- **路径支持以 **`*` 结尾表示前缀匹配（如：`/api/*`）
+- **主机名支持以 `*` 开头表示后缀匹配（如：`*.example.com`）**
+- **路径支持以 `*` 结尾表示前缀匹配（如：`/api/*`）**
 
-**--site, -s\***可选\*
+**--site, -s** _可选_
 **站点名称（需为账户下已激活站点）**
 
-**--alias, -a\***可选\*
+**--alias, -a** _可选_
 **路由名称（别名）例如：apple、orange等**
 
 ### route list
@@ -319,7 +338,7 @@ esa-cli route list
 esa-cli route delete <ROUTE_NAME> [OPTIONS]
 ```
 
-**ROUTE_NAME\***必需\*
+**ROUTE_NAME** _必需_
 **要删除的路由名称**
 
 ---
@@ -332,13 +351,13 @@ esa-cli route delete <ROUTE_NAME> [OPTIONS]
 esa-cli login [OPTIONS]
 ```
 
-**--access-key-id, --ak\***可选\*
+**--access-key-id, --ak** _可选_
 **AccessKey ID (AK)**
 
-**--access-key-secret, --sk\***可选\*
+**--access-key-secret, --sk** _可选_
 **AccessKey Secret (SK)**
 
-**环境变量**从环境变量中读取：
+**环境变量** _从环境变量中读取：_
 
 - **ESA_ACCESS_KEY_ID**
 - **ESA_ACCESS_KEY_SECRET**
@@ -363,10 +382,10 @@ esa-cli logout
 esa-cli config [OPTIONS]
 ```
 
-**--local, -l\***可选\*
+**--local, -l** _可选_
 **编辑本地配置文件（默认 false）**
 
-**--global, -g\***可选\*
+**--global, -g** _可选_
 **编辑全局配置文件（默认 false）**
 
 ---

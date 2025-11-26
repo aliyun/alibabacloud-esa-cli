@@ -15,7 +15,7 @@ ESA CLI is a command-line tool for building with Alibaba Cloud ESA Functions and
 
 ### Prerequisites
 
-- Node.js: 18.x or higher (supports 18.x, 20.x, 22.x)
+- Node.js: 20.x or higher (supports 20.x, 22.x)
 - OS: macOS (x86, Apple Silicon), Linux
 - Recommended to use a Node version manager like Volta or nvm to avoid permission issues and easily switch Node.js versions.
 

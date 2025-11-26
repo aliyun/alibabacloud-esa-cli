@@ -38,12 +38,12 @@ npx esa-cli <COMMAND> <SUBCOMMAND> [PARAMETERS] [OPTIONS]
 
 ```
 {
-  ...
-  "scripts": {
-    "deploy": "esa-cli deploy",
-    "dev": "esa-cli dev"
+  ...
+  "scripts": {
+    "deploy": "esa-cli deploy",
+    "dev": "esa-cli dev"
   }
-  ...
+  ...
 }
 ```
 
@@ -338,14 +338,10 @@ esa-cli login [OPTIONS]
 **--access-key-secret, --sk\***可选\*
 **AccessKey Secret (SK)**
 
-**--endpoint, -e\***可选\*
-**API 端点 URL 例子: esa.cn-hangzhou.aliyuncs.com**
-
 **环境变量**从环境变量中读取：
 
 - **ESA_ACCESS_KEY_ID**
 - **ESA_ACCESS_KEY_SECRET**
-- **ESA_ENDPOINT**
 
 ---
 

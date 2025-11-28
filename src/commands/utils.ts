@@ -116,6 +116,13 @@ export async function checkIsLoginSuccess(): Promise<boolean> {
         },
         endpoint: result.endpoint
       });
+      api.updateConfig({
+        auth: {
+          accessKeyId,
+          accessKeySecret
+        },
+        endpoint: result.endpoint
+      });
       return true;
     }
   }

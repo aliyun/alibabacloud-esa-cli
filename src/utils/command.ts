@@ -1,7 +1,10 @@
 import { spawn } from 'child_process';
+import { platform } from 'os';
 
 import { cancel, spinner } from '@clack/prompts';
 import chalk from 'chalk';
+
+export const isWindows = platform() === 'win32';
 
 export interface ExecCommandOptions {
   startText?: string;
@@ -16,6 +19,7 @@ export interface ExecCommandOptions {
   transformOutput?: (output: string) => string; // Output transformation
   fallbackOutput?: (error: unknown) => string; // Fallback output on error
   errorMessage?: string; // Prompt message when cancelled
+  shell?: boolean; // Use shell to execute command (auto-selects cmd.exe on Windows, /bin/sh on Unix)
 }
 
 /**
@@ -37,7 +41,8 @@ export const execCommand = async (
     cwd,
     transformOutput,
     fallbackOutput,
-    errorMessage
+    errorMessage,
+    shell = false
   } = options;
 
   // Determine stdio mode based on options
@@ -83,7 +88,7 @@ export const execCommand = async (
         stdio,
         cwd,
         env: { ...process.env, ...env },
-        shell: false
+        shell
       });
 
       if (stdio === 'pipe') {
@@ -181,6 +186,26 @@ export const execCommand = async (
       cancel(errorMessage);
     }
     return { success: false, stdout, stderr };
+  }
+};
+
+/**
+ * Execute a command with login shell on Unix (to load ~/.profile, ~/.zshrc etc.)
+ * On Windows, directly execute the command since login shell is not typically needed.
+ *
+ * @param commandStr - The full command string to execute
+ * @param options - ExecCommandOptions
+ */
+export const execWithLoginShell = async (
+  commandStr: string,
+  options: ExecCommandOptions = {}
+): Promise<{ success: boolean; stdout: string; stderr: string }> => {
+  if (isWindows) {
+    // Windows: use cmd /c to execute the command
+    return execCommand(['cmd', '/c', commandStr], options);
+  } else {
+    // Unix: use login shell to ensure PATH is properly set (nvm, fnm, etc.)
+    return execCommand(['sh', '-lc', commandStr], options);
   }
 };
 

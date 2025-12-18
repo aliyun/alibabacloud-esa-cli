@@ -6,6 +6,7 @@ import t from '../i18n/index.js';
 import { getApiConfig } from '../utils/fileUtils/index.js';
 import { CliConfig } from '../utils/fileUtils/interface.js';
 
+import { CLI_USER_AGENT } from './constants.js';
 import {
   PublishRoutineCodeVersionReq,
   GetMatchSiteReq,
@@ -56,7 +57,8 @@ export class ApiService {
     let apiConfig = new $OpenApi.Config({
       accessKeyId: cliConfig.auth?.accessKeyId,
       accessKeySecret: cliConfig.auth?.accessKeySecret,
-      endpoint: cliConfig.endpoint
+      endpoint: cliConfig.endpoint,
+      userAgent: CLI_USER_AGENT
     });
 
     this.client = new $OpenApi.default.default(apiConfig);
@@ -74,7 +76,8 @@ export class ApiService {
     let apiConfig = new $OpenApi.Config({
       accessKeyId: newConfig.auth?.accessKeyId,
       accessKeySecret: newConfig.auth?.accessKeySecret,
-      endpoint: newConfig.endpoint
+      endpoint: newConfig.endpoint,
+      userAgent: CLI_USER_AGENT
     });
     this.client = new $OpenApi.default.default(apiConfig);
   }

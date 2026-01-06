@@ -38,9 +38,12 @@ const renameMock = {
             }
             if (
               path.parentPath?.type === 'MemberExpression' &&
-              path.key === 'object'
+              path.key === 'object' &&
+              path.node.name === 'cache'
             ) {
-              path.node.name = replacements[name as ReplacementKeys];
+              path.node.name = 'mockCache';
+            } else if (path.node.name === 'EdgeKV') {
+              path.node.name = 'mockKV';
             }
           }
         });

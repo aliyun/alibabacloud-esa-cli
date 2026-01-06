@@ -33,7 +33,13 @@ const renameMock = {
         traverse(ast, {
           Identifier(path) {
             const name = path.node.name;
-            if (replacements.hasOwnProperty(name)) {
+            if (!replacements.hasOwnProperty(name)) {
+              return;
+            }
+            if (
+              path.parentPath?.type === 'MemberExpression' &&
+              path.key === 'object'
+            ) {
               path.node.name = replacements[name as ReplacementKeys];
             }
           }

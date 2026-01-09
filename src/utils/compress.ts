@@ -32,7 +32,8 @@ const compress = async (
   scriptEntry?: string,
   assetsDir?: string,
   minify = false,
-  projectPath?: string
+  projectPath?: string,
+  noBundle = false
 ): Promise<{
   zip: AdmZip;
   fileList: string[];
@@ -129,9 +130,15 @@ const compress = async (
     routineType === EDGE_ROUTINE_TYPE.JS_AND_ASSETS
   ) {
     const buildEntry = path.resolve(projectPath ?? '', entry ?? '');
-    await prodBuild(minify, buildEntry, projectPath);
-    code = readEdgeRoutineFile(projectPath);
+    if (noBundle) {
+      // Skip esbuild bundling, use original entry source directly
+      code = fs.readFileSync(buildEntry, 'utf-8');
+    } else {
+      await prodBuild(minify, buildEntry, projectPath);
+      code = readEdgeRoutineFile(projectPath);
+    }
     zip.addFile(`routine/index.js`, Buffer.from(code || ''));
+
     fileList.push('routine/index.js');
     const relativeEntry = path
       .relative(projectPath ?? '', buildEntry)

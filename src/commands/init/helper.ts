@@ -12,7 +12,7 @@ import { SelectItem } from '../../components/mutiLevelSelect.js';
 import t from '../../i18n/index.js';
 import logger from '../../libs/logger.js';
 import Template from '../../libs/templates/index.js';
-import { execCommand } from '../../utils/command.js';
+import { execCommand, execWithLoginShell } from '../../utils/command.js';
 import { getDirName } from '../../utils/fileUtils/base.js';
 import {
   generateConfigFile,
@@ -474,7 +474,7 @@ export const createProject = async (initParams: initParams) => {
     const extraParams = frameworkConfig.params || '';
     const full =
       `${command} ${initParams.name} ${templateFlag} ${extraParams}`.trim();
-    const res = await execCommand(['sh', '-lc', full], {
+    const res = await execWithLoginShell(full, {
       interactive: true,
       startText: `Starting to execute framework command ${chalk.gray(full)}`,
       doneText: `Framework command executed  ${chalk.gray(full)}`

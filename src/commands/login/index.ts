@@ -7,14 +7,13 @@ import chalk from 'chalk';
 import { CommandModule, ArgumentsCamelCase } from 'yargs';
 
 import t from '../../i18n/index.js';
-import { ApiService } from '../../libs/apiService.js';
 import logger from '../../libs/logger.js';
 import {
-  getApiConfig,
   getCliConfig,
   updateCliConfigFile,
   generateDefaultConfig
 } from '../../utils/fileUtils/index.js';
+import { validateCredentials } from '../../utils/validateCredentials.js';
 
 const login: CommandModule = {
   command: 'login',
@@ -30,11 +29,6 @@ const login: CommandModule = {
         alias: 'sk',
         describe: t('login_option_access_key_secret')?.d('AccessKey Secret'),
         type: 'string'
-      })
-      .option('endpoint', {
-        alias: 'e',
-        describe: t('login_option_endpoint')?.d('Endpoint'),
-        type: 'string'
       });
   },
   handler: async (argv: ArgumentsCamelCase) => {
@@ -46,33 +40,44 @@ export default login;
 
 export async function handleLogin(argv?: ArgumentsCamelCase): Promise<void> {
   generateDefaultConfig();
-
-  const accessKeyId = argv?.['access-key-id'];
-  const accessKeySecret = argv?.['access-key-secret'];
-  const endpoint =
-    (argv?.['endpoint'] as string | undefined) || process.env.ESA_ENDPOINT;
-  if (accessKeyId && accessKeySecret) {
-    await handleLoginWithAKSK(
-      accessKeyId as string,
-      accessKeySecret as string,
-      endpoint
-    );
-    return;
-  }
-
   if (process.env.ESA_ACCESS_KEY_ID && process.env.ESA_ACCESS_KEY_SECRET) {
-    logger.log(
-      `🔑 ${t('login_get_from_env').d(`Get AccessKey ID and AccessKey Secret from environment variables.`)}`
-    );
-
-    await handleLoginWithAKSK(
+    const result = await validateCredentials(
       process.env.ESA_ACCESS_KEY_ID,
-      process.env.ESA_ACCESS_KEY_SECRET,
-      endpoint
+      process.env.ESA_ACCESS_KEY_SECRET
     );
+    if (result.valid) {
+      logger.log(
+        t('login_get_credentials_from_environment_variables').d(
+          'Get credentials from environment variables'
+        )
+      );
+      logger.success(t('login_success').d('Login success!'));
+    } else {
+      logger.error(result.message || 'Login failed');
+    }
     return;
   }
 
+  const accessKeyId = argv?.['access-key-id'] as string;
+  const accessKeySecret = argv?.['access-key-secret'] as string;
+  if (accessKeyId && accessKeySecret) {
+    const result = await validateCredentials(accessKeyId, accessKeySecret);
+    if (result.valid) {
+      logger.success(t('login_success').d('Login success!'));
+      updateCliConfigFile({
+        auth: {
+          accessKeyId,
+          accessKeySecret
+        },
+        ...(result.endpoint ? { endpoint: result.endpoint } : {})
+      });
+    } else {
+      logger.error(result.message || 'Login failed');
+    }
+    return;
+  }
+
+  // interactive login
   const cliConfig = getCliConfig();
   if (!cliConfig) return;
   if (
@@ -81,9 +86,11 @@ export async function handleLogin(argv?: ArgumentsCamelCase): Promise<void> {
     cliConfig.auth.accessKeyId &&
     cliConfig.auth.accessKeySecret
   ) {
-    const service = await ApiService.getInstance();
-    const loginStatus = await service.checkLogin();
-    if (loginStatus.success) {
+    const loginStatus = await validateCredentials(
+      cliConfig.auth.accessKeyId,
+      cliConfig.auth.accessKeySecret
+    );
+    if (loginStatus.valid) {
       logger.warn(t('login_already').d('You are already logged in.'));
       const selected = (await clackSelect({
         message: t('login_existing_credentials_message').d(
@@ -102,56 +109,18 @@ export async function handleLogin(argv?: ArgumentsCamelCase): Promise<void> {
       if (isCancel(selected) || selected === 'exit') {
         return;
       }
-      await getUserInputAuthInfo(endpoint);
     } else {
       logger.error(
         t('pre_login_failed').d(
           'The previously entered Access Key ID (AK) and Secret Access Key (SK) are incorrect. Please enter them again.'
         )
       );
-      logger.log(`${t('login_logging').d('Logging in')}...`);
-      await getUserInputAuthInfo(endpoint);
     }
-  } else {
-    logger.log(`${t('login_logging').d('Logging in')}...`);
-    await getUserInputAuthInfo(endpoint);
   }
+  await interactiveLogin();
 }
 
-async function handleLoginWithAKSK(
-  accessKeyId: string,
-  accessKeySecret: string,
-  endpoint?: string
-): Promise<void> {
-  let apiConfig = getApiConfig();
-  apiConfig.auth = {
-    accessKeyId,
-    accessKeySecret
-  };
-  if (endpoint) {
-    apiConfig.endpoint = endpoint;
-  }
-  try {
-    await updateCliConfigFile({
-      auth: apiConfig.auth,
-      ...(endpoint ? { endpoint } : {})
-    });
-    const service = await ApiService.getInstance();
-    service.updateConfig(apiConfig);
-    const loginStatus = await service.checkLogin();
-    if (loginStatus.success) {
-      logger.success(t('login_success').d('Login success!'));
-    } else {
-      logger.error(loginStatus.message || 'Login failed');
-    }
-  } catch (error) {
-    logger.error(
-      t('login_failed').d('An error occurred while trying to log in.')
-    );
-  }
-}
-
-export async function getUserInputAuthInfo(endpoint?: string): Promise<void> {
+export async function interactiveLogin(): Promise<void> {
   const styledUrl = chalk.underline.blue(
     'https://ram.console.aliyun.com/manage/ak'
   );
@@ -165,33 +134,18 @@ export async function getUserInputAuthInfo(endpoint?: string): Promise<void> {
     message: 'AccessKey Secret:'
   })) as string;
 
-  let apiConfig = getApiConfig();
+  const loginStatus = await validateCredentials(accessKeyId, accessKeySecret);
 
-  apiConfig.auth = {
-    accessKeyId,
-    accessKeySecret
-  };
-  if (endpoint) {
-    apiConfig.endpoint = endpoint;
-  }
-
-  try {
+  if (loginStatus.valid) {
     await updateCliConfigFile({
-      auth: apiConfig.auth,
-      ...(endpoint ? { endpoint } : {})
+      auth: {
+        accessKeyId,
+        accessKeySecret
+      },
+      ...(loginStatus.endpoint ? { endpoint: loginStatus.endpoint } : {})
     });
-    const service = await ApiService.getInstance();
-    service.updateConfig(apiConfig);
-    const loginStatus = await service.checkLogin();
-
-    if (loginStatus.success) {
-      logger.success(t('login_success').d('Login success!'));
-    } else {
-      logger.error(loginStatus.message || 'Login failed');
-    }
-  } catch (error) {
-    logger.error(
-      t('login_failed').d('An error occurred while trying to log in.')
-    );
+    logger.success(t('login_success').d('Login success!'));
+  } else {
+    logger.error(loginStatus.message || 'Login failed');
   }
 }

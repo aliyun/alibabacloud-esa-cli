@@ -16,6 +16,7 @@ import routeCommand from './commands/route/index.js';
 import routine from './commands/routine/index.js';
 import site from './commands/site/index.js';
 import t from './i18n/index.js';
+import logger from './libs/logger.js';
 import { handleCheckVersion, checkCLIVersion } from './utils/checkVersion.js';
 import { getCliConfig } from './utils/fileUtils/index.js';
 
@@ -33,6 +34,9 @@ const main = async () => {
     .wrap(null)
     .help()
     .middleware(async (argv) => {
+      if (argv.debug) {
+        logger.setLogLevel('debug');
+      }
       try {
         // Pass current command (first positional) so version check can decide prompting behavior
         await checkCLIVersion(
@@ -53,6 +57,11 @@ const main = async () => {
     .options('help', {
       describe: t('main_help_describe').d('Show help'),
       alias: 'h'
+    })
+    .options('debug', {
+      describe: t('dev_option_debugger').d('Output debug logs'),
+      type: 'boolean',
+      default: false
     });
 
   esa.command(

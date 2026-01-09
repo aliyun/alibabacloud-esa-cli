@@ -5,6 +5,7 @@ import * as $Util from '@alicloud/tea-util';
 import { getApiConfig } from '../utils/fileUtils/index.js';
 import { CliConfig } from '../utils/fileUtils/interface.js';
 
+import { CLI_USER_AGENT } from './constants.js';
 import {
   ApiError,
   ApiMethod,
@@ -27,7 +28,8 @@ class Client {
     const apiConfig = new $OpenApi.Config({
       accessKeyId: config.auth?.accessKeyId,
       accessKeySecret: config.auth?.accessKeySecret,
-      endpoint: config.endpoint
+      endpoint: config.endpoint,
+      userAgent: CLI_USER_AGENT
     });
     return new ESA.default(apiConfig as any);
   }

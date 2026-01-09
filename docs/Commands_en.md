@@ -345,15 +345,11 @@ AccessKey ID (AK)
 **--access-key-secret, --sk** _optional_  
 AccessKey Secret (SK)
 
-**--endpoint, -e** _optional_  
-API endpoint URL Example: esa.cn-hangzhou.aliyuncs.com
-
 **Environment Variables**  
 Read from environment variables:
 
 - **ESA_ACCESS_KEY_ID**
 - **ESA_ACCESS_KEY_SECRET**
-- **ESA_ENDPOINT**
 
 ---
 

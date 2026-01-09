@@ -39,6 +39,11 @@ const commit: CommandModule = {
         alias: 'n',
         describe: t('commit_option_name').d('Functions& Pages name'),
         type: 'string'
+      })
+      .option('bundle', {
+        describe: 'Bundle with esbuild (use --no-bundle to skip)',
+        type: 'boolean',
+        default: true
       });
   },
   handler: async (argv: ArgumentsCamelCase) => {
@@ -73,7 +78,9 @@ export async function handleCommit(argv: ArgumentsCamelCase) {
     description,
     argv?.entry as string,
     argv?.assets as string,
-    argv?.minify as boolean
+    argv?.minify as boolean,
+    undefined,
+    argv.bundle === false
   );
   const { isSuccess } = res || {};
   if (!isSuccess) {

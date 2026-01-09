@@ -12,11 +12,13 @@ import { isInstalledGit } from '../libs/git/index.js';
 import {
   CreateRoutineRelatedRecordReq,
   GetMatchSiteReq,
-  ListSitesReq
+  ListSitesReq,
+  ListSitesRes
 } from '../libs/interface.js';
 import logger from '../libs/logger.js';
 import { getRoot } from '../utils/fileUtils/base.js';
 import { getCliConfig, projectConfigPath } from '../utils/fileUtils/index.js';
+import { validateCredentials } from '../utils/validateCredentials.js';
 
 import { getRoutineDetails } from './common/utils.js';
 
@@ -85,90 +87,53 @@ export const bindRoutineWithDomain = async (name: string, domain: string) => {
   }
 };
 
-export function validName(name: any): boolean {
+export function validName(name: string): boolean {
   return /^[a-zA-Z0-9-_]+$/.test(name);
 }
 
 // Validate if domain is valid
-export function validDomain(domain: any): boolean {
+export function validDomain(domain: string): boolean {
   return /^(?:[a-z0-9-](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/.test(
     domain
   );
 }
 
 export async function checkIsLoginSuccess(): Promise<boolean> {
-  let accessKeyId = process.env.ESA_ACCESS_KEY_ID;
-  let accessKeySecret = process.env.ESA_ACCESS_KEY_SECRET;
-  let endpoint = process.env.ESA_ENDPOINT;
   const cliConfig = getCliConfig();
-  if (!accessKeyId || !accessKeySecret) {
-    accessKeyId = cliConfig?.auth?.accessKeyId;
-    accessKeySecret = cliConfig?.auth?.accessKeySecret;
-  }
+  let accessKeyId =
+    process.env.ESA_ACCESS_KEY_ID || cliConfig?.auth?.accessKeyId;
+  let accessKeySecret =
+    process.env.ESA_ACCESS_KEY_SECRET || cliConfig?.auth?.accessKeySecret;
 
-  if (!endpoint) {
-    endpoint = cliConfig?.endpoint;
+  if (accessKeyId && accessKeySecret) {
+    const result = await validateCredentials(accessKeyId, accessKeySecret);
+    const server = await ApiService.getInstance();
+    if (result.valid) {
+      server.updateConfig({
+        auth: {
+          accessKeyId,
+          accessKeySecret
+        },
+        endpoint: result.endpoint
+      });
+      api.updateConfig({
+        auth: {
+          accessKeyId,
+          accessKeySecret
+        },
+        endpoint: result.endpoint
+      });
+      return true;
+    }
   }
 
   const namedCommand = chalk.green('esa-cli login');
-  if (!accessKeyId || !accessKeySecret) {
-    logger.log(
-      `❌ ${t('utils_login_error').d('Maybe you are not logged in yet.')}`
-    );
-    logger.log(
-      `🔔 ${t('utils_login_error_config', { namedCommand }).d(`Please run command to login: ${namedCommand}`)}`
-    );
-    return false;
-  }
-
-  return await validateLoginCredentials(
-    accessKeyId,
-    accessKeySecret,
-    endpoint,
-    namedCommand
+  logger.log(
+    `❌ ${t('utils_login_error').d('Maybe you are not logged in yet.')}`
   );
-}
-
-/**
- * 验证登录凭据的公共函数
- * @param accessKeyId AccessKey ID
- * @param accessKeySecret AccessKey Secret
- * @param namedCommand 命令名称（用于错误提示）
- * @param showError 是否显示错误信息
- * @returns 登录是否成功
- */
-export async function validateLoginCredentials(
-  accessKeyId: string,
-  accessKeySecret: string,
-  endpoint?: string,
-  namedCommand?: string,
-  showError = true
-): Promise<boolean> {
-  const server = await ApiService.getInstance();
-  server.updateConfig({
-    auth: {
-      accessKeyId,
-      accessKeySecret
-    },
-    endpoint: endpoint
-  });
-  const res = await server.checkLogin();
-
-  if (res.success) {
-    return true;
-  }
-
-  if (showError) {
-    logger.log(res.message || '');
-    logger.log(
-      `❌ ${t('utils_login_error').d('Maybe you are not logged in yet.')}`
-    );
-    if (namedCommand) {
-      logger.log(
-        `🔔 ${t('utils_login_error_config', { namedCommand }).d(`Please run command to login: ${namedCommand}`)}`
-      );
-    }
-  }
+  logger.log(
+    `🔔 ${t('utils_login_error_config', { namedCommand }).d(`Please run command to login: ${namedCommand}`)}`
+  );
   return false;
 }
 
@@ -200,10 +165,10 @@ export const getAllSites = async (): Promise<Option[]> => {
       break;
     }
   }
-  return res.map((site: any) => {
+  return res.map((site: ListSitesRes['data']['Sites'][0]) => {
     return {
       label: site.SiteName,
-      value: site.SiteId
+      value: site.SiteId.toString()
     };
   });
 };

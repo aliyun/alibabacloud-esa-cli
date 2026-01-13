@@ -1,6 +1,6 @@
 {
   "name": "esa-cli",
-  "version": "1.0.4-beta.3",
+  "version": "1.0.4",
   "description": "A CLI for operating Alibaba Cloud ESA Functions and Pages.",
   "main": "bin/enter.cjs",
   "type": "module",

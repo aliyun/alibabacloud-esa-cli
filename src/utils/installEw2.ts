@@ -1,5 +1,5 @@
 import { execSync } from 'child_process';
-import https from 'https';
+import http from 'http';
 import os from 'os';
 import path from 'path';
 import util from 'util';
@@ -72,22 +72,19 @@ export async function preCheckEw2(): Promise<boolean> {
 
 export function fetchRemoteManifest(): Promise<Ew2Manifest> {
   return new Promise((resolve, reject) => {
-    https
-      .get(
-        'https://edgestar-cn.oss-cn-beijing.aliyuncs.com/ew2/manifest.json',
-        (res) => {
-          let data = '';
-          res.on('data', (chunk) => (data += chunk));
-          res.on('end', () => {
-            try {
-              const json = JSON.parse(data);
-              resolve(json);
-            } catch (err) {
-              reject(null);
-            }
-          });
-        }
-      )
+    http
+      .get('http://esa-runtime.myalicdn.com/ew2/manifest.json', (res) => {
+        let data = '';
+        res.on('data', (chunk) => (data += chunk));
+        res.on('end', () => {
+          try {
+            const json = JSON.parse(data);
+            resolve(json);
+          } catch (err) {
+            reject(null);
+          }
+        });
+      })
       .on('error', () => reject);
   });
 }

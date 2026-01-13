@@ -33,8 +33,17 @@ const renameMock = {
         traverse(ast, {
           Identifier(path) {
             const name = path.node.name;
-            if (replacements.hasOwnProperty(name)) {
-              path.node.name = replacements[name as ReplacementKeys];
+            if (!replacements.hasOwnProperty(name)) {
+              return;
+            }
+            if (
+              path.parentPath?.type === 'MemberExpression' &&
+              path.key === 'object' &&
+              path.node.name === 'cache'
+            ) {
+              path.node.name = 'mockCache';
+            } else if (path.node.name === 'EdgeKV') {
+              path.node.name = 'mockKV';
             }
           }
         });

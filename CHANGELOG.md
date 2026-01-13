@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.0.4] - 2026-01-13
+
+### Fixed
+
+- Fix mock Cache replacement bug
+
 ## [1.0.3] - 2025-11-28
 
 ### Fixed

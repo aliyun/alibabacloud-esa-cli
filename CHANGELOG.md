@@ -1,10 +1,17 @@
 # Changelog
 
-## [1.0.4] - 2026-01-13
+## [1.0.5] - 2026-01-13
 
 ### Fixed
 
 - Fix mock Cache replacement bug
+
+## [1.0.4] - 2026-01-09
+
+### Added
+
+- Support skip bundle
+- Detect user endpoint and remove endpoint param
 
 ## [1.0.3] - 2025-11-28
 

@@ -1,16 +1,43 @@
 # Changelog
 
+## [1.0.6] - 2026-01-20
+
+### Added
+
+- Update template version to latest
+- Support to skip install esa-cli when init a project
+
+### Fixed
+
+- Fix init command error in Windows
+
 ## [1.0.5] - 2026-01-13
 
 ### Fixed
 
 - Fix mock KV storage issues in development environment
+## [1.0.4] - 2026-01-20
+
+### Added
+
+- CLI user-agent for API requests
+
+### Fixed
+
+- Resolve npm execution issues on Windows by using shell mode
+- Fix spawn bug in Windows
+
+### Changed
+
+- Use rimraf for cross-platform build script compatibility
 
 ## [1.0.3] - 2025-11-28
 
 ### Fixed
 
 - Fix mock KV storage issues in development environment
+- Fix mock cache error in the top of workers code
+- Fix API update config bug
 
 ## [1.0.2] - 2025-11-19
 

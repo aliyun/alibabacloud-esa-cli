@@ -19,6 +19,7 @@
     "dev": "tsc --watch",
     "eslint": "eslint src/ --ext .js,.jsx,.ts,.tsx",
     "prepare": "husky install",
+    "prepublishOnly": "npm run build",
     "lint-staged": "lint-staged",
     "test": "vitest --coverage",
     "coverage": "vitest --coverage",

@@ -15,22 +15,14 @@
 
 ### Fixed
 
-- Fix mock KV storage issues in development environment
+- Fix mock Cache replacement bug
 
-## [1.0.4] - 2026-01-20
+## [1.0.4] - 2026-01-09
 
 ### Added
 
-- CLI user-agent for API requests
-
-### Fixed
-
-- Resolve npm execution issues on Windows by using shell mode
-- Fix spawn bug in Windows
-
-### Changed
-
-- Use rimraf for cross-platform build script compatibility
+- Support skip bundle
+- Detect user endpoint and remove endpoint param
 
 ## [1.0.3] - 2025-11-28
 

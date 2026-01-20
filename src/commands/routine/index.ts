@@ -8,8 +8,8 @@ import routineList from './list.js';
 let yargsIns: Argv;
 const routineCommand: CommandModule<{}> = {
   command: 'project [script]',
-  aliases: ['routine'],
-  describe: `🧭 ${t('routine_describe').d('Manage your project')}`,
+  aliases: ['Functions & Pages'],
+  describe: `🧭 ${t('routine_describe').d('Manage your Functions & Pages project')}`,
   builder: (yargs) => {
     yargsIns = yargs;
     return yargs

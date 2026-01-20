@@ -1,4 +1,5 @@
 import { execSync } from 'child_process';
+import os from 'os';
 import path from 'path';
 import { exit } from 'process';
 
@@ -148,9 +149,8 @@ export async function checkAndUpdatePackage(
       spinner.text = t('template_updating').d(
         'Updating templates to latest...'
       );
-      execSync(`rm -rf node_modules/${packageName}`, {
-        cwd: packageJsonPath
-      });
+      // Cross-platform: use fs-extra.removeSync instead of rm -rf
+      fs.removeSync(path.join(packageJsonPath, 'node_modules', packageName));
       execSync(`npm install ${packageName}@latest`, {
         cwd: packageJsonPath,
         stdio: 'inherit'
@@ -196,12 +196,9 @@ export async function checkAndUpdatePackage(
         spinner.start(
           t('template_updating').d('Updating templates to latest...')
         );
-        execSync(`rm -rf node_modules/${packageName}`, {
-          cwd: packageJsonPath
-        });
-        execSync(`rm -rf package-lock.json`, {
-          cwd: packageJsonPath
-        });
+        // Cross-platform: use fs-extra.removeSync instead of rm -rf
+        fs.removeSync(path.join(packageJsonPath, 'node_modules', packageName));
+        fs.removeSync(path.join(packageJsonPath, 'package-lock.json'));
         execSync(`npm install ${packageName}@latest`, {
           cwd: packageJsonPath,
           stdio: 'inherit'
@@ -277,6 +274,7 @@ export function getInitParamsFromArgv(argv: ArgumentsCamelCase): initParams {
     params.framework = undefined;
     params.language = undefined;
     params.yes = true;
+    params.installEsaCli = false;
   }
 
   if (typeof a.name === 'string') params.name = a.name;
@@ -298,6 +296,8 @@ export function getInitParamsFromArgv(argv: ArgumentsCamelCase): initParams {
   }
   if (typeof a.git === 'boolean') params.git = Boolean(a.git);
   if (typeof a.deploy === 'boolean') params.deploy = Boolean(a.deploy);
+  if (typeof a['install-esa-cli'] === 'boolean')
+    params.installEsaCli = Boolean(a['install-esa-cli']);
 
   return params;
 }
@@ -593,6 +593,20 @@ export const applyFileEdits = async (
 };
 
 export const installESACli = async (initParams: initParams) => {
+  if (!initParams.installEsaCli) {
+    const install = (await promptParameter<boolean>({
+      type: 'confirm',
+      question: 'Do you want to install esa-cli as a dev dependency?',
+      label: 'Install ESA CLI',
+      defaultValue: false
+    })) as boolean;
+    initParams.installEsaCli = install;
+  }
+
+  if (!initParams.installEsaCli) {
+    return;
+  }
+
   const targetPath = path.join(process.cwd(), initParams.name);
   const res = await execCommand(['npm', 'install', '-D', 'esa-cli'], {
     cwd: targetPath,
@@ -859,6 +873,9 @@ export async function initializeProject(
 
   const targetPath = path.join(process.cwd(), name);
   if (fs.existsSync(targetPath)) {
+    // Cross-platform delete command hint
+    const isWindows = os.platform() === 'win32';
+    const deleteCmd = isWindows ? `rmdir /s /q "${name}"` : `rm -rf "${name}"`;
     logger.block();
     logger.tree([
       `${chalk.bgRed(' ERROR ')} ${chalk.bold.red(
@@ -871,7 +888,7 @@ export async function initializeProject(
       chalk.gray(t('try').d('Try one of the following:')),
       `- ${chalk.white(t('try_diff_name').d('Choose a different project name'))}`,
       `- ${chalk.white(t('try_remove').d('Remove the directory:'))} ${chalk.yellow(
-        `rm -rf "${name}”`
+        deleteCmd
       )}`,
       `- ${chalk.white(
         t('try_another_dir').d('Run the command in another directory')

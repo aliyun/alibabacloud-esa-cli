@@ -1,4 +1,5 @@
 import fs from 'fs';
+import os from 'os';
 
 import spawn from 'cross-spawn';
 import { CommandModule, ArgumentsCamelCase, Argv } from 'yargs';
@@ -7,8 +8,20 @@ import t from '../i18n/index.js';
 import logger from '../libs/logger.js';
 import { projectConfigPath, cliConfigPath } from '../utils/fileUtils/index.js';
 
+const getDefaultEditor = (): string => {
+  // Use environment variable if set
+  if (process.env.EDITOR) {
+    return process.env.EDITOR;
+  }
+  // Platform-specific default editors
+  if (os.platform() === 'win32') {
+    return 'notepad';
+  }
+  return 'vi';
+};
+
 const editConfigFile = (configPath: string) => {
-  const editor = process.env.EDITOR || 'vi';
+  const editor = getDefaultEditor();
   spawn(editor, [configPath], {
     stdio: 'inherit'
   });

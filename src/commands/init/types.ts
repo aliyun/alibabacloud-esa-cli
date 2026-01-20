@@ -12,6 +12,7 @@ export interface initParams {
   category?: 'framework' | 'template';
   yes?: boolean;
   skip?: boolean;
+  installEsaCli?: boolean;
 }
 
 export type FileEdit = {

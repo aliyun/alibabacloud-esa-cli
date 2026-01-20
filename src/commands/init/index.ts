@@ -66,6 +66,11 @@ const init: CommandModule = {
         alias: 'd',
         describe: 'Deploy after initialization',
         type: 'boolean'
+      })
+      .option('install-esa-cli', {
+        describe: 'Install esa-cli as a dev dependency',
+        type: 'boolean',
+        default: false
       });
   },
   handler: async (argv: ArgumentsCamelCase) => {

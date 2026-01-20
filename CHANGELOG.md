@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.0.5] - 2026-01-13
+
+### Fixed
+
+- Fix mock KV storage issues in development environment
+
 ## [1.0.3] - 2025-11-28
 
 ### Fixed

@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.0.6] - 2026-01-20
+
+### Added
+
+- Update template version to latest
+- Support to skip install esa-cli when init a project
+
+### Fixed
+
+- Fix init command error in Windows
+
 ## [1.0.5] - 2026-01-13
 
 ### Fixed
@@ -18,6 +29,8 @@
 ### Fixed
 
 - Fix mock KV storage issues in development environment
+- Fix mock cache error in the top of workers code
+- Fix API update config bug
 
 ## [1.0.2] - 2025-11-19
 

@@ -236,9 +236,7 @@ const dev: CommandModule = {
         if (path.includes('.dev')) {
           if (userFileRepacking) {
             userFileRepacking = false;
-            return;
           }
-          worker.restart(devPack);
           return;
         }
         logger.info('Dev repack');

@@ -468,7 +468,7 @@
     "zh_CN": "用这个命令登录：${namedCommand}"
   },
   "routine_describe": {
-    "en": "Manage your project",
+    "en": "Manage your Functions & Pages project",
     "zh_CN": "管理函数和Pages"
   },
   "route_input": {

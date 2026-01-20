@@ -42,7 +42,7 @@ export const execCommand = async (
     transformOutput,
     fallbackOutput,
     errorMessage,
-    shell = false
+    shell = isWindows
   } = options;
 
   // Determine stdio mode based on options

@@ -16,6 +16,7 @@
 ### Fixed
 
 - Fix mock KV storage issues in development environment
+
 ## [1.0.4] - 2026-01-20
 
 ### Added

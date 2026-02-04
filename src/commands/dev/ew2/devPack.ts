@@ -43,7 +43,10 @@ conf_path = "${erConfPath}"
       allow_node_module: true
     },
     ContextOptions: {
-      vm_max_cpu_time: 100
+      vm_max_cpu_time: 100,
+      js_fetch_request_max_size: 16,
+      js_cache_request_max_size: 16,
+      js_kv_request_max_size: 16
     },
     ServiceOptionsMd5: '1',
     InstanceOptionsMd5: '2',

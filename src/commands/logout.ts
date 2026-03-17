@@ -24,10 +24,17 @@ export async function handleLogout() {
   }
 
   if (!cliConfig.auth) {
-    cliConfig.auth = { accessKeyId: '', accessKeySecret: '' };
+    cliConfig.auth = {
+      accessKeyId: '',
+      accessKeySecret: '',
+      securityToken: ''
+    };
   } else {
     cliConfig.auth.accessKeyId = '';
     cliConfig.auth.accessKeySecret = '';
+    if ('securityToken' in cliConfig.auth) {
+      cliConfig.auth.securityToken = '';
+    }
   }
 
   await updateCliConfigFile(cliConfig);

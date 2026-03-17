@@ -104,23 +104,28 @@ export async function checkIsLoginSuccess(): Promise<boolean> {
     process.env.ESA_ACCESS_KEY_ID || cliConfig?.auth?.accessKeyId;
   let accessKeySecret =
     process.env.ESA_ACCESS_KEY_SECRET || cliConfig?.auth?.accessKeySecret;
+  const securityToken =
+    process.env.ESA_SECURITY_TOKEN || cliConfig?.auth?.securityToken;
 
   if (accessKeyId && accessKeySecret) {
-    const result = await validateCredentials(accessKeyId, accessKeySecret);
+    const result = await validateCredentials(
+      accessKeyId,
+      accessKeySecret,
+      securityToken
+    );
     const server = await ApiService.getInstance();
     if (result.valid) {
+      const auth: { accessKeyId: string; accessKeySecret: string; securityToken?: string } = {
+        accessKeyId,
+        accessKeySecret
+      };
+      if (securityToken) auth.securityToken = securityToken;
       server.updateConfig({
-        auth: {
-          accessKeyId,
-          accessKeySecret
-        },
+        auth,
         endpoint: result.endpoint
       });
       api.updateConfig({
-        auth: {
-          accessKeyId,
-          accessKeySecret
-        },
+        auth,
         endpoint: result.endpoint
       });
       return true;

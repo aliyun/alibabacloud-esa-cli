@@ -16,17 +16,20 @@ const INTERNATIONAL_ENDPOINT = 'esa.ap-southeast-1.aliyuncs.com';
 
 /**
  * Validate credentials for a single endpoint
+ * @param securityToken - Optional STS SecurityToken; when provided, uses STS auth
  */
 async function validateEndpoint(
   accessKeyId: string,
   accessKeySecret: string,
-  endpoint: string
+  endpoint: string,
+  securityToken?: string
 ): Promise<{ valid: boolean; message?: string }> {
   try {
     const apiConfig = new $OpenApi.Config({
       accessKeyId,
       accessKeySecret,
-      endpoint
+      endpoint,
+      ...(securityToken ? { securityToken } : {})
     });
 
     const client = new $OpenApi.default.default(apiConfig);
@@ -87,36 +90,30 @@ async function validateEndpoint(
 }
 
 /**
- * Validate if AK/SK/endpoint are valid
+ * Validate if AK/SK/endpoint are valid (supports STS when securityToken is provided)
  *
  * @param accessKeyId - AccessKey ID
  * @param accessKeySecret - AccessKey Secret
+ * @param securityToken - Optional STS SecurityToken for temporary credentials
  * @returns Validation result, including whether valid, site type and endpoint
  */
 export async function validateCredentials(
   accessKeyId: string,
-  accessKeySecret: string
+  accessKeySecret: string,
+  securityToken?: string
 ): Promise<ValidateCredentialsResult> {
+  const withToken = (ep: string) =>
+    validateEndpoint(accessKeyId, accessKeySecret, ep, securityToken);
+
   if (process.env.CUSTOM_ENDPOINT) {
-    const result = await validateEndpoint(
-      accessKeyId,
-      accessKeySecret,
-      process.env.CUSTOM_ENDPOINT
-    );
+    const result = await withToken(process.env.CUSTOM_ENDPOINT);
     if (result.valid) {
       return { valid: true, endpoint: process.env.CUSTOM_ENDPOINT };
-    } else {
-      return { valid: false, message: result.message };
     }
+    return { valid: false, message: result.message };
   }
 
-  // First validate domestic site
-  const domesticResult = await validateEndpoint(
-    accessKeyId,
-    accessKeySecret,
-    DOMESTIC_ENDPOINT
-  );
-
+  const domesticResult = await withToken(DOMESTIC_ENDPOINT);
   if (domesticResult.valid) {
     return {
       valid: true,
@@ -125,13 +122,7 @@ export async function validateCredentials(
     };
   }
 
-  // If domestic site validation fails, validate international site
-  const internationalResult = await validateEndpoint(
-    accessKeyId,
-    accessKeySecret,
-    INTERNATIONAL_ENDPOINT
-  );
-
+  const internationalResult = await withToken(INTERNATIONAL_ENDPOINT);
   if (internationalResult.valid) {
     return {
       valid: true,
@@ -140,7 +131,6 @@ export async function validateCredentials(
     };
   }
 
-  // Both failed, return failure result
   return {
     valid: false,
     message:

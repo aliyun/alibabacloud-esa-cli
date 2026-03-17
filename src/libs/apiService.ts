@@ -58,7 +58,10 @@ export class ApiService {
       accessKeyId: cliConfig.auth?.accessKeyId,
       accessKeySecret: cliConfig.auth?.accessKeySecret,
       endpoint: cliConfig.endpoint,
-      userAgent: CLI_USER_AGENT
+      userAgent: CLI_USER_AGENT,
+      ...(cliConfig.auth?.securityToken
+        ? { securityToken: cliConfig.auth.securityToken }
+        : {})
     });
 
     this.client = new $OpenApi.default.default(apiConfig);
@@ -77,7 +80,10 @@ export class ApiService {
       accessKeyId: newConfig.auth?.accessKeyId,
       accessKeySecret: newConfig.auth?.accessKeySecret,
       endpoint: newConfig.endpoint,
-      userAgent: CLI_USER_AGENT
+      userAgent: CLI_USER_AGENT,
+      ...(newConfig.auth?.securityToken
+        ? { securityToken: newConfig.auth.securityToken }
+        : {})
     });
     this.client = new $OpenApi.default.default(apiConfig);
   }

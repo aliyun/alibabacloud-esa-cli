@@ -29,7 +29,10 @@ class Client {
       accessKeyId: config.auth?.accessKeyId,
       accessKeySecret: config.auth?.accessKeySecret,
       endpoint: config.endpoint,
-      userAgent: CLI_USER_AGENT
+      userAgent: CLI_USER_AGENT,
+      ...(config.auth?.securityToken
+        ? { securityToken: config.auth.securityToken }
+        : {})
     });
     return new ESA.default(apiConfig as any);
   }

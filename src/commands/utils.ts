@@ -17,7 +17,11 @@ import {
 } from '../libs/interface.js';
 import logger from '../libs/logger.js';
 import { getRoot } from '../utils/fileUtils/base.js';
-import { getCliConfig, projectConfigPath } from '../utils/fileUtils/index.js';
+import {
+  getApiConfig,
+  getCliConfig,
+  projectConfigPath
+} from '../utils/fileUtils/index.js';
 import { validateCredentials } from '../utils/validateCredentials.js';
 
 import { getRoutineDetails } from './common/utils.js';
@@ -120,13 +124,16 @@ export async function checkIsLoginSuccess(): Promise<boolean> {
         accessKeySecret
       };
       if (securityToken) auth.securityToken = securityToken;
+      // 使用配置文件/项目里的 endpoint，避免 validateCredentials 探测到的公网域名
+      //（如 esa.cn-hangzhou）覆盖用户显式配置的预发等地址
+      const fileConfig = getApiConfig();
       server.updateConfig({
-        auth,
-        endpoint: result.endpoint
+        ...fileConfig,
+        auth
       });
       api.updateConfig({
-        auth,
-        endpoint: result.endpoint
+        ...fileConfig,
+        auth
       });
       return true;
     }

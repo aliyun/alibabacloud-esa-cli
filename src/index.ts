@@ -37,14 +37,19 @@ const main = async () => {
       if (argv.debug) {
         logger.setLogLevel('debug');
       }
-      try {
-        // Pass current command (first positional) so version check can decide prompting behavior
-        await checkCLIVersion(
-          (argv._ && argv._[0] ? String(argv._[0]) : '') as string
-        );
-      } catch (e) {
-        console.log(e);
-        console.log('error');
+      const skip =
+        argv['skip-version-check'] ||
+        process.env.ESA_SKIP_VERSION_CHECK === '1';
+      if (!skip) {
+        try {
+          // Pass current command (first positional) so version check can decide prompting behavior
+          await checkCLIVersion(
+            (argv._ && argv._[0] ? String(argv._[0]) : '') as string
+          );
+        } catch (e) {
+          console.log(e);
+          console.log('error');
+        }
       }
     })
     .epilogue(
@@ -60,6 +65,11 @@ const main = async () => {
     })
     .options('debug', {
       describe: t('dev_option_debugger').d('Output debug logs'),
+      type: 'boolean',
+      default: false
+    })
+    .options('skip-version-check', {
+      describe: t('main_skip_version_check_describe').d('Skip CLI version check'),
       type: 'boolean',
       default: false
     });

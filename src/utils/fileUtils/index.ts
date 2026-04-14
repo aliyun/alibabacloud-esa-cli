@@ -14,6 +14,15 @@ const __dirname = getDirName(import.meta.url);
 
 const root = getRoot();
 
+/**
+ * Strip JSONC content (comments + trailing commas) to make it valid JSON
+ */
+function stripJsonc(content: string): string {
+  return content
+    .replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, '')
+    .replace(/,\s*([}\]])/g, '$1');
+}
+
 // Function to get the actual project config file path (supports both .jsonc and .toml)
 export const getProjectConfigPath = (filePath: string = root): string => {
   const configFormats = ['esa.jsonc', 'esa.toml'];
@@ -85,10 +94,7 @@ export async function updateProjectConfigFile(
     // Detect file format based on file extension
     if (configPath.endsWith('.jsonc') || configPath.endsWith('.json')) {
       // Handle JSONC format
-      const jsonContent = configFileContent.replace(
-        /\/\*[\s\S]*?\*\/|\/\/.*$/gm,
-        ''
-      );
+      const jsonContent = stripJsonc(configFileContent);
       config = JSON.parse(jsonContent);
       config = { ...config, ...configUpdate };
       updatedConfigString = JSON.stringify(config, null, 2) + '\n';
@@ -116,10 +122,7 @@ export async function updateCliConfigFile(configUpdate: Partial<CliConfig>) {
     // Detect file format based on file extension
     if (configPath.endsWith('.jsonc') || configPath.endsWith('.json')) {
       // Handle JSONC format
-      const jsonContent = configFileContent.replace(
-        /\/\*[\s\S]*?\*\/|\/\/.*$/gm,
-        ''
-      );
+      const jsonContent = stripJsonc(configFileContent);
       config = JSON.parse(jsonContent);
       config = { ...config, ...configUpdate };
       updatedConfigString = JSON.stringify(config, null, 2) + '\n';
@@ -145,11 +148,8 @@ export function readConfigFile(
     const configFileContent = fs.readFileSync(configPath, 'utf-8');
     try {
       if (configPath.endsWith('.jsonc') || configPath.endsWith('.json')) {
-        // Remove comments for JSON parsing
-        const jsonContent = configFileContent.replace(
-          /\/\*[\s\S]*?\*\/|\/\/.*$/gm,
-          ''
-        );
+        // Remove comments and trailing commas for JSON parsing
+        const jsonContent = stripJsonc(configFileContent);
         const config = JSON.parse(jsonContent);
         return config as CliConfig | ProjectConfig;
       } else {

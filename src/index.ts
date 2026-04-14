@@ -37,6 +37,9 @@ const main = async () => {
       if (argv.debug) {
         logger.setLogLevel('debug');
       }
+      if (argv.skipUpdateCheck) {
+        return;
+      }
       try {
         // Pass current command (first positional) so version check can decide prompting behavior
         await checkCLIVersion(
@@ -60,6 +63,11 @@ const main = async () => {
     })
     .options('debug', {
       describe: t('dev_option_debugger').d('Output debug logs'),
+      type: 'boolean',
+      default: false
+    })
+    .options('skip-update-check', {
+      describe: t('main_skip_update_check').d('Skip CLI version update check'),
       type: 'boolean',
       default: false
     });

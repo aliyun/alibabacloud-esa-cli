@@ -29,13 +29,28 @@ export async function handleCheckVersion() {
 export async function checkCLIVersion(
   currentCommand?: string
 ): Promise<boolean> {
+  if (process.env.ESA_NO_UPDATE_CHECK) {
+    return true;
+  }
   try {
     const __dirname = getDirName(import.meta.url);
     const packageJsonPath = path.join(__dirname, '..', '..', 'package.json');
     const jsonString = await fs.readFile(packageJsonPath, 'utf-8');
     const packageJson = JSON.parse(jsonString);
     const currentVersion = packageJson.version;
-    const response = await fetch('https://registry.npmjs.org/esa-cli/latest');
+    const controller = new AbortController();
+    const fetchTimeout = setTimeout(() => controller.abort(), 5000);
+    let response;
+    try {
+      response = await fetch(
+        'https://registry.npmmirror.com/esa-cli/latest',
+        {
+          signal: controller.signal as any
+        }
+      );
+    } finally {
+      clearTimeout(fetchTimeout);
+    }
     if (!response.ok) {
       return true;
     }

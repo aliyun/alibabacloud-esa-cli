@@ -400,3 +400,11 @@ export interface GetRoutineCodeVersionInfoRes {
     ExtraInfo: string;
   };
 }
+
+export interface GetRoutineAccessTokenReq {
+  Name: string;
+}
+export interface GetRoutineAccessTokenRes {
+  code: string;
+  data: { RequestId?: string; Token?: string; DefaultRelatedRecord?: string };
+}

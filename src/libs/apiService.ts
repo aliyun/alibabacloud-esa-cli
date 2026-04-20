@@ -46,7 +46,9 @@ import {
   CreateRoutineCodeDeploymentReq,
   CreateRoutineCodeDeploymentRes,
   GetRoutineCodeVersionInfoRes,
-  GetRoutineCodeVersionInfoReq
+  GetRoutineCodeVersionInfoReq,
+  GetRoutineAccessTokenReq,
+  GetRoutineAccessTokenRes
 } from './interface.js';
 
 export class ApiService {
@@ -1183,6 +1185,54 @@ export class ApiService {
       }
     } catch (error) {
       console.log(error);
+    }
+    return null;
+  }
+
+  async getRoutineAccessToken(
+    requestParams: GetRoutineAccessTokenReq
+  ): Promise<GetRoutineAccessTokenRes | null> {
+    try {
+      let params = {
+        action: 'GetRoutineAccessToken',
+        version: '2024-09-10',
+        protocol: 'https',
+        method: 'GET',
+        authType: 'AK',
+        bodyType: 'json',
+        reqBodyType: 'json',
+        style: 'RPC',
+        pathname: '/',
+        toMap: function () {
+          return this;
+        }
+      };
+
+      let request = new $OpenApi.OpenApiRequest({
+        query: {
+          Name: requestParams.Name
+        }
+      });
+
+      let runtime = {
+        toMap: function () {
+          return this;
+        }
+      };
+      const res = await this.client.callApi(params, request, runtime);
+      if (res.statusCode === 200 && res.body) {
+        const ret: GetRoutineAccessTokenRes = {
+          code: res.statusCode.toString(),
+          data: {
+            RequestId: res.body.RequestId,
+            Token: res.body.Token,
+            DefaultRelatedRecord: res.body.DefaultRelatedRecord
+          }
+        };
+        return ret;
+      }
+    } catch (error) {
+      // Token retrieval failure is non-critical, silently return null
     }
     return null;
   }

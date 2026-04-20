@@ -124,8 +124,6 @@ export async function checkIsLoginSuccess(): Promise<boolean> {
         accessKeySecret
       };
       if (securityToken) auth.securityToken = securityToken;
-      // 使用配置文件/项目里的 endpoint，避免 validateCredentials 探测到的公网域名
-      //（如 esa.cn-hangzhou）覆盖用户显式配置的预发等地址
       const fileConfig = getApiConfig();
       server.updateConfig({
         ...fileConfig,

@@ -513,80 +513,60 @@ export async function displayDeploySuccess(
   const service = await ApiService.getInstance();
   const res = await service.getRoutine({ Name: projectName });
   const defaultUrl = res?.data?.DefaultRelatedRecord;
-  const visitUrl = defaultUrl ? 'https://' + defaultUrl : '';
+  let visitUrl = defaultUrl ? 'https://' + defaultUrl : '';
 
-  const accent = chalk.hex('#7C3AED');
+  // Get access token for the visit URL
+  let hasToken = false;
+  if (visitUrl) {
+    const tokenRes = await service.getRoutineAccessToken({
+      Name: projectName
+    });
+    const token = tokenRes?.data?.Token;
+    if (token) {
+      visitUrl += `?esa_er_token=${token}`;
+      hasToken = true;
+    }
+  }
+
   const label = chalk.hex('#22c55e');
   const subtle = chalk.gray;
+  const orange = chalk.hex('#FFA500');
 
-  const title = `${chalk.bold('🚀 ')}${chalk.bold(
-    t('init_deploy_success').d('Deploy Success')
-  )}`;
-  const lineUrl = `${label('URL')}  ${visitUrl ? chalk.yellowBright(visitUrl) : subtle('-')}`;
-  const lineProject = `${label('APP')}  ${chalk.cyan(projectName || '-')}`;
-  const lineCd = projectName
-    ? `${label('TIP')}  ${t('deploy_success_cd').d('Enter project directory')}: ${chalk.green(
-        `cd ${projectName}`
-      )}`
-    : '';
-  const guides: string[] = [];
+  logger.block();
+  logger.log(
+    `${chalk.bold('🚀')} ${chalk.hex('#7C3AED').bold(t('init_deploy_success').d('Deploy Success'))}`
+  );
+  logger.block();
+  logger.log(`${label('APP')}  ${chalk.cyan(projectName || '-')}`);
+  if (hasToken) {
+    logger.log(orange(`⏰  ${t('token_validity_tip').d('Token is valid for 1 hour')}`));
+  }
+  logger.log(`${label('URL')}  ${visitUrl ? chalk.yellowBright(visitUrl) : subtle('-')}`);
+
+  if (projectName) {
+    logger.block();
+    logger.log(
+      `${label('TIP')}  ${t('deploy_success_cd').d('Enter project directory')}: ${chalk.green(`cd ${projectName}`)}`
+    );
+  }
   if (showDomainGuide) {
-    guides.push(
-      `${label('TIP')}  ${t('deploy_success_guide').d('Add a custom domain')}: ${chalk.green(
-        'esa-cli domain add <DOMAIN>'
-      )}`
+    logger.log(
+      `${label('TIP')}  ${t('deploy_success_guide').d('Add a custom domain')}: ${chalk.green('esa-cli domain add <DOMAIN>')}`
     );
   }
   if (showRouteGuide) {
-    guides.push(
-      `${label('TIP')}  ${t('deploy_success_guide_2').d('Add routes for a site')}: ${chalk.green(
-        'esa-cli route add -r <ROUTE> -s <SITE>'
-      )}`
+    logger.log(
+      `${label('TIP')}  ${t('deploy_success_guide_2').d('Add routes for a site')}: ${chalk.green('esa-cli route add -r <ROUTE> -s <SITE>')}`
     );
   }
-  const tip = `${subtle(
-    t('deploy_url_warn').d(
-      'The domain may take some time to take effect, please try again later.'
-    )
-  )}`;
-
-  const lines = [
-    accent(title),
-    '',
-    lineProject,
-    lineUrl,
-    lineCd ? '' : '',
-    lineCd || '',
-    guides.length ? '' : '',
-    ...guides,
-    guides.length ? '' : '',
-    tip
-  ];
-
-  const stripAnsi = (s: string) => s.replace(/\x1B\[[0-?]*[ -\/]*[@-~]/g, '');
-  const contentWidth = Math.max(...lines.map((l) => stripAnsi(l).length));
-
-  const borderColor = chalk.hex('#00D4FF').bold;
-  const top = `${borderColor('╔')}${borderColor(
-    '═'.repeat(contentWidth + 2)
-  )}${borderColor('╗')}`;
-  const bottom = `${borderColor('╚')}${borderColor(
-    '═'.repeat(contentWidth + 2)
-  )}${borderColor('╝')}`;
-
-  const boxLines = [
-    top,
-    ...lines.map((l) => {
-      const pad = ' '.repeat(contentWidth - stripAnsi(l).length);
-      const left = borderColor('║');
-      const right = borderColor('║');
-      return `${left} ${l}${pad} ${right}`;
-    }),
-    bottom
-  ];
-
   logger.block();
-  boxLines.forEach((l) => logger.log(l));
+  logger.log(
+    subtle(
+      t('deploy_url_warn').d(
+        'The domain may take some time to take effect, please try again later.'
+      )
+    )
+  );
   logger.block();
 }
 

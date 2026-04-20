@@ -1346,5 +1346,17 @@
   "login_get_credentials_from_environment_variables": {
     "en": "Get credentials from environment variables",
     "zh_CN": ""
+  },
+  "main_skip_update_check": {
+    "en": "Skip CLI version update check",
+    "zh_CN": ""
+  },
+  "deploy_visit_url": {
+    "en": "Visit URL (with token)",
+    "zh_CN": ""
+  },
+  "token_validity_tip": {
+    "en": "Token is valid for 1 hour",
+    "zh_CN": "该 URL 有效期为 1 小时"
   }
 }

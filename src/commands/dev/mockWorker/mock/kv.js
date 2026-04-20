@@ -12,11 +12,11 @@ class EdgeKV {
     if (typeof root === 'undefined') {
       root = Deno.cwd();
     }
-    if (root === '/') {
+    const prev = path.resolve(root, '../');
+    if (prev === root) {
       return Deno.cwd();
     }
     const file = path.join(root, 'cliconfig.toml');
-    const prev = path.resolve(root, '../');
     try {
       const hasToml = fs.existsSync(file);
       if (hasToml) {

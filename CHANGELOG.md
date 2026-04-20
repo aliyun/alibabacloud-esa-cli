@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.0.7] - 2026-01-20
+
+### Added
+
+- Support skipping esa-cli installation when initializing a project
+- Update template version to latest
+
+### Fixed
+
+- Fix init command error on Windows
+- Fix mock KV storage issues in development environment
+
 ## [1.0.6] - 2026-01-20
 
 ### Added

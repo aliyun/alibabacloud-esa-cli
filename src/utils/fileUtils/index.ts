@@ -305,7 +305,8 @@ export const getApiConfig = () => {
   let defaultConfig = {
     auth: {
       accessKeyId: '',
-      accessKeySecret: ''
+      accessKeySecret: '',
+      securityToken: undefined as string | undefined
     },
     endpoint: `esa.cn-hangzhou.aliyuncs.com`
   };
@@ -319,7 +320,8 @@ export const getApiConfig = () => {
   const config = {
     auth: {
       accessKeyId: combinedConfig.auth?.accessKeyId,
-      accessKeySecret: combinedConfig.auth?.accessKeySecret
+      accessKeySecret: combinedConfig.auth?.accessKeySecret,
+      securityToken: combinedConfig.auth?.securityToken
     },
     endpoint: combinedConfig.endpoint
   };

@@ -17,7 +17,11 @@ import {
 } from '../libs/interface.js';
 import logger from '../libs/logger.js';
 import { getRoot } from '../utils/fileUtils/base.js';
-import { getCliConfig, projectConfigPath } from '../utils/fileUtils/index.js';
+import {
+  getApiConfig,
+  getCliConfig,
+  projectConfigPath
+} from '../utils/fileUtils/index.js';
 import { validateCredentials } from '../utils/validateCredentials.js';
 
 import { getRoutineDetails } from './common/utils.js';
@@ -104,24 +108,30 @@ export async function checkIsLoginSuccess(): Promise<boolean> {
     process.env.ESA_ACCESS_KEY_ID || cliConfig?.auth?.accessKeyId;
   let accessKeySecret =
     process.env.ESA_ACCESS_KEY_SECRET || cliConfig?.auth?.accessKeySecret;
+  const securityToken =
+    process.env.ESA_SECURITY_TOKEN || cliConfig?.auth?.securityToken;
 
   if (accessKeyId && accessKeySecret) {
-    const result = await validateCredentials(accessKeyId, accessKeySecret);
+    const result = await validateCredentials(
+      accessKeyId,
+      accessKeySecret,
+      securityToken
+    );
     const server = await ApiService.getInstance();
     if (result.valid) {
+      const auth: { accessKeyId: string; accessKeySecret: string; securityToken?: string } = {
+        accessKeyId,
+        accessKeySecret
+      };
+      if (securityToken) auth.securityToken = securityToken;
+      const fileConfig = getApiConfig();
       server.updateConfig({
-        auth: {
-          accessKeyId,
-          accessKeySecret
-        },
-        endpoint: result.endpoint
+        ...fileConfig,
+        auth
       });
       api.updateConfig({
-        auth: {
-          accessKeyId,
-          accessKeySecret
-        },
-        endpoint: result.endpoint
+        ...fileConfig,
+        auth
       });
       return true;
     }

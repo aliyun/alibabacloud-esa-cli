@@ -1,5 +1,35 @@
 # Changelog
 
+## [1.0.10] - 2026-04-20
+
+### Added
+
+- Support STS Token login for temporary credentials
+  - Command line: `esa login --sts-token "AccessKeyId,AccessKeySecret,SecurityToken"`
+  - JSON format: `esa login --sts-token '{"AccessKeyId":"xxx","AccessKeySecret":"xxx","SecurityToken":"xxx"}'`
+  - Environment variables: `ESA_ACCESS_KEY_ID` + `ESA_ACCESS_KEY_SECRET` + `ESA_SECURITY_TOKEN`
+  - Interactive: run `esa login` and select "STS Token" login method
+- Support multiple endpoint configurations (use project/config file endpoint instead of auto-detected one)
+
+## [1.0.9] - 2026-04-16
+
+### Fixed
+
+- Fix KV mock root path detection on Windows (use parent comparison instead of `/`)
+
+## [1.0.8] - 2026-04-14
+
+### Added
+
+- Support deploy access token: deploy success URL now includes a temporary access token (valid for 1 hour)
+- Add `--skip-update-check` option to skip CLI version update check
+- Support `ESA_NO_UPDATE_CHECK` environment variable to disable version check
+
+### Changed
+
+- Switch version check registry from npmjs.org to npmmirror.com with 5s timeout
+- Improve JSONC config file parsing to handle trailing commas
+
 ## [1.0.7] - 2026-01-20
 
 ### Added

@@ -1075,6 +1075,30 @@
     "en": "AccessKey Secret (SK)",
     "zh_CN": "AccessKey Secret (SK)"
   },
+  "login_option_sts_token": {
+    "en": "STS token: AccessKeyId,AccessKeySecret,SecurityToken (comma-separated, one-shot)",
+    "zh_CN": "STS 临时凭证：AccessKeyId,AccessKeySecret,SecurityToken（逗号分隔，一次性输入）"
+  },
+  "login_sts_token_prompt": {
+    "en": "Enter STS token (AccessKeyId,AccessKeySecret,SecurityToken):",
+    "zh_CN": "请输入 STS 凭证（AccessKeyId,AccessKeySecret,SecurityToken）："
+  },
+  "login_sts_token_format_invalid": {
+    "en": "Invalid STS token format. Use: AccessKeyId,AccessKeySecret,SecurityToken",
+    "zh_CN": "STS 凭证格式错误，请使用：AccessKeyId,AccessKeySecret,SecurityToken"
+  },
+  "login_method_select": {
+    "en": "Choose login method",
+    "zh_CN": "选择登录方式"
+  },
+  "login_method_aksk": {
+    "en": "AK/SK (AccessKey ID + AccessKey Secret)",
+    "zh_CN": "AK/SK（AccessKey ID + AccessKey Secret）"
+  },
+  "login_method_sts": {
+    "en": "STS Token (one-shot: AccessKeyId,AccessKeySecret,SecurityToken)",
+    "zh_CN": "STS 临时凭证（一次性输入：AccessKeyId,AccessKeySecret,SecurityToken）"
+  },
   "login_option_skip_login": {
     "en": "Skip login",
     "zh_CN": "跳过登录"

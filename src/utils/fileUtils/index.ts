@@ -301,6 +301,32 @@ export function getDevOpenBrowserUrl(): string {
 }
 
 export const getApiConfig = () => {
+  const envAccessKeyId =
+    process.env.ALIBABA_CLOUD_ACCESS_KEY_ID ||
+    process.env.ESA_ACCESS_KEY_ID;
+  const envAccessKeySecret =
+    process.env.ALIBABA_CLOUD_ACCESS_KEY_SECRET ||
+    process.env.ESA_ACCESS_KEY_SECRET;
+  const envSecurityToken =
+    process.env.ALIBABA_CLOUD_SECURITY_TOKEN ||
+    process.env.ESA_SECURITY_TOKEN;
+
+  if (envAccessKeyId && envAccessKeySecret) {
+    const [cliConfig, projectConfig] = getConfigurations();
+    const endpoint =
+      projectConfig?.endpoint ||
+      cliConfig?.endpoint ||
+      'esa.cn-hangzhou.aliyuncs.com';
+    return {
+      auth: {
+        accessKeyId: envAccessKeyId,
+        accessKeySecret: envAccessKeySecret,
+        securityToken: envSecurityToken
+      },
+      endpoint
+    };
+  }
+
   const [cliConfig, projectConfig] = getConfigurations();
   let defaultConfig = {
     auth: {

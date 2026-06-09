@@ -20,6 +20,8 @@ import logger from './libs/logger.js';
 import { handleCheckVersion, checkCLIVersion } from './utils/checkVersion.js';
 import { getCliConfig } from './utils/fileUtils/index.js';
 
+const cliName = process.env.ALIBABA_CLOUD_ESA_CLI_COMPAT_MODE || 'esa-cli';
+
 const main = async () => {
   const argv = hideBin(process.argv);
   const cliConfig = getCliConfig();
@@ -28,7 +30,7 @@ const main = async () => {
     .fail((msg, err) => {
       console.error(msg, err);
     })
-    .scriptName('esa-cli')
+    .scriptName(cliName)
     .locale(cliConfig?.lang || 'en')
     .version(false)
     .wrap(null)
@@ -80,7 +82,7 @@ const main = async () => {
       if (args._.length > 0) {
         // Unknown command
         console.error(
-          t('common_sub_command_fail').d('Use esa-cli <command> -h to see help')
+          t('common_sub_command_fail').d(`Use ${cliName} <command> -h to see help`)
         );
       } else {
         if (args.v) {

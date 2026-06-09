@@ -80,14 +80,19 @@ export default login;
 
 export async function handleLogin(argv?: ArgumentsCamelCase): Promise<void> {
   generateDefaultConfig();
-  const envSecurityToken = process.env.ESA_SECURITY_TOKEN;
-  if (
-    process.env.ESA_ACCESS_KEY_ID &&
-    process.env.ESA_ACCESS_KEY_SECRET
-  ) {
+  const envAccessKeyId =
+    process.env.ALIBABA_CLOUD_ACCESS_KEY_ID ||
+    process.env.ESA_ACCESS_KEY_ID;
+  const envAccessKeySecret =
+    process.env.ALIBABA_CLOUD_ACCESS_KEY_SECRET ||
+    process.env.ESA_ACCESS_KEY_SECRET;
+  const envSecurityToken =
+    process.env.ALIBABA_CLOUD_SECURITY_TOKEN ||
+    process.env.ESA_SECURITY_TOKEN;
+  if (envAccessKeyId && envAccessKeySecret) {
     const result = await validateCredentials(
-      process.env.ESA_ACCESS_KEY_ID,
-      process.env.ESA_ACCESS_KEY_SECRET,
+      envAccessKeyId,
+      envAccessKeySecret,
       envSecurityToken
     );
     if (result.valid) {

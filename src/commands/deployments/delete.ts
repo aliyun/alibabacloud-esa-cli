@@ -37,7 +37,7 @@ const deploymentsDelete: CommandModule = {
       });
   },
   handler: async (argv: ArgumentsCamelCase) => {
-    handleDeleteDeployments(argv);
+    await handleDeleteDeployments(argv);
   }
 };
 

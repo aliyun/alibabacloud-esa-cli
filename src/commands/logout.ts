@@ -10,8 +10,8 @@ const logout: CommandModule = {
   builder: (yargs: Argv) => {
     return yargs;
   },
-  handler: () => {
-    handleLogout();
+  handler: async () => {
+    await handleLogout();
   }
 };
 

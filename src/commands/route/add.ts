@@ -48,7 +48,7 @@ const addRoute: CommandModule = {
       });
   },
   handler: async (argv: ArgumentsCamelCase) => {
-    handlerAddRoute(argv);
+    await handlerAddRoute(argv);
   }
 };
 

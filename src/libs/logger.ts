@@ -24,14 +24,20 @@ export type LogLevel =
   | 'debug'
   | 'silly';
 
-const transport: DailyRotateFile = new DailyRotateFile({
-  filename: path.join(os.homedir(), '.esa-logs/esa-debug-%DATE%.log'),
-  level: 'info',
-  datePattern: 'YYYY-MM-DD-HH',
-  zippedArchive: true,
-  maxSize: '10m',
-  maxFiles: '7d'
-});
+const shouldWriteLogFile = () =>
+  process.env.NODE_ENV !== 'test' &&
+  !process.env.VITEST &&
+  !process.env.VITEST_WORKER_ID;
+
+const createFileTransport = (): DailyRotateFile =>
+  new DailyRotateFile({
+    filename: path.join(os.homedir(), '.esa-logs/esa-debug-%DATE%.log'),
+    level: 'info',
+    datePattern: 'YYYY-MM-DD-HH',
+    zippedArchive: true,
+    maxSize: '10m',
+    maxFiles: '7d'
+  });
 
 class Logger {
   private static instance: Logger;
@@ -73,10 +79,12 @@ class Logger {
       }
     );
 
+    const transports = shouldWriteLogFile() ? [createFileTransport()] : [];
     this.logger = createLogger({
       level: 'info',
       format: combine(label({ label: 'ESA' }), timestamp(), customFormat),
-      transports: [transport]
+      silent: transports.length === 0,
+      transports
     });
 
     this.spinner = ora('Loading...');

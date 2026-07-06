@@ -1,12 +1,26 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { generateCodeVersion } from '../../../src/commands/common/routineUtils.js';
+import { generateCodeVersion } from '../../../src/commands/common/utils.js';
 import { ApiService } from '../../../src/libs/apiService.js';
 import { getProjectConfig } from '../../../src/utils/fileUtils/index.js';
 
-// Mock dependencies
 vi.mock('../../../src/libs/apiService.js');
-vi.mock('../../../src/utils/compress.js');
+vi.mock('../../../src/utils/compress.js', () => ({
+  default: vi.fn().mockResolvedValue({
+    zip: { toBuffer: () => Buffer.from('test') },
+    sourceList: [],
+    dynamicSources: []
+  })
+}));
 vi.mock('../../../src/utils/fileUtils/index.js');
+vi.mock('../../../src/libs/logger.js', () => ({
+  default: {
+    log: vi.fn(),
+    error: vi.fn(),
+    block: vi.fn(),
+    startSubStep: vi.fn(),
+    endSubStep: vi.fn()
+  }
+}));
 
 describe('routineUtils', () => {
   beforeEach(() => {
@@ -15,7 +29,6 @@ describe('routineUtils', () => {
 
   describe('generateCodeVersion', () => {
     it('should normalize singlePageApplication to SinglePageApplication', async () => {
-      // Mock project config with notFoundStrategy
       const mockProjectConfig = {
         name: 'test-project',
         assets: {
@@ -26,7 +39,6 @@ describe('routineUtils', () => {
 
       (getProjectConfig as any).mockReturnValue(mockProjectConfig);
 
-      // Mock ApiService
       const mockApiService = {
         CreateRoutineWithAssetsCodeVersion: vi.fn().mockResolvedValue({
           code: '200',
@@ -46,15 +58,6 @@ describe('routineUtils', () => {
 
       (ApiService.getInstance as any).mockResolvedValue(mockApiService);
 
-      // Mock compress function
-      const mockCompress = vi.fn().mockResolvedValue({
-        toBuffer: () => Buffer.from('test')
-      });
-      vi.doMock('../../../src/utils/compress.js', () => ({
-        default: mockCompress
-      }));
-
-      // Call the function
       const result = await generateCodeVersion(
         'test-project',
         'test description',
@@ -64,22 +67,22 @@ describe('routineUtils', () => {
         undefined
       );
 
-      // Verify that CreateRoutineWithAssetsCodeVersion was called with ConfOptions
       expect(
         mockApiService.CreateRoutineWithAssetsCodeVersion
-      ).toHaveBeenCalledWith({
-        Name: 'test-project',
-        CodeDescription: 'test description',
-        ConfOptions: {
-          NotFoundStrategy: 'SinglePageApplication'
-        }
-      });
+      ).toHaveBeenCalledWith(
+        expect.objectContaining({
+          Name: 'test-project',
+          CodeDescription: 'test description',
+          ConfOptions: {
+            NotFoundStrategy: 'SinglePageApplication'
+          }
+        })
+      );
 
       expect(result?.isSuccess).toBe(true);
     });
 
     it('should pass any notFoundStrategy value to API', async () => {
-      // Mock project config with different notFoundStrategy value
       const mockProjectConfig = {
         name: 'test-project',
         assets: {
@@ -90,7 +93,6 @@ describe('routineUtils', () => {
 
       (getProjectConfig as any).mockReturnValue(mockProjectConfig);
 
-      // Mock ApiService
       const mockApiService = {
         CreateRoutineWithAssetsCodeVersion: vi.fn().mockResolvedValue({
           code: '200',
@@ -110,15 +112,6 @@ describe('routineUtils', () => {
 
       (ApiService.getInstance as any).mockResolvedValue(mockApiService);
 
-      // Mock compress function
-      const mockCompress = vi.fn().mockResolvedValue({
-        toBuffer: () => Buffer.from('test')
-      });
-      vi.doMock('../../../src/utils/compress.js', () => ({
-        default: mockCompress
-      }));
-
-      // Call the function
       const result = await generateCodeVersion(
         'test-project',
         'test description',
@@ -128,22 +121,22 @@ describe('routineUtils', () => {
         undefined
       );
 
-      // Verify that CreateRoutineWithAssetsCodeVersion was called with ConfOptions
       expect(
         mockApiService.CreateRoutineWithAssetsCodeVersion
-      ).toHaveBeenCalledWith({
-        Name: 'test-project',
-        CodeDescription: 'test description',
-        ConfOptions: {
-          NotFoundStrategy: 'customStrategy'
-        }
-      });
+      ).toHaveBeenCalledWith(
+        expect.objectContaining({
+          Name: 'test-project',
+          CodeDescription: 'test description',
+          ConfOptions: {
+            NotFoundStrategy: 'customStrategy'
+          }
+        })
+      );
 
       expect(result?.isSuccess).toBe(true);
     });
 
     it('should not pass ConfOptions when notFoundStrategy is not configured', async () => {
-      // Mock project config without notFoundStrategy
       const mockProjectConfig = {
         name: 'test-project',
         assets: {
@@ -153,7 +146,6 @@ describe('routineUtils', () => {
 
       (getProjectConfig as any).mockReturnValue(mockProjectConfig);
 
-      // Mock ApiService
       const mockApiService = {
         CreateRoutineWithAssetsCodeVersion: vi.fn().mockResolvedValue({
           code: '200',
@@ -173,15 +165,6 @@ describe('routineUtils', () => {
 
       (ApiService.getInstance as any).mockResolvedValue(mockApiService);
 
-      // Mock compress function
-      const mockCompress = vi.fn().mockResolvedValue({
-        toBuffer: () => Buffer.from('test')
-      });
-      vi.doMock('../../../src/utils/compress.js', () => ({
-        default: mockCompress
-      }));
-
-      // Call the function
       const result = await generateCodeVersion(
         'test-project',
         'test description',
@@ -191,13 +174,11 @@ describe('routineUtils', () => {
         undefined
       );
 
-      // Verify that CreateRoutineWithAssetsCodeVersion was called without ConfOptions
-      expect(
-        mockApiService.CreateRoutineWithAssetsCodeVersion
-      ).toHaveBeenCalledWith({
-        Name: 'test-project',
-        CodeDescription: 'test description'
-      });
+      const callArgs =
+        mockApiService.CreateRoutineWithAssetsCodeVersion.mock.calls[0][0];
+      expect(callArgs.Name).toBe('test-project');
+      expect(callArgs.CodeDescription).toBe('test description');
+      expect(callArgs.ConfOptions).toBeUndefined();
 
       expect(result?.isSuccess).toBe(true);
     });

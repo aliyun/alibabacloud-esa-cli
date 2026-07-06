@@ -17,7 +17,7 @@ const main = () => {
     process.execPath,
     ['--no-warnings', ...process.execArgv, entryPath, ...process.argv.slice(2)],
     {
-      stdio: [0, 1, 2, 'ipc'],
+      stdio: 'inherit',
       env: {
         ...process.env
       }
@@ -26,16 +26,14 @@ const main = () => {
     .on('error', (err) => {
       console.log('Get Error', err);
     })
-    .on('message', (msg) => {
-      // console.log('Get Message', msg);
-      process.send && process.send(msg);
-    })
-    .on('disconnect', () => {
-      // console.log('Get disconnect');
-      process.disconnect && process.disconnect();
-    })
-    .on('exit', (code) => {
-      process.exit && process.exit(code);
+    .on('exit', (code, signal) => {
+      if (code !== null) {
+        process.exit(code);
+      } else if (signal) {
+        process.kill(process.pid, signal);
+      } else {
+        process.exit(1);
+      }
     });
 };
 

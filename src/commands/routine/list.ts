@@ -24,7 +24,7 @@ const list: CommandModule = {
       .usage(`${t('common_usage').d('Usage')}: \$0 list [--keyword <keyword>]`);
   },
   handler: async (argv: ArgumentsCamelCase) => {
-    handleList(argv);
+    await handleList(argv);
   }
 };
 

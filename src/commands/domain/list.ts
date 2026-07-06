@@ -15,7 +15,7 @@ const listDomain: CommandModule = {
   command: 'list',
   describe: `🔍 ${t('domain_list_describe').d('List all related domains')}`,
   handler: async () => {
-    handleListDomains();
+    await handleListDomains();
   }
 };
 

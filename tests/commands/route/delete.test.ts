@@ -27,8 +27,7 @@ describe('handle delete routes', () => {
       [MockFunction log] {
         "calls": [
           [
-            "
-      🎉  SUCCESS  Delete route success!",
+            "🎉  SUCCESS  Delete route success!",
           ],
         ],
         "results": [

@@ -69,8 +69,7 @@ const init: CommandModule = {
       })
       .option('install-esa-cli', {
         describe: 'Install esa-cli as a dev dependency',
-        type: 'boolean',
-        default: false
+        type: 'boolean'
       });
   },
   handler: async (argv: ArgumentsCamelCase) => {
@@ -81,7 +80,7 @@ const init: CommandModule = {
 
 export default init;
 
-const handleInit = async (argv: ArgumentsCamelCase) => {
+export const handleInit = async (argv: ArgumentsCamelCase) => {
   await checkAndUpdatePackage('esa-template');
   const initParams = getInitParamsFromArgv(argv);
   await create(initParams);
@@ -114,7 +113,7 @@ const config = async (initParams: initParams) => {
 
 const deploy = async (initParams: initParams) => {
   intro(`Deploy an application with ESA ${chalk.gray('Step 3 of 3')}`);
-  if (!initParams.deploy) {
+  if (typeof initParams.deploy !== 'boolean') {
     const deploy = (await promptParameter<boolean>({
       type: 'confirm',
       question: t('auto_deploy').d('Do you want to deploy your project?'),

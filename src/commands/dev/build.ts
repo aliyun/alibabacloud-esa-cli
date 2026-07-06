@@ -15,7 +15,10 @@ interface BuildOptions {
   isNode?: boolean;
 }
 type ReplacementKeys = 'cache' | 'EdgeKV';
-const replacements = { cache: 'mockCache', EdgeKV: 'mockKV' };
+const replacements: Record<ReplacementKeys, string> = {
+  cache: 'mockCache',
+  EdgeKV: 'mockKV'
+};
 
 const traverse = _traverse.default;
 const generator = _generator.default;

@@ -1,8 +1,23 @@
-import { vi, expect } from 'vitest';
+import { vi, expect, describe, it, afterEach } from 'vitest';
 
 import { handleCommit } from '../../src/commands/commit/index.js';
-import * as routineUtils from '../../src/commands/common/routineUtils.js';
-import * as descriptionInput from '../../src/components/descriptionInput.js';
+import * as commonUtils from '../../src/commands/common/utils.js';
+import * as promptModule from '../../src/utils/prompt.js';
+
+vi.mock('../../src/commands/common/utils.js');
+vi.mock('../../src/utils/prompt.js');
+vi.mock('@clack/prompts', () => ({
+  intro: vi.fn(),
+  outro: vi.fn()
+}));
+vi.mock('../../src/libs/logger.js', () => ({
+  default: {
+    log: vi.fn(),
+    error: vi.fn(),
+    startSubStep: vi.fn(),
+    endSubStep: vi.fn()
+  }
+}));
 
 describe('handleCommit', () => {
   afterEach(() => {
@@ -10,78 +25,63 @@ describe('handleCommit', () => {
   });
 
   it('should return early if project validation fails', async () => {
-    vi.spyOn(routineUtils, 'validateAndInitializeProject').mockResolvedValue(
-      null
-    );
+    vi.mocked(commonUtils.validateAndInitializeProject).mockResolvedValue(null);
 
-    await handleCommit({
+    const result = await handleCommit({
       _: [],
       $0: ''
     });
 
-    expect(routineUtils.validateAndInitializeProject).toHaveBeenCalledWith(
+    expect(result).toBe(false);
+    expect(commonUtils.validateAndInitializeProject).toHaveBeenCalledWith(
       undefined
     );
-    // When validation fails, the function should return early without calling other functions
-    // We don't need to check generateCodeVersion since it's not mocked in this test
+    expect(commonUtils.generateCodeVersion).not.toHaveBeenCalled();
   });
 
   it('should handle commit with default parameters', async () => {
-    const mockProjectConfig = {
-      name: 'test-project',
-      entry: 'index.js',
-      assets: { directory: 'assets' }
-    };
-
-    vi.spyOn(routineUtils, 'validateAndInitializeProject').mockResolvedValue({
-      projectConfig: mockProjectConfig,
+    vi.mocked(commonUtils.validateAndInitializeProject).mockResolvedValue({
+      projectConfig: { name: 'test-project', entry: 'index.js', assets: { directory: 'assets' } },
       projectName: 'test-project'
     });
 
-    vi.spyOn(descriptionInput, 'descriptionInput').mockResolvedValue(
-      'Test description'
-    );
-    vi.spyOn(routineUtils, 'generateCodeVersion').mockResolvedValue({
+    vi.mocked(promptModule.default).mockResolvedValue('Test description');
+    vi.mocked(commonUtils.generateCodeVersion).mockResolvedValue({
       isSuccess: true,
-      res: null
+      res: { data: { CodeVersion: 'v1' } } as any
     });
 
-    await handleCommit({
+    const result = await handleCommit({
       _: [],
       $0: ''
     });
 
-    expect(routineUtils.validateAndInitializeProject).toHaveBeenCalledWith(
+    expect(result).toBe(true);
+    expect(commonUtils.validateAndInitializeProject).toHaveBeenCalledWith(
       undefined
     );
-    expect(descriptionInput.descriptionInput).toHaveBeenCalled();
-    expect(routineUtils.generateCodeVersion).toHaveBeenCalledWith(
+    expect(promptModule.default).toHaveBeenCalled();
+    expect(commonUtils.generateCodeVersion).toHaveBeenCalledWith(
       'test-project',
       'Test description',
       undefined,
       undefined,
-      undefined
+      undefined,
+      undefined,
+      false
     );
   });
 
   it('should handle commit with custom project name', async () => {
-    const mockProjectConfig = {
-      name: 'test-project',
-      entry: 'index.js',
-      assets: { directory: 'assets' }
-    };
-
-    vi.spyOn(routineUtils, 'validateAndInitializeProject').mockResolvedValue({
-      projectConfig: mockProjectConfig,
+    vi.mocked(commonUtils.validateAndInitializeProject).mockResolvedValue({
+      projectConfig: { name: 'test-project', entry: 'index.js', assets: { directory: 'assets' } },
       projectName: 'custom-name'
     });
 
-    vi.spyOn(descriptionInput, 'descriptionInput').mockResolvedValue(
-      'Test description'
-    );
-    vi.spyOn(routineUtils, 'generateCodeVersion').mockResolvedValue({
+    vi.mocked(promptModule.default).mockResolvedValue('Test description');
+    vi.mocked(commonUtils.generateCodeVersion).mockResolvedValue({
       isSuccess: true,
-      res: null
+      res: { data: { CodeVersion: 'v1' } } as any
     });
 
     await handleCommit({
@@ -90,36 +90,30 @@ describe('handleCommit', () => {
       $0: ''
     });
 
-    expect(routineUtils.validateAndInitializeProject).toHaveBeenCalledWith(
+    expect(commonUtils.validateAndInitializeProject).toHaveBeenCalledWith(
       'custom-name'
     );
-    expect(routineUtils.generateCodeVersion).toHaveBeenCalledWith(
+    expect(commonUtils.generateCodeVersion).toHaveBeenCalledWith(
       'custom-name',
       'Test description',
       undefined,
       undefined,
-      undefined
+      undefined,
+      undefined,
+      false
     );
   });
 
   it('should handle commit with custom entry file', async () => {
-    const mockProjectConfig = {
-      name: 'test-project',
-      entry: 'index.js',
-      assets: { directory: 'assets' }
-    };
-
-    vi.spyOn(routineUtils, 'validateAndInitializeProject').mockResolvedValue({
-      projectConfig: mockProjectConfig,
+    vi.mocked(commonUtils.validateAndInitializeProject).mockResolvedValue({
+      projectConfig: { name: 'test-project', entry: 'index.js', assets: { directory: 'assets' } },
       projectName: 'test-project'
     });
 
-    vi.spyOn(descriptionInput, 'descriptionInput').mockResolvedValue(
-      'Test description'
-    );
-    vi.spyOn(routineUtils, 'generateCodeVersion').mockResolvedValue({
+    vi.mocked(promptModule.default).mockResolvedValue('Test description');
+    vi.mocked(commonUtils.generateCodeVersion).mockResolvedValue({
       isSuccess: true,
-      res: null
+      res: { data: { CodeVersion: 'v1' } } as any
     });
 
     await handleCommit({
@@ -128,33 +122,27 @@ describe('handleCommit', () => {
       $0: ''
     });
 
-    expect(routineUtils.generateCodeVersion).toHaveBeenCalledWith(
+    expect(commonUtils.generateCodeVersion).toHaveBeenCalledWith(
       'test-project',
       'Test description',
       'custom.js',
       undefined,
-      undefined
+      undefined,
+      undefined,
+      false
     );
   });
 
   it('should handle commit with assets option', async () => {
-    const mockProjectConfig = {
-      name: 'test-project',
-      entry: 'index.js',
-      assets: { directory: 'assets' }
-    };
-
-    vi.spyOn(routineUtils, 'validateAndInitializeProject').mockResolvedValue({
-      projectConfig: mockProjectConfig,
+    vi.mocked(commonUtils.validateAndInitializeProject).mockResolvedValue({
+      projectConfig: { name: 'test-project', entry: 'index.js', assets: { directory: 'assets' } },
       projectName: 'test-project'
     });
 
-    vi.spyOn(descriptionInput, 'descriptionInput').mockResolvedValue(
-      'Test description'
-    );
-    vi.spyOn(routineUtils, 'generateCodeVersion').mockResolvedValue({
+    vi.mocked(promptModule.default).mockResolvedValue('Test description');
+    vi.mocked(commonUtils.generateCodeVersion).mockResolvedValue({
       isSuccess: true,
-      res: null
+      res: { data: { CodeVersion: 'v1' } } as any
     });
 
     await handleCommit({
@@ -163,30 +151,26 @@ describe('handleCommit', () => {
       $0: ''
     });
 
-    expect(routineUtils.generateCodeVersion).toHaveBeenCalledWith(
+    expect(commonUtils.generateCodeVersion).toHaveBeenCalledWith(
       'test-project',
       'Test description',
       undefined,
       'custom-assets',
-      undefined
+      undefined,
+      undefined,
+      false
     );
   });
 
   it('should handle commit with description option', async () => {
-    const mockProjectConfig = {
-      name: 'test-project',
-      entry: 'index.js',
-      assets: { directory: 'assets' }
-    };
-
-    vi.spyOn(routineUtils, 'validateAndInitializeProject').mockResolvedValue({
-      projectConfig: mockProjectConfig,
+    vi.mocked(commonUtils.validateAndInitializeProject).mockResolvedValue({
+      projectConfig: { name: 'test-project', entry: 'index.js', assets: { directory: 'assets' } },
       projectName: 'test-project'
     });
 
-    vi.spyOn(routineUtils, 'generateCodeVersion').mockResolvedValue({
+    vi.mocked(commonUtils.generateCodeVersion).mockResolvedValue({
       isSuccess: true,
-      res: null
+      res: { data: { CodeVersion: 'v1' } } as any
     });
 
     await handleCommit({
@@ -195,34 +179,28 @@ describe('handleCommit', () => {
       $0: ''
     });
 
-    expect(descriptionInput.descriptionInput).not.toHaveBeenCalled();
-    expect(routineUtils.generateCodeVersion).toHaveBeenCalledWith(
+    expect(promptModule.default).not.toHaveBeenCalled();
+    expect(commonUtils.generateCodeVersion).toHaveBeenCalledWith(
       'test-project',
       'Custom description',
       undefined,
       undefined,
-      undefined
+      undefined,
+      undefined,
+      false
     );
   });
 
   it('should handle commit with minify option', async () => {
-    const mockProjectConfig = {
-      name: 'test-project',
-      entry: 'index.js',
-      assets: { directory: 'assets' }
-    };
-
-    vi.spyOn(routineUtils, 'validateAndInitializeProject').mockResolvedValue({
-      projectConfig: mockProjectConfig,
+    vi.mocked(commonUtils.validateAndInitializeProject).mockResolvedValue({
+      projectConfig: { name: 'test-project', entry: 'index.js', assets: { directory: 'assets' } },
       projectName: 'test-project'
     });
 
-    vi.spyOn(descriptionInput, 'descriptionInput').mockResolvedValue(
-      'Test description'
-    );
-    vi.spyOn(routineUtils, 'generateCodeVersion').mockResolvedValue({
+    vi.mocked(promptModule.default).mockResolvedValue('Test description');
+    vi.mocked(commonUtils.generateCodeVersion).mockResolvedValue({
       isSuccess: true,
-      res: null
+      res: { data: { CodeVersion: 'v1' } } as any
     });
 
     await handleCommit({
@@ -231,30 +209,26 @@ describe('handleCommit', () => {
       $0: ''
     });
 
-    expect(routineUtils.generateCodeVersion).toHaveBeenCalledWith(
+    expect(commonUtils.generateCodeVersion).toHaveBeenCalledWith(
       'test-project',
       'Test description',
       undefined,
       undefined,
-      true
+      true,
+      undefined,
+      false
     );
   });
 
   it('should handle commit with all options', async () => {
-    const mockProjectConfig = {
-      name: 'test-project',
-      entry: 'index.js',
-      assets: { directory: 'assets' }
-    };
-
-    vi.spyOn(routineUtils, 'validateAndInitializeProject').mockResolvedValue({
-      projectConfig: mockProjectConfig,
+    vi.mocked(commonUtils.validateAndInitializeProject).mockResolvedValue({
+      projectConfig: { name: 'test-project', entry: 'index.js', assets: { directory: 'assets' } },
       projectName: 'custom-name'
     });
 
-    vi.spyOn(routineUtils, 'generateCodeVersion').mockResolvedValue({
+    vi.mocked(commonUtils.generateCodeVersion).mockResolvedValue({
       isSuccess: true,
-      res: null
+      res: { data: { CodeVersion: 'v1' } } as any
     });
 
     await handleCommit({
@@ -267,16 +241,37 @@ describe('handleCommit', () => {
       $0: ''
     });
 
-    expect(routineUtils.validateAndInitializeProject).toHaveBeenCalledWith(
+    expect(commonUtils.validateAndInitializeProject).toHaveBeenCalledWith(
       'custom-name'
     );
-    expect(descriptionInput.descriptionInput).not.toHaveBeenCalled();
-    expect(routineUtils.generateCodeVersion).toHaveBeenCalledWith(
+    expect(promptModule.default).not.toHaveBeenCalled();
+    expect(commonUtils.generateCodeVersion).toHaveBeenCalledWith(
       'custom-name',
       'Full commit test',
       'custom.js',
       'custom-assets',
-      true
+      true,
+      undefined,
+      false
     );
+  });
+
+  it('should return false when code version generation fails', async () => {
+    vi.mocked(commonUtils.validateAndInitializeProject).mockResolvedValue({
+      projectConfig: { name: 'test-project', entry: 'index.js', assets: { directory: 'assets' } },
+      projectName: 'test-project'
+    });
+    vi.mocked(commonUtils.generateCodeVersion).mockResolvedValue({
+      isSuccess: false,
+      res: null
+    });
+
+    const result = await handleCommit({
+      description: 'Bad commit',
+      _: [],
+      $0: ''
+    });
+
+    expect(result).toBe(false);
   });
 });

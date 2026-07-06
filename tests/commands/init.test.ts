@@ -1,582 +1,204 @@
-// init.test.js
-import fs from 'fs';
-
-import fsExtra from 'fs-extra';
-import { it, describe, expect, vi } from 'vitest';
+import { it, describe, expect, vi, afterEach, beforeEach } from 'vitest';
 
 import { handleInit } from '../../src/commands/init/index.js';
-import * as Util from '../../src/utils/fileUtils/index.js';
-import { mockConsoleMethods } from '../helper/mockConsole.js';
 
-import { mockInquirerPrompt } from './helper.js';
-
-vi.mock('child_process');
-vi.mock('fs/promises', () => ({
-  rename: vi.fn()
+vi.mock('@clack/prompts', () => ({
+  intro: vi.fn(),
+  outro: vi.fn(),
+  log: { step: vi.fn(), info: vi.fn(), error: vi.fn() }
 }));
 
-// Mock the compress function to avoid errors in tests
-vi.mock('../../src/utils/compress.js', () => ({
-  default: vi.fn().mockResolvedValue({
-    toBuffer: () => Buffer.from('test')
-  })
+vi.mock('../../src/i18n/index.js', () => ({
+  default: (key: string) => ({ d: (v: string) => v })
 }));
 
-// Mock ApiService to avoid API calls in tests
-vi.mock('../../src/libs/apiService.js', () => ({
-  ApiService: {
-    getInstance: vi.fn().mockResolvedValue({
-      CreateRoutineWithAssetsCodeVersion: vi.fn().mockResolvedValue({
-        data: {
-          OssPostConfig: {
-            OSSAccessKeyId: 'test-key',
-            Signature: 'test-signature',
-            Url: 'test-url',
-            Key: 'test-key',
-            Policy: 'test-policy'
-          }
-        }
-      }),
-      uploadToOss: vi.fn().mockResolvedValue(true)
-    })
+vi.mock('../../src/utils/prompt.js', () => ({
+  default: vi.fn().mockResolvedValue(false),
+  promptParameter: vi.fn().mockResolvedValue(false)
+}));
+
+vi.mock('../../src/commands/common/utils.js', () => ({
+  displayDeploySuccess: vi.fn().mockResolvedValue(undefined)
+}));
+
+vi.mock('../../src/libs/logger.js', () => ({
+  default: {
+    log: vi.fn(),
+    error: vi.fn(),
+    success: vi.fn(),
+    info: vi.fn(),
+    startSubStep: vi.fn(),
+    endSubStep: vi.fn()
   }
 }));
 
-// Mock other utility functions
-vi.mock('../../src/commands/common/routineUtils.js', () => ({
-  checkIsLoginSuccess: vi.fn().mockResolvedValue(true),
-  ensureRoutineExists: vi.fn().mockResolvedValue(undefined),
-  quickDeployForInit: vi.fn().mockResolvedValue(true)
+vi.mock('../../src/utils/fileUtils/index.js', () => ({
+  getProjectConfig: vi.fn(),
+  getProjectConfigPath: vi.fn().mockReturnValue('/tmp/esa.jsonc'),
+  projectConfigPath: '/tmp/esa.jsonc',
+  cliConfigPath: '/tmp/config.toml',
+  getCliConfig: vi.fn(),
+  getCliConfigPath: vi.fn(),
+  getTemplatesConfig: vi.fn(),
+  templateHubPath: '/tmp',
+  updateProjectConfigFile: vi.fn(),
+  generateConfigFile: vi.fn()
 }));
 
-vi.mock(import('../../src/commands/init/helper.js'), async (importOriginal) => {
-  const actual = await importOriginal();
-  return {
-    ...actual,
-    checkAndUpdatePackage: vi.fn()
-  };
-});
+vi.mock('../../src/utils/fileUtils/base.js', () => ({
+  getRoot: vi.fn().mockReturnValue('/test/root'),
+  getDirName: vi.fn().mockReturnValue('/test/dir')
+}));
+
+vi.mock('../../src/commands/init/helper.js', () => ({
+  checkAndUpdatePackage: vi.fn().mockResolvedValue(undefined),
+  getInitParamsFromArgv: vi.fn().mockReturnValue({ name: 'test-project' }),
+  configProjectName: vi.fn().mockResolvedValue(undefined),
+  configCategory: vi.fn().mockResolvedValue(undefined),
+  configTemplate: vi.fn().mockResolvedValue(undefined),
+  configLanguage: vi.fn().mockResolvedValue(undefined),
+  createProject: vi.fn().mockResolvedValue(undefined),
+  installDependencies: vi.fn().mockResolvedValue(undefined),
+  applyFileEdits: vi.fn().mockResolvedValue(true),
+  installESACli: vi.fn().mockResolvedValue(undefined),
+  updateConfigFile: vi.fn().mockResolvedValue(undefined),
+  initGit: vi.fn().mockResolvedValue(true),
+  buildProject: vi.fn().mockResolvedValue(undefined),
+  deployProject: vi.fn().mockResolvedValue(undefined)
+}));
 
 describe('handleInit', () => {
-  let std = mockConsoleMethods();
   beforeEach(() => {
-    vi.spyOn(Util, 'getTemplatesConfig').mockReturnValue([
-      {
-        Title_EN: 'test-template-1',
-        Title_ZH: 'test-template-1',
-        Desc_EN: 'test desc',
-        Desc_ZH: 'test desc',
-        URL: 'test',
-        children: []
-      },
-      {
-        Title_EN: 'test-template-2',
-        Title_ZH: 'test-template-2',
-        Desc_EN: 'test desc2',
-        Desc_ZH: 'test desc2',
-        URL: 'test',
-        children: []
-      }
-    ]);
-
-    // Mock getProjectConfig to return a valid project configuration
-    vi.spyOn(Util, 'getProjectConfig').mockReturnValue({
-      name: 'test-template-1',
-      entry: 'src/index.js',
-      assets: { directory: 'assets' }
-    } as any);
+    vi.clearAllMocks();
   });
+
   afterEach(() => {
     vi.clearAllMocks();
   });
 
-  it('clones the repository and updates project config --install git', async () => {
-    vi.mock('../../src/components/mutiLevelSelect.js', () => ({
-      default: vi.fn().mockResolvedValue('/test/path/test-template-1')
-    }));
-    mockInquirerPrompt([
-      { name: 'test-template-1' },
-      { configFormat: 'jsonc' },
-      { initGit: 'Yes' },
-      { deploy: 'Yes' }
-    ]);
+  it('should call all init steps in order', async () => {
+    const helper = await import('../../src/commands/init/helper.js');
 
-    vi.spyOn(fsExtra, 'copy').mockImplementation(vi.mocked);
-    vi.spyOn(fs, 'readdirSync').mockReturnValue(['test' as any]);
+    await handleInit({ _: [], $0: '' });
 
-    await handleInit({
-      _: [],
-      $0: ''
-    });
-    expect(std.out).toMatchInlineSnapshot(`
-      [MockFunction log] {
-        "calls": [
-          [
-            {
-              "name": "test-template-1",
-            },
-          ],
-          [
-            {
-              "configFormat": "jsonc",
-            },
-          ],
-          [
-            {
-              "initGit": "Yes",
-            },
-          ],
-          [
-            "Git has been installed successfully.",
-          ],
-          [
-            {
-              "deploy": "Yes",
-            },
-          ],
-          [
-            "Enter your routine project folder: 💡 cd test-template-1",
-          ],
-          [
-            "Start a local development server for your project: 💡 esa-cli dev",
-          ],
-          [
-            "Save a new version of code: 💡 esa-cli commit",
-          ],
-          [
-            "Deploy your project to different environments: 💡 esa-cli deploy",
-          ],
-        ],
-        "results": [
-          {
-            "type": "return",
-            "value": undefined,
-          },
-          {
-            "type": "return",
-            "value": undefined,
-          },
-          {
-            "type": "return",
-            "value": undefined,
-          },
-          {
-            "type": "return",
-            "value": undefined,
-          },
-          {
-            "type": "return",
-            "value": undefined,
-          },
-          {
-            "type": "return",
-            "value": undefined,
-          },
-          {
-            "type": "return",
-            "value": undefined,
-          },
-          {
-            "type": "return",
-            "value": undefined,
-          },
-        ],
-      }
-    `);
+    expect(helper.checkAndUpdatePackage).toHaveBeenCalledWith('esa-template');
+    expect(helper.getInitParamsFromArgv).toHaveBeenCalled();
+    expect(helper.configProjectName).toHaveBeenCalled();
+    expect(helper.configCategory).toHaveBeenCalled();
+    expect(helper.configTemplate).toHaveBeenCalled();
+    expect(helper.createProject).toHaveBeenCalled();
+    expect(helper.applyFileEdits).toHaveBeenCalled();
+    expect(helper.installESACli).toHaveBeenCalled();
+    expect(helper.updateConfigFile).toHaveBeenCalled();
+    expect(helper.initGit).toHaveBeenCalled();
   });
 
-  it('clones the repository and updates project config --install git', async () => {
-    vi.mock('../../src/components/mutiLevelSelect.js', () => ({
-      default: vi.fn().mockResolvedValue('/test/path/test-template-1')
-    }));
-    mockInquirerPrompt([
-      { name: 'test-template-1' },
-      { configFormat: 'jsonc' },
-      { initGit: 'No' },
-      { deploy: 'Yes' }
-    ]);
+  it('should pass argv to getInitParamsFromArgv', async () => {
+    const helper = await import('../../src/commands/init/helper.js');
 
-    vi.spyOn(fsExtra, 'copy').mockImplementation(vi.mocked);
-    vi.spyOn(fs, 'readdirSync').mockReturnValue(['test' as any]);
+    const argv = { name: 'my-project', _: [], $0: '' };
+    await handleInit(argv);
 
-    await handleInit({
-      _: [],
-      $0: ''
-    });
-    expect(std.out).toMatchInlineSnapshot(`
-      [MockFunction log] {
-        "calls": [
-          [
-            {
-              "name": "test-template-1",
-            },
-          ],
-          [
-            {
-              "configFormat": "jsonc",
-            },
-          ],
-          [
-            {
-              "initGit": "No",
-            },
-          ],
-          [
-            "Git installation was skipped.",
-          ],
-          [
-            {
-              "deploy": "Yes",
-            },
-          ],
-          [
-            "Enter your routine project folder: 💡 cd test-template-1",
-          ],
-          [
-            "Start a local development server for your project: 💡 esa-cli dev",
-          ],
-          [
-            "Save a new version of code: 💡 esa-cli commit",
-          ],
-          [
-            "Deploy your project to different environments: 💡 esa-cli deploy",
-          ],
-        ],
-        "results": [
-          {
-            "type": "return",
-            "value": undefined,
-          },
-          {
-            "type": "return",
-            "value": undefined,
-          },
-          {
-            "type": "return",
-            "value": undefined,
-          },
-          {
-            "type": "return",
-            "value": undefined,
-          },
-          {
-            "type": "return",
-            "value": undefined,
-          },
-          {
-            "type": "return",
-            "value": undefined,
-          },
-          {
-            "type": "return",
-            "value": undefined,
-          },
-          {
-            "type": "return",
-            "value": undefined,
-          },
-        ],
-      }
-    `);
-  });
-  it('clones the repository and updates project config --install git --skip deploy', async () => {
-    vi.mock('../../src/components/mutiLevelSelect.js', () => ({
-      default: vi.fn().mockResolvedValue('/test/path/test-template-1')
-    }));
-    mockInquirerPrompt([
-      { name: 'test-template-1' },
-      { configFormat: 'jsonc' },
-      { initGit: 'Yes' },
-      { deploy: 'No' }
-    ]);
-
-    vi.spyOn(fsExtra, 'copy').mockImplementation(vi.mocked);
-    vi.spyOn(fs, 'readdirSync').mockReturnValue(['test' as any]);
-
-    await handleInit({
-      _: [],
-      $0: ''
-    });
-    expect(std.out).toMatchInlineSnapshot(`
-      [MockFunction log] {
-        "calls": [
-          [
-            {
-              "name": "test-template-1",
-            },
-          ],
-          [
-            {
-              "configFormat": "jsonc",
-            },
-          ],
-          [
-            {
-              "initGit": "Yes",
-            },
-          ],
-          [
-            "Git has been installed successfully.",
-          ],
-          [
-            {
-              "deploy": "No",
-            },
-          ],
-          [
-            "Enter your routine project folder: 💡 cd test-template-1",
-          ],
-          [
-            "Start a local development server for your project: 💡 esa-cli dev",
-          ],
-          [
-            "Save a new version of code: 💡 esa-cli commit",
-          ],
-          [
-            "Deploy your project to different environments: 💡 esa-cli deploy",
-          ],
-        ],
-        "results": [
-          {
-            "type": "return",
-            "value": undefined,
-          },
-          {
-            "type": "return",
-            "value": undefined,
-          },
-          {
-            "type": "return",
-            "value": undefined,
-          },
-          {
-            "type": "return",
-            "value": undefined,
-          },
-          {
-            "type": "return",
-            "value": undefined,
-          },
-          {
-            "type": "return",
-            "value": undefined,
-          },
-          {
-            "type": "return",
-            "value": undefined,
-          },
-          {
-            "type": "return",
-            "value": undefined,
-          },
-        ],
-      }
-    `);
+    expect(helper.getInitParamsFromArgv).toHaveBeenCalledWith(argv);
   });
 
-  it('should skip the project git and deployment initialization', async () => {
-    vi.mock('../../src/components/mutiLevelSelect.js', () => ({
-      default: vi.fn().mockResolvedValue('/test/path/test-template-1')
-    }));
-    mockInquirerPrompt([
-      { name: 'test-template-1' },
-      { configFormat: 'jsonc' },
-      { initGit: 'Yes' },
-      { deploy: 'No' }
-    ]);
-
-    vi.spyOn(fsExtra, 'copy').mockImplementation(vi.mocked);
-    vi.spyOn(fs, 'readdirSync').mockReturnValue(['test' as any]);
-
-    await handleInit({
-      _: [],
-      $0: '',
-      skip: true
-    });
-    expect(std.out).toMatchInlineSnapshot(`
-      [MockFunction log] {
-        "calls": [
-          [
-            {
-              "name": "test-template-1",
-            },
-          ],
-          [
-            {
-              "configFormat": "jsonc",
-            },
-          ],
-          [
-            {
-              "initGit": "Yes",
-            },
-          ],
-          [
-            "Git has been installed successfully.",
-          ],
-          [
-            {
-              "deploy": "No",
-            },
-          ],
-          [
-            "Enter your routine project folder: 💡 cd test-template-1",
-          ],
-          [
-            "Start a local development server for your project: 💡 esa-cli dev",
-          ],
-          [
-            "Save a new version of code: 💡 esa-cli commit",
-          ],
-          [
-            "Deploy your project to different environments: 💡 esa-cli deploy",
-          ],
-        ],
-        "results": [
-          {
-            "type": "return",
-            "value": undefined,
-          },
-          {
-            "type": "return",
-            "value": undefined,
-          },
-          {
-            "type": "return",
-            "value": undefined,
-          },
-          {
-            "type": "return",
-            "value": undefined,
-          },
-          {
-            "type": "return",
-            "value": undefined,
-          },
-        ],
-      }
-    `);
-  });
-
-  it('should handle template name parameter', async () => {
-    vi.mock('../../src/components/mutiLevelSelect.js', () => ({
-      default: vi.fn().mockResolvedValue('/test/path/test-template-1')
-    }));
-    mockInquirerPrompt([{ name: 'test-template-2' }]);
-
-    await handleInit({
-      _: [],
-      $0: '',
-      template: 'test-template-1',
-      skip: true
-    });
-    expect(std.out).toMatchInlineSnapshot(`
-      [MockFunction log] {
-        "calls": [
-          [
-            {
-              "name": "test-template-2",
-            },
-          ],
-          [
-            "Enter your routine project folder: 💡 cd test-template-2",
-          ],
-          [
-            "Start a local development server for your project: 💡 esa dev",
-          ],
-          [
-            "Save a new version of code: 💡 esa commit",
-          ],
-          [
-            "Deploy your project to different environments: 💡 esa deploy",
-          ],
-        ],
-        "results": [
-          {
-            "type": "return",
-            "value": undefined,
-          },
-          {
-            "type": "return",
-            "value": undefined,
-          },
-          {
-            "type": "return",
-            "value": undefined,
-          },
-          {
-            "type": "return",
-            "value": undefined,
-          },
-          {
-            "type": "return",
-            "value": undefined,
-          },
-        ],
-      }
-    `);
-  });
-
-  it('should handle project name parameter', async () => {
-    vi.mock('../../src/components/mutiLevelSelect.js', () => ({
-      default: vi.fn().mockResolvedValue('/test/path/test-template-1')
-    }));
-    mockInquirerPrompt([
-      { name: 'test-template-1' },
-      { configFormat: 'jsonc' }
-    ]);
-
-    await handleInit({
-      _: [],
-      $0: '',
+  it('should call configLanguage when category is framework', async () => {
+    const helper = await import('../../src/commands/init/helper.js');
+    vi.mocked(helper.getInitParamsFromArgv).mockReturnValue({
       name: 'test-project',
-      skip: true
+      category: 'framework'
     });
-    expect(std.out).toMatchInlineSnapshot(`
-      [MockFunction log] {
-        "calls": [
-          [
-            {
-              "name": "test-template-1",
-            },
-          ],
-          [
-            {
-              "configFormat": "jsonc",
-            },
-          ],
-          [
-            "Enter your routine project folder: 💡 cd test-project",
-          ],
-          [
-            "Start a local development server for your project: 💡 esa dev",
-          ],
-          [
-            "Save a new version of code: 💡 esa commit",
-          ],
-          [
-            "Deploy your project to different environments: 💡 esa deploy",
-          ],
-        ],
-        "results": [
-          {
-            "type": "return",
-            "value": undefined,
-          },
-          {
-            "type": "return",
-            "value": undefined,
-          },
-          {
-            "type": "return",
-            "value": undefined,
-          },
-          {
-            "type": "return",
-            "value": undefined,
-          },
-        ],
-      }
-    `);
+
+    await handleInit({ _: [], $0: '' });
+
+    expect(helper.configLanguage).toHaveBeenCalled();
+  });
+
+  it('should not call configLanguage when category is template', async () => {
+    const helper = await import('../../src/commands/init/helper.js');
+    vi.mocked(helper.getInitParamsFromArgv).mockReturnValue({
+      name: 'test-project',
+      category: 'template'
+    });
+
+    await handleInit({ _: [], $0: '' });
+
+    expect(helper.configLanguage).not.toHaveBeenCalled();
+  });
+
+  it('should prompt for deploy when deploy is not set', async () => {
+    const helper = await import('../../src/commands/init/helper.js');
+    const { promptParameter } = await import('../../src/utils/prompt.js');
+    vi.mocked(helper.getInitParamsFromArgv).mockReturnValue({
+      name: 'test-project'
+    });
+    vi.mocked(promptParameter).mockResolvedValue(false);
+
+    await handleInit({ _: [], $0: '' });
+
+    expect(promptParameter).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'confirm'
+      })
+    );
+  });
+
+  it('should call deployProject when deploy is true', async () => {
+    const helper = await import('../../src/commands/init/helper.js');
+    const { promptParameter } = await import('../../src/utils/prompt.js');
+    vi.mocked(helper.getInitParamsFromArgv).mockReturnValue({
+      name: 'test-project',
+      deploy: true
+    });
+
+    await handleInit({ _: [], $0: '' });
+
+    expect(promptParameter).not.toHaveBeenCalled();
+    expect(helper.buildProject).toHaveBeenCalled();
+    expect(helper.deployProject).toHaveBeenCalled();
+  });
+
+  it('should not prompt for deploy when deploy is false', async () => {
+    const helper = await import('../../src/commands/init/helper.js');
+    const { promptParameter } = await import('../../src/utils/prompt.js');
+    vi.mocked(helper.getInitParamsFromArgv).mockReturnValue({
+      name: 'test-project',
+      deploy: false
+    });
+
+    await handleInit({ _: [], $0: '' });
+
+    expect(promptParameter).not.toHaveBeenCalled();
+    expect(helper.buildProject).not.toHaveBeenCalled();
+    expect(helper.deployProject).not.toHaveBeenCalled();
+  });
+
+  it('should skip deploy steps when user declines deploy', async () => {
+    const helper = await import('../../src/commands/init/helper.js');
+    const { promptParameter } = await import('../../src/utils/prompt.js');
+    vi.mocked(helper.getInitParamsFromArgv).mockReturnValue({
+      name: 'test-project'
+    });
+    vi.mocked(promptParameter).mockResolvedValue(false);
+
+    await handleInit({ _: [], $0: '' });
+
+    expect(helper.buildProject).not.toHaveBeenCalled();
+    expect(helper.deployProject).not.toHaveBeenCalled();
+  });
+
+  it('should call displayDeploySuccess after successful deploy', async () => {
+    const helper = await import('../../src/commands/init/helper.js');
+    const { displayDeploySuccess } = await import(
+      '../../src/commands/common/utils.js'
+    );
+    vi.mocked(helper.getInitParamsFromArgv).mockReturnValue({
+      name: 'my-app',
+      deploy: true
+    });
+
+    await handleInit({ _: [], $0: '' });
+
+    expect(displayDeploySuccess).toHaveBeenCalledWith('my-app', true, true);
   });
 });

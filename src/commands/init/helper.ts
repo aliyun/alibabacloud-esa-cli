@@ -593,7 +593,7 @@ export const applyFileEdits = async (
 };
 
 export const installESACli = async (initParams: initParams) => {
-  if (!initParams.installEsaCli) {
+  if (typeof initParams.installEsaCli !== 'boolean') {
     const install = (await promptParameter<boolean>({
       type: 'confirm',
       question: 'Do you want to install esa-cli as a dev dependency?',
@@ -670,7 +670,7 @@ export const initGit = async (initParams: initParams): Promise<boolean> => {
     return true;
   }
 
-  if (!initParams.git) {
+  if (typeof initParams.git !== 'boolean') {
     const initGit = (await promptParameter<boolean>({
       type: 'confirm',
       question: t('init_git').d('Do you want to init git in your project?'),

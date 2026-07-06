@@ -164,7 +164,7 @@
     "zh_CN": "帮助"
   },
   "common_sub_command_fail": {
-    "en": "Use esa-cli <command> -h to see help",
+    "en": "Use ${cliName} <command> -h to see help",
     "zh_CN": "使用 esa-cli <command> -h 查看帮助"
   },
   "deployments_delete_describe": {

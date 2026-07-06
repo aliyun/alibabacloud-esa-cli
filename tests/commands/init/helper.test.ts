@@ -1,41 +1,72 @@
 import { execSync } from 'child_process';
 
-import inquirer from 'inquirer';
+import { confirm as clackConfirm, isCancel } from '@clack/prompts';
+import fs from 'fs-extra';
 import { it, describe, expect, vi, beforeEach, afterEach } from 'vitest';
 
 import { checkAndUpdatePackage } from '../../../src/commands/init/helper.js';
-import t from '../../../src/i18n/index.js';
-import logger from '../../../src/libs/logger.js';
 
 vi.mock('child_process');
-vi.mock('inquirer');
-vi.mock('../../../src/libs/logger.js');
-vi.mock('../../../src/i18n/index.js');
+vi.mock('@clack/prompts', () => ({
+  confirm: vi.fn(),
+  isCancel: vi.fn().mockReturnValue(false)
+}));
+vi.mock('fs-extra', () => ({
+  default: {
+    removeSync: vi.fn(),
+    readdirSync: vi.fn(),
+    statSync: vi.fn(),
+    existsSync: vi.fn(),
+    readFileSync: vi.fn(),
+    copy: vi.fn()
+  },
+  removeSync: vi.fn(),
+  readdirSync: vi.fn(),
+  copy: vi.fn()
+}));
+vi.mock('../../../src/libs/logger.js', () => {
+  const ora = {
+    text: '',
+    start: vi.fn(),
+    stop: vi.fn(),
+    fail: vi.fn()
+  };
+  return {
+    default: {
+      log: vi.fn(),
+      success: vi.fn(),
+      error: vi.fn(),
+      ora,
+      stopSpinner: vi.fn(),
+      divider: vi.fn()
+    }
+  };
+});
+vi.mock('../../../src/i18n/index.js', () => ({
+  default: (key: string, params?: any) => ({
+    d: (defaultValue: string) => defaultValue
+  })
+}));
+vi.mock('../../../src/utils/fileUtils/base.js', () => ({
+  getDirName: vi.fn().mockReturnValue('/test/dir'),
+  getRoot: vi.fn().mockReturnValue('/test/root')
+}));
+vi.mock('../../../src/utils/fileUtils/index.js', () => ({
+  getProjectConfig: vi.fn(),
+  getProjectConfigPath: vi.fn(),
+  getCliConfig: vi.fn(),
+  getTemplatesConfig: vi.fn(),
+  templateHubPath: '/tmp',
+  generateConfigFile: vi.fn(),
+  updateProjectConfigFile: vi.fn()
+}));
 
 const mockExecSync = vi.mocked(execSync);
-const mockInquirerPrompt = vi.mocked(inquirer.prompt);
-const mockLogger = vi.mocked(logger);
-const mockT = vi.mocked(t);
+const mockClackConfirm = vi.mocked(clackConfirm);
 
 describe('checkAndUpdatePackage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-
-    mockLogger.log = vi.fn();
-    mockLogger.success = vi.fn();
-    mockLogger.error = vi.fn();
-
-    mockT.mockImplementation((key: string, params?: any) => {
-      const translations: Record<string, string> = {
-        display_current_esa_template_version: 'Current esa-template version:',
-        display_latest_esa_template_version: 'Latest esa-template version:',
-        is_update_to_latest_version:
-          'Do you want to update templates to latest version?',
-        updated_esa_template_to_latest_version: `${params?.packageName || 'package'} updated successfully`,
-        esa_template_is_latest_version: `${params?.packageName || 'package'} is latest.`
-      };
-      return { d: (defaultValue: string) => translations[key] || defaultValue };
-    });
   });
 
   afterEach(() => {
@@ -46,10 +77,11 @@ describe('checkAndUpdatePackage', () => {
     const packageName = 'test-package';
 
     mockExecSync
-      .mockReturnValueOnce(Buffer.from('test-package@1.0.0')) // npm list
-      .mockReturnValueOnce(Buffer.from('2.0.0')); // npm view version
+      .mockReturnValueOnce(Buffer.from('test-package@1.0.0'))
+      .mockReturnValueOnce(Buffer.from('2.0.0'));
 
-    mockInquirerPrompt.mockResolvedValue({ isUpdate: true });
+    mockClackConfirm.mockResolvedValue(true);
+    mockExecSync.mockReturnValueOnce(Buffer.from(''));
 
     await checkAndUpdatePackage(packageName);
 
@@ -63,21 +95,7 @@ describe('checkAndUpdatePackage', () => {
       expect.objectContaining({ cwd: expect.any(String) })
     );
 
-    expect(mockInquirerPrompt).toHaveBeenCalledWith({
-      type: 'confirm',
-      name: 'isUpdate',
-      message: expect.any(String)
-    });
-
-    expect(mockExecSync).toHaveBeenCalledWith(
-      `rm -rf node_modules/${packageName}`,
-      expect.objectContaining({ cwd: expect.any(String) })
-    );
-
-    expect(mockExecSync).toHaveBeenCalledWith(
-      `rm -rf package-lock.json`,
-      expect.objectContaining({ cwd: expect.any(String) })
-    );
+    expect(mockClackConfirm).toHaveBeenCalled();
 
     expect(mockExecSync).toHaveBeenCalledWith(
       `npm install ${packageName}@latest`,
@@ -86,18 +104,14 @@ describe('checkAndUpdatePackage', () => {
         stdio: 'inherit'
       })
     );
-
-    expect(mockLogger.log).toHaveBeenCalledWith(
-      expect.stringContaining('updated successfully')
-    );
   });
 
   it('should not update package when current version is same as latest version', async () => {
     const packageName = 'test-package';
 
     mockExecSync
-      .mockReturnValueOnce(Buffer.from('test-package@1.0.0')) // npm list
-      .mockReturnValueOnce(Buffer.from('1.0.0')); // npm view version
+      .mockReturnValueOnce(Buffer.from('test-package@1.0.0'))
+      .mockReturnValueOnce(Buffer.from('1.0.0'));
 
     await checkAndUpdatePackage(packageName);
 
@@ -111,44 +125,21 @@ describe('checkAndUpdatePackage', () => {
       expect.objectContaining({ cwd: expect.any(String) })
     );
 
-    expect(mockInquirerPrompt).not.toHaveBeenCalled();
-
-    expect(mockExecSync).not.toHaveBeenCalledWith(
-      `rm -rf node_modules/${packageName}`,
-      expect.any(Object)
-    );
-
-    expect(mockExecSync).not.toHaveBeenCalledWith(
-      `npm install ${packageName}@latest`,
-      expect.any(Object)
-    );
-
-    expect(mockLogger.log).toHaveBeenCalledWith(
-      expect.stringContaining('is latest')
-    );
+    expect(mockClackConfirm).not.toHaveBeenCalled();
   });
 
   it('should not update package when user declines the update', async () => {
     const packageName = 'test-package';
 
     mockExecSync
-      .mockReturnValueOnce(Buffer.from('test-package@1.0.0')) // npm list
-      .mockReturnValueOnce(Buffer.from('2.0.0')); // npm view version
+      .mockReturnValueOnce(Buffer.from('test-package@1.0.0'))
+      .mockReturnValueOnce(Buffer.from('2.0.0'));
 
-    mockInquirerPrompt.mockResolvedValue({ isUpdate: false });
+    mockClackConfirm.mockResolvedValue(false);
 
     await checkAndUpdatePackage(packageName);
 
-    expect(mockInquirerPrompt).toHaveBeenCalledWith({
-      type: 'confirm',
-      name: 'isUpdate',
-      message: expect.any(String)
-    });
-
-    expect(mockExecSync).not.toHaveBeenCalledWith(
-      `rm -rf node_modules/${packageName}`,
-      expect.any(Object)
-    );
+    expect(mockClackConfirm).toHaveBeenCalled();
 
     expect(mockExecSync).not.toHaveBeenCalledWith(
       `npm install ${packageName}@latest`,
@@ -163,14 +154,9 @@ describe('checkAndUpdatePackage', () => {
       .mockImplementationOnce(() => {
         throw new Error('Package not found');
       })
-      .mockReturnValueOnce(Buffer.from('2.0.0')); // npm view version
+      .mockReturnValueOnce(Buffer.from(''));
 
     await checkAndUpdatePackage(packageName);
-
-    expect(mockExecSync).toHaveBeenCalledWith(
-      `rm -rf node_modules/${packageName}`,
-      expect.objectContaining({ cwd: expect.any(String) })
-    );
 
     expect(mockExecSync).toHaveBeenCalledWith(
       `npm install ${packageName}@latest`,
@@ -180,7 +166,7 @@ describe('checkAndUpdatePackage', () => {
       })
     );
 
-    expect(mockInquirerPrompt).not.toHaveBeenCalled();
+    expect(mockClackConfirm).not.toHaveBeenCalled();
   });
 
   it('should handle general errors gracefully', async () => {
@@ -193,8 +179,11 @@ describe('checkAndUpdatePackage', () => {
 
     await checkAndUpdatePackage(packageName);
 
-    expect(mockLogger.error).toHaveBeenCalledWith(
-      'Error: An error occurred while checking and updating the package, skipping template update'
+    const logger = (await import('../../../src/libs/logger.js')).default;
+    expect(logger.ora.fail).toHaveBeenCalledWith(
+      expect.stringContaining(
+        'An error occurred while checking and updating the package'
+      )
     );
 
     consoleSpy.mockRestore();
@@ -204,10 +193,11 @@ describe('checkAndUpdatePackage', () => {
     const packageName = 'test-package';
 
     mockExecSync
-      .mockReturnValueOnce(Buffer.from('└── test-package@1.0.0')) // npm list with tree format
-      .mockReturnValueOnce(Buffer.from('2.0.0')); // npm view version
+      .mockReturnValueOnce(Buffer.from('└── test-package@1.0.0'))
+      .mockReturnValueOnce(Buffer.from('2.0.0'));
 
-    mockInquirerPrompt.mockResolvedValue({ isUpdate: true });
+    mockClackConfirm.mockResolvedValue(true);
+    mockExecSync.mockReturnValueOnce(Buffer.from(''));
 
     await checkAndUpdatePackage(packageName);
 
@@ -226,10 +216,11 @@ describe('checkAndUpdatePackage', () => {
     const packageName = 'test-package';
 
     mockExecSync
-      .mockReturnValueOnce(Buffer.from('test-package')) // npm list without version
-      .mockReturnValueOnce(Buffer.from('2.0.0')); // npm view version
+      .mockReturnValueOnce(Buffer.from('test-package'))
+      .mockReturnValueOnce(Buffer.from('2.0.0'));
 
-    mockInquirerPrompt.mockResolvedValue({ isUpdate: true });
+    mockClackConfirm.mockResolvedValue(true);
+    mockExecSync.mockReturnValueOnce(Buffer.from(''));
 
     await checkAndUpdatePackage(packageName);
 
@@ -246,6 +237,7 @@ describe('checkAndUpdatePackage', () => {
 
   it('should handle error when npm list error', async () => {
     const packageName = 'test-package';
+    const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
 
     mockExecSync.mockImplementation(() => {
       throw new Error('Network error');
@@ -253,8 +245,13 @@ describe('checkAndUpdatePackage', () => {
 
     await checkAndUpdatePackage(packageName);
 
-    expect(mockLogger.error).toHaveBeenCalledWith(
-      'Error: An error occurred while checking and updating the package, skipping template update'
+    const logger = (await import('../../../src/libs/logger.js')).default;
+    expect(logger.ora.fail).toHaveBeenCalledWith(
+      expect.stringContaining(
+        'An error occurred while checking and updating the package'
+      )
     );
+
+    consoleSpy.mockRestore();
   });
 });

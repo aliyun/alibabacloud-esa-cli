@@ -47,17 +47,17 @@ const commit: CommandModule = {
       });
   },
   handler: async (argv: ArgumentsCamelCase) => {
-    await handleCommit(argv);
-    exit();
+    const success = await handleCommit(argv);
+    exit(success ? 0 : 1);
   }
 };
 
 export default commit;
 
-export async function handleCommit(argv: ArgumentsCamelCase) {
+export async function handleCommit(argv: ArgumentsCamelCase): Promise<boolean> {
   intro(`Commit an application with ESA`);
   const projectInfo = await validateAndInitializeProject(argv?.name as string);
-  if (!projectInfo) return;
+  if (!projectInfo) return false;
   const { projectName } = projectInfo;
   let description;
   if (argv.description) {
@@ -85,7 +85,7 @@ export async function handleCommit(argv: ArgumentsCamelCase) {
   const { isSuccess } = res || {};
   if (!isSuccess) {
     logger.endSubStep('Generate version failed');
-    exit(1);
+    return false;
   }
   const codeVersion = res?.res?.data?.CodeVersion;
   if (!codeVersion) {
@@ -94,4 +94,5 @@ export async function handleCommit(argv: ArgumentsCamelCase) {
   }
   logger.endSubStep(`Version generated: ${codeVersion}`);
   outro(`Code version ${chalk.bold(codeVersion)} generated successfully`);
+  return true;
 }

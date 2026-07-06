@@ -17,13 +17,12 @@ const deleteCommand: CommandModule = {
           'The name of the project to delete'
         ),
         type: 'string',
-        array: true,
         demandOption: true
       })
       .usage(`${t('common_usage').d('Usage')}: $0 delete <projectName>`);
   },
   handler: async (argv: ArgumentsCamelCase) => {
-    handleDelete(argv);
+    await handleDelete(argv);
   }
 };
 

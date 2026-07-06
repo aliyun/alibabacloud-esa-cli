@@ -3,7 +3,6 @@ import { it, describe, expect, vi, beforeEach } from 'vitest';
 import { displayVersionList } from '../../../src/commands/deploy/helper.js';
 import { handleListDeployments } from '../../../src/commands/deployments/list.js';
 import {
-  checkDirectory,
   checkIsLoginSuccess,
   getRoutineCodeVersions
 } from '../../../src/commands/utils.js';
@@ -33,7 +32,6 @@ describe('handle display deployments', () => {
     vi.mocked(ApiService.getInstance).mockResolvedValue(mockApiService);
 
     // Mock utility functions
-    vi.mocked(checkDirectory).mockReturnValue(true);
     vi.mocked(getProjectConfig).mockReturnValue({ name: 'test-project' });
     vi.mocked(checkIsLoginSuccess).mockResolvedValue(true);
     vi.mocked(validRoutine).mockResolvedValue(undefined);
@@ -88,7 +86,6 @@ describe('handle display deployments', () => {
 
     await handleListDeployments();
 
-    expect(checkDirectory).toHaveBeenCalled();
     expect(getProjectConfig).toHaveBeenCalled();
     expect(checkIsLoginSuccess).toHaveBeenCalled();
     expect(validRoutine).toHaveBeenCalledWith('test-project');
@@ -808,15 +805,6 @@ describe('handle display deployments', () => {
 
     expect(checkIsLoginSuccess).toHaveBeenCalled();
     expect(mockApiService.getRoutine).not.toHaveBeenCalled();
-  });
-
-  it('should handle display deployments with checkDirectory returning false', async () => {
-    vi.mocked(checkDirectory).mockReturnValue(false);
-
-    await handleListDeployments();
-
-    expect(checkDirectory).toHaveBeenCalled();
-    expect(getProjectConfig).not.toHaveBeenCalled();
   });
 
   it('should handle display deployments with getProjectConfig returning null', async () => {

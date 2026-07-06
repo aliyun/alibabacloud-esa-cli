@@ -28,7 +28,9 @@ const main = async () => {
   const esa = yargs(argv)
     .strict()
     .fail((msg, err) => {
-      console.error(msg, err);
+      if (msg) console.error(msg);
+      if (err) console.error(err);
+      process.exit(1);
     })
     .scriptName(cliName)
     .locale(cliConfig?.lang || 'en')

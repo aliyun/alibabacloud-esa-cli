@@ -59,7 +59,9 @@
     "@typescript-eslint/parser": "^6.9.1",
     "eslint": "^8.57.0",
     "eslint-plugin-import": "^2.32.0",
-    "eslint-plugin-react": "latest",
+    "eslint-plugin-react": "^7.37.5",
+    "react-dom": "^18.2.0",
+    "rimraf": "^6.0.1",
     "eslint-plugin-react-hooks": "^5.2.0",
     "husky": "^8.0.3",
     "jsdom": "^25.0.1",
@@ -106,9 +108,7 @@
     "winston": "^3.11.0",
     "winston-daily-rotate-file": "^5.0.0",
     "yargs": "^17.7.2",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "rimraf": "^6.0.1"
+    "react": "^18.2.0"
   },
   "lint-staged": {
     "src/**/*.{ts,tsx,js,jsx}": [

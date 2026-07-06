@@ -72,7 +72,7 @@ const login: CommandModule = {
       });
   },
   handler: async (argv: ArgumentsCamelCase) => {
-    handleLogin(argv);
+    await handleLogin(argv);
   }
 };
 

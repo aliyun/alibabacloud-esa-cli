@@ -1,4 +1,5 @@
 import { execSync } from 'child_process';
+import path from 'path';
 
 import { confirm as clackConfirm, isCancel, log, outro } from '@clack/prompts';
 import fs from 'fs-extra';
@@ -149,6 +150,12 @@ const mockGetProjectConfig = vi.mocked(getProjectConfig);
 const mockGenerateConfigFile = vi.mocked(generateConfigFile);
 const mockUpdateProjectConfigFile = vi.mocked(updateProjectConfigFile);
 const mockCommitAndDeployVersion = vi.mocked(commitAndDeployVersion);
+const workspacePath = path.join(path.sep, 'workspace');
+const demoPath = path.join(workspacePath, 'demo');
+const templatesPath = path.join(path.sep, 'templates');
+const helloTemplatePath = path.join(templatesPath, 'hello');
+const emptyTemplatePath = path.join(templatesPath, 'empty');
+const tmpPath = path.join(path.sep, 'tmp');
 
 const frameworkConfig = {
   react: {
@@ -565,14 +572,17 @@ describe('template and framework config helpers', () => {
       isDirectory: () => !String(itemPath).includes('plain-file')
     }));
     mockGetProjectConfig.mockImplementation((projectPath: any) => ({
-      name: String(projectPath).endsWith('/hello') ? 'Hello World' : 'Ignored'
+      name:
+        path.basename(String(projectPath)) === 'hello'
+          ? 'Hello World'
+          : 'Ignored'
     }) as any);
 
-    expect(getTemplateInstances('/templates')).toEqual([
-      { path: '/templates/hello', title: 'Hello World' }
+    expect(getTemplateInstances(templatesPath)).toEqual([
+      { path: helloTemplatePath, title: 'Hello World' }
     ]);
     expect(templateMocks.constructor).toHaveBeenCalledWith(
-      '/templates/hello',
+      helloTemplatePath,
       'Hello World'
     );
   });
@@ -641,7 +651,7 @@ describe('template and framework config helpers', () => {
     expect(prepareTemplateItems()).toEqual([
       {
         label: 'Hello World',
-        value: '/tmp/hello',
+        value: path.join(tmpPath, 'hello'),
         hint: 'Starter',
         children: []
       }
@@ -663,56 +673,56 @@ describe('project creation helpers', () => {
     });
     mockGetProjectConfig.mockReturnValue({ name: 'demo' } as any);
 
-    await preInstallDependencies('/workspace/demo');
+    await preInstallDependencies(demoPath);
 
     expect(mockExecSync).toHaveBeenCalledWith('npm install', {
       stdio: 'inherit',
-      cwd: '/workspace/demo'
+      cwd: demoPath
     });
     expect(mockExecSync).toHaveBeenCalledWith('npm run build', {
       stdio: 'inherit',
-      cwd: '/workspace/demo'
+      cwd: demoPath
     });
     expect(mockUpdateProjectConfigFile).toHaveBeenCalledWith(
       { assets: { directory: 'dist' } },
-      '/workspace/demo'
+      demoPath
     );
   });
 
   it('should skip dependency installation when package.json is missing', async () => {
     mockFs.existsSync.mockReturnValue(false);
 
-    await preInstallDependencies('/workspace/demo');
+    await preInstallDependencies(demoPath);
 
     expect(mockExecSync).not.toHaveBeenCalled();
   });
 
   it('should initialize a template project and update copied project config', async () => {
-    vi.spyOn(process, 'cwd').mockReturnValue('/workspace');
+    vi.spyOn(process, 'cwd').mockReturnValue(workspacePath);
     mockFs.existsSync.mockReturnValue(false);
     const projectConfig = { name: 'template-name', entry: 'index.ts' };
     mockGetProjectConfig.mockReturnValue(projectConfig as any);
 
-    const result = await initializeProject('/templates/hello', 'demo');
+    const result = await initializeProject(helloTemplatePath, 'demo');
 
     expect(result).toEqual({
-      template: { path: '/templates/hello', title: 'demo' },
-      targetPath: '/workspace/demo'
+      template: { path: helloTemplatePath, title: 'demo' },
+      targetPath: demoPath
     });
     expect(mockFs.copy).toHaveBeenCalledWith(
-      '/templates/hello',
-      '/workspace/demo'
+      helloTemplatePath,
+      demoPath
     );
     expect(mockUpdateProjectConfigFile).toHaveBeenCalledWith(
       { name: 'demo', entry: 'index.ts' },
-      '/workspace/demo'
+      demoPath
     );
   });
 
   it('should return null when selected template has no project config', async () => {
     mockGetProjectConfig.mockReturnValue(null);
 
-    await expect(initializeProject('/templates/empty', 'demo')).resolves.toBe(
+    await expect(initializeProject(emptyTemplatePath, 'demo')).resolves.toBe(
       null
     );
 
@@ -721,11 +731,11 @@ describe('project creation helpers', () => {
   });
 
   it('should return null when target directory already exists', async () => {
-    vi.spyOn(process, 'cwd').mockReturnValue('/workspace');
+    vi.spyOn(process, 'cwd').mockReturnValue(workspacePath);
     mockGetProjectConfig.mockReturnValue({ name: 'template' } as any);
     mockFs.existsSync.mockReturnValue(true);
 
-    await expect(initializeProject('/templates/hello', 'demo')).resolves.toBe(
+    await expect(initializeProject(helloTemplatePath, 'demo')).resolves.toBe(
       null
     );
 
@@ -741,21 +751,21 @@ describe('post scaffold helpers', () => {
   });
 
   it('should install dependencies for framework projects', async () => {
-    vi.spyOn(process, 'cwd').mockReturnValue('/workspace');
+    vi.spyOn(process, 'cwd').mockReturnValue(workspacePath);
 
     await installDependencies({ name: 'demo', framework: 'react' });
 
     expect(execCommand).toHaveBeenCalledWith(
       ['npm', 'install'],
       expect.objectContaining({
-        cwd: '/workspace/demo',
+        cwd: demoPath,
         startText: 'Installing dependencies'
       })
     );
   });
 
   it('should apply exact, glob, regex, and create-if-missing file edits', async () => {
-    vi.spyOn(process, 'cwd').mockReturnValue('/workspace');
+    vi.spyOn(process, 'cwd').mockReturnValue(workspacePath);
     mockFs.readdirSync.mockReturnValue([
       'vite.config.js',
       'route-1.ts',
@@ -778,24 +788,24 @@ describe('post scaffold helpers', () => {
     ).resolves.toBe(true);
 
     expect(mockFs.writeFileSync).toHaveBeenCalledWith(
-      '/workspace/demo/next.config.ts',
+      path.join(demoPath, 'next.config.ts'),
       'exact content',
       'utf-8'
     );
     expect(mockFs.writeFileSync).toHaveBeenCalledWith(
-      '/workspace/demo/vite.config.js',
+      path.join(demoPath, 'vite.config.js'),
       'glob content',
       'utf-8'
     );
     expect(mockFs.writeFileSync).toHaveBeenCalledWith(
-      '/workspace/demo/route-1.ts',
+      path.join(demoPath, 'route-1.ts'),
       'regex content',
       'utf-8'
     );
   });
 
   it('should prompt before installing esa-cli when flag is not provided', async () => {
-    vi.spyOn(process, 'cwd').mockReturnValue('/workspace');
+    vi.spyOn(process, 'cwd').mockReturnValue(workspacePath);
     mockPromptParameter.mockResolvedValue(true);
     const params = { name: 'demo' };
 
@@ -805,7 +815,7 @@ describe('post scaffold helpers', () => {
     expect(execCommand).toHaveBeenCalledWith(
       ['npm', 'install', '-D', 'esa-cli'],
       expect.objectContaining({
-        cwd: '/workspace/demo',
+        cwd: demoPath,
         startText: 'Installing ESA CLI'
       })
     );
@@ -818,14 +828,14 @@ describe('post scaffold helpers', () => {
   });
 
   it('should generate framework config file with assets config', async () => {
-    vi.spyOn(process, 'cwd').mockReturnValue('/workspace');
+    vi.spyOn(process, 'cwd').mockReturnValue(workspacePath);
 
     await updateConfigFile({ name: 'demo', framework: 'react' });
 
     expect(mockGenerateConfigFile).toHaveBeenCalledWith(
       'demo',
       { assets: { directory: './dist' } },
-      '/workspace/demo',
+      demoPath,
       'jsonc',
       'singlePageApplication'
     );
@@ -875,7 +885,7 @@ describe('git, build, and deploy helpers', () => {
   });
 
   it('should initialize git and write a default gitignore', async () => {
-    vi.spyOn(process, 'cwd').mockReturnValue('/workspace');
+    vi.spyOn(process, 'cwd').mockReturnValue(workspacePath);
     mockFs.existsSync.mockReturnValue(false);
 
     await expect(
@@ -884,10 +894,10 @@ describe('git, build, and deploy helpers', () => {
 
     expect(mockExecCommand).toHaveBeenCalledWith(
       ['git', 'init'],
-      expect.objectContaining({ cwd: '/workspace/demo' })
+      expect.objectContaining({ cwd: demoPath })
     );
     expect(mockFs.writeFileSync).toHaveBeenCalledWith(
-      '/workspace/demo/.gitignore',
+      path.join(demoPath, '.gitignore'),
       expect.stringContaining('node_modules/'),
       'utf-8'
     );
@@ -900,14 +910,14 @@ describe('git, build, and deploy helpers', () => {
   });
 
   it('should build framework projects', async () => {
-    vi.spyOn(process, 'cwd').mockReturnValue('/workspace');
+    vi.spyOn(process, 'cwd').mockReturnValue(workspacePath);
 
     await buildProject({ name: 'demo', framework: 'react' });
 
     expect(execCommand).toHaveBeenCalledWith(
       ['npm', 'run', 'build'],
       expect.objectContaining({
-        cwd: '/workspace/demo',
+        cwd: demoPath,
         startText: 'Building project'
       })
     );
@@ -921,7 +931,7 @@ describe('git, build, and deploy helpers', () => {
   });
 
   it('should deploy initialized project to all environments', async () => {
-    vi.spyOn(process, 'cwd').mockReturnValue('/workspace');
+    vi.spyOn(process, 'cwd').mockReturnValue(workspacePath);
 
     await deployProject({ name: 'demo', deploy: true });
 
@@ -930,7 +940,7 @@ describe('git, build, and deploy helpers', () => {
       undefined,
       undefined,
       'Init project',
-      '/workspace/demo',
+      demoPath,
       'all'
     );
   });

@@ -3,6 +3,38 @@ const fs = require('fs');
 const spawn = require('cross-spawn');
 const path = require('path');
 
+const getRuntimeNodePath = () => {
+  const nodePaths = new Set();
+  const launcherDirs = [
+    __dirname,
+    process.argv[1] ? path.dirname(process.argv[1]) : undefined
+  ].filter(Boolean);
+
+  for (const launcherDir of launcherDirs) {
+    const pnpmNodeModules = path.resolve(
+      launcherDir,
+      '..',
+      '..',
+      '.pnpm',
+      'node_modules'
+    );
+
+    if (fs.existsSync(pnpmNodeModules)) {
+      nodePaths.add(pnpmNodeModules);
+    }
+  }
+
+  if (process.env.NODE_PATH) {
+    for (const nodePath of process.env.NODE_PATH.split(path.delimiter)) {
+      if (nodePath) {
+        nodePaths.add(nodePath);
+      }
+    }
+  }
+
+  return nodePaths.size > 0 ? Array.from(nodePaths).join(path.delimiter) : '';
+};
+
 const main = () => {
   let entryPath;
   if (fs.existsSync(path.join(__dirname, '../dist/index.js'))) {
@@ -13,13 +45,16 @@ const main = () => {
     throw new Error('Neither dist/index.js nor index.js could be found.');
   }
 
+  const nodePath = getRuntimeNodePath();
+
   return spawn(
     process.execPath,
     ['--no-warnings', ...process.execArgv, entryPath, ...process.argv.slice(2)],
     {
       stdio: 'inherit',
       env: {
-        ...process.env
+        ...process.env,
+        ...(nodePath ? { NODE_PATH: nodePath } : {})
       }
     }
   )

@@ -10,9 +10,11 @@ on:
       
 jobs:
   build:
-    runs-on: macos-latest
+    runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
+        os: [macos-latest, ubuntu-latest, windows-latest]
         node-version: [18.x, 20.x, 22.x]
     steps:
       - name: Checkout code

@@ -333,7 +333,7 @@ export const configProjectName = async (initParams: initParams) => {
       return true;
     }
   })) as string;
-  initParams.name = name;
+  initParams.name = name || defaultName;
 };
 
 export const configCategory = async (initParams: initParams) => {
@@ -526,7 +526,7 @@ export const applyFileEdits = async (
       // Very small glob subset: *, ?, {a,b,c}
       let escaped = pattern
         .replace(/[-/\\^$+?.()|[\]{}]/g, '\\$&') // escape regex specials first
-        .replace(/\\\*/g, '.*')
+        .replace(/\*/g, '.*')
         .replace(/\\\?/g, '.');
       // restore and convert {a,b} to (a|b)
       escaped = escaped.replace(/\\\{([^}]+)\\\}/g, (_, inner) => {
@@ -554,7 +554,10 @@ export const applyFileEdits = async (
       let matchedFiles: string[] = [];
       if (edit.matchType === 'exact') {
         const absExact = path.join(targetPath, edit.match);
-        matchedFiles = fs.existsSync(absExact) ? [edit.match] : [];
+        matchedFiles =
+          fs.existsSync(absExact) || edit.createIfMissing !== false
+            ? [edit.match]
+            : [];
       } else if (edit.matchType === 'glob') {
         const regex = toRegexFromGlob(edit.match);
         matchedFiles = listRootFiles().filter((name) => regex.test(name));
@@ -579,7 +582,7 @@ export const applyFileEdits = async (
       for (const rel of matchedFiles) {
         const abs = path.join(targetPath, rel);
         if (payload == null) continue;
-        if (!fs.existsSync(abs)) continue; // Only overwrite existing files
+        if (!fs.existsSync(abs) && edit.createIfMissing === false) continue;
         fs.ensureDirSync(path.dirname(abs));
         fs.writeFileSync(abs, payload, 'utf-8');
       }
@@ -714,7 +717,8 @@ export async function getGitVersion() {
 }
 
 export async function isGitInstalled() {
-  return (await getGitVersion()) !== '' && (await getGitVersion()) !== null;
+  const gitVersion = await getGitVersion();
+  return gitVersion !== '' && gitVersion !== null;
 }
 
 /**

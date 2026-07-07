@@ -114,9 +114,10 @@ jobs:
 
       - name: Smoke test pnpm global install
         run: |
-          PNPM_HOME="$RUNNER_TEMP/install-smoke/pnpm-home"
+          export PNPM_HOME="$RUNNER_TEMP/install-smoke/pnpm-home"
           mkdir -p "$PNPM_HOME/bin"
-          PATH="$PNPM_HOME/bin:$PATH" pnpm add --global "$TARBALL" --global-dir "$RUNNER_TEMP/install-smoke/pnpm-global" --store-dir "$RUNNER_TEMP/pnpm-store" --allow-build=esbuild --allow-build=@alicloud/openapi-core
+          export PATH="$PNPM_HOME/bin:$PATH"
+          pnpm add --global "$TARBALL" --global-dir "$RUNNER_TEMP/install-smoke/pnpm-global" --store-dir "$RUNNER_TEMP/pnpm-store" --allow-build=esbuild --allow-build=@alicloud/openapi-core
           HOME="$RUNNER_TEMP/esa-cli-home" "$PNPM_HOME/bin/esa" --version
           HOME="$RUNNER_TEMP/esa-cli-home" "$PNPM_HOME/bin/esa-cli" --version
 

@@ -1,5 +1,26 @@
 # Changelog
 
+## [1.0.11] - 2026-07-22
+
+### Added
+
+- Support standard Alibaba Cloud credential environment variables: `ALIBABA_CLOUD_ACCESS_KEY_ID`, `ALIBABA_CLOUD_ACCESS_KEY_SECRET`, and `ALIBABA_CLOUD_SECURITY_TOKEN`, while retaining the existing `ESA_*` variables as fallbacks.
+- Support `ALIBABA_CLOUD_ESA_CLI_COMPAT_MODE` for overriding the CLI name shown in help, usage, and error messages.
+
+### Changed
+
+- Replace React/Ink-based terminal interactions with lightweight Clack and native terminal handling, removing unused React and Ink runtime dependencies.
+- Expand CI and installation coverage across macOS, Linux, Windows, Node.js 18/20/22, and npm, Yarn, pnpm, and Bun.
+- Require Node.js 18 or newer and upgrade esbuild to the patched 0.25 release line.
+- Upgrade the ESA SDK and ZIP implementation to patched releases with safer dependency trees.
+- Upgrade test and lint tooling to patched releases that retain Node.js 18 support.
+
+### Fixed
+
+- Declare previously implicit runtime dependencies explicitly to prevent installation failures with strict package managers.
+- Support pnpm global installations by resolving pnpm's shared runtime dependency path.
+- Resolve file MD5 calculations only after the input stream closes, preventing cleanup races and file-handle issues.
+
 ## [1.0.10] - 2026-04-20
 
 ### Added

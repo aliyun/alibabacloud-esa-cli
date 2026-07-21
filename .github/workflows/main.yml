@@ -7,7 +7,10 @@ on:
   pull_request:
     branches:
       - '**' 
-      
+
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: ${{ matrix.os }}
@@ -26,7 +29,10 @@ jobs:
           node-version: ${{ matrix.node-version }}
           
       - name: Install dependencies
-        run: npm install
+        run: npm ci
+
+      - name: Run lint
+        run: npm run lint
         
       - name: Run tests
         run: npm test
@@ -63,7 +69,7 @@ jobs:
 
       - name: Build package tarball
         run: |
-          npm install
+          npm ci
           npm run build
           mkdir -p "$RUNNER_TEMP/esa-pack" "$RUNNER_TEMP/esa-cli-home"
           npm pack --pack-destination "$RUNNER_TEMP/esa-pack"

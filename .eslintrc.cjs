@@ -43,12 +43,6 @@ module.exports = {
       'single',
       { avoidEscape: true, allowTemplateLiterals: true }
     ],
-    '@typescript-eslint/quotes': [
-      'error',
-      'single',
-      { avoidEscape: true, allowTemplateLiterals: true }
-    ],
-
     // 多余变量检查
     'no-unused-vars': 'off', // 关闭基础规则，使用TypeScript版本
     '@typescript-eslint/no-unused-vars': [
@@ -56,7 +50,7 @@ module.exports = {
       {
         argsIgnorePattern: '^_',
         varsIgnorePattern: '^_',
-        caughtErrorsIgnorePattern: '^_'
+        caughtErrors: 'none'
       }
     ],
     'no-unused-expressions': 'error',

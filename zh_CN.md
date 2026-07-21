@@ -51,7 +51,7 @@ npm i -D esa-cli@latest
 
 ## 相关文档
 
-- [esa-cli 命令](./docs/Commands_zh_CN.md)
-- [ESA 配置文件说明](./docs/Config_zh_CN.md)
+- [esa-cli 命令](https://github.com/aliyun/alibabacloud-esa-cli/blob/master/docs/Commands_zh_CN.md)
+- [ESA 配置文件说明](https://github.com/aliyun/alibabacloud-esa-cli/blob/master/docs/Config_zh_CN.md)
 - [阿里云 ESA 文档](https://help.aliyun.com/document_detail/2710021.html)
 - [Functions 和 Pages API 参考](https://help.aliyun.com/document_detail/2710024.html)

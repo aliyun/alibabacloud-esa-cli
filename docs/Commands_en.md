@@ -345,11 +345,23 @@ AccessKey ID (AK)
 **--access-key-secret, --sk** _optional_  
 AccessKey Secret (SK)
 
-**Environment Variables**  
-Read from environment variables:
+**--sts-token** _optional_
+
+Temporary STS credentials in `AccessKeyId,AccessKeySecret,SecurityToken` or JSON format
+
+**Environment Variables**
+
+The standard Alibaba Cloud variables are preferred:
+
+- **ALIBABA_CLOUD_ACCESS_KEY_ID**
+- **ALIBABA_CLOUD_ACCESS_KEY_SECRET**
+- **ALIBABA_CLOUD_SECURITY_TOKEN** _(optional)_
+
+The legacy variables remain supported as lower-priority fallbacks:
 
 - **ESA_ACCESS_KEY_ID**
 - **ESA_ACCESS_KEY_SECRET**
+- **ESA_SECURITY_TOKEN** _(optional)_
 
 ---
 

@@ -189,12 +189,6 @@ const mockGlobal = () => {
       deleteRoutineCodeVersion: vi.fn().mockResolvedValue({
         Status: 'OK'
       } as DeleteRoutineCodeVersionRes),
-      createRoutineRelatedRoute: vi.fn().mockResolvedValue({
-        data: { Status: 'OK' }
-      }),
-      deleteRoutineRelatedRoute: vi.fn().mockResolvedValue({
-        data: { Status: 'OK' }
-      } as DeleteRoutineRelatedRouteRes),
       listSites: vi.fn().mockResolvedValue({
         data: {
           Sites: [

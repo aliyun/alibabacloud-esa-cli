@@ -357,10 +357,20 @@ esa-cli login [OPTIONS]
 **--access-key-secret, --sk** _可选_
 **AccessKey Secret (SK)**
 
-**环境变量** _从环境变量中读取：_
+**--sts-token** _可选_
+**临时 STS 凭证，支持 `AccessKeyId,AccessKeySecret,SecurityToken` 或 JSON 格式**
+
+**环境变量** _优先读取阿里云标准环境变量：_
+
+- **ALIBABA_CLOUD_ACCESS_KEY_ID**
+- **ALIBABA_CLOUD_ACCESS_KEY_SECRET**
+- **ALIBABA_CLOUD_SECURITY_TOKEN** _可选_
+
+**以下旧变量继续作为低优先级兼容项：**
 
 - **ESA_ACCESS_KEY_ID**
 - **ESA_ACCESS_KEY_SECRET**
+- **ESA_SECURITY_TOKEN** _可选_
 
 ---
 

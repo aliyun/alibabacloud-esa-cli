@@ -4,7 +4,6 @@ import fs from 'fs';
 import { ListRoutineCodeVersionsResponseBodyCodeVersions } from '@alicloud/esa20240910/dist/models/ListRoutineCodeVersionsResponseBodyCodeVersions.js';
 import chalk from 'chalk';
 
-import { Option } from '../components/filterSelector.js';
 import t from '../i18n/index.js';
 import api from '../libs/api.js';
 import { ApiService } from '../libs/apiService.js';
@@ -25,6 +24,11 @@ import {
 import { validateCredentials } from '../utils/validateCredentials.js';
 
 import { getRoutineDetails } from './common/utils.js';
+
+export interface Option {
+  label: string;
+  value: string;
+}
 
 export const checkDirectory = (isCheckGit = false): boolean => {
   const root = getRoot();
@@ -105,11 +109,17 @@ export function validDomain(domain: string): boolean {
 export async function checkIsLoginSuccess(): Promise<boolean> {
   const cliConfig = getCliConfig();
   let accessKeyId =
-    process.env.ESA_ACCESS_KEY_ID || cliConfig?.auth?.accessKeyId;
+    process.env.ALIBABA_CLOUD_ACCESS_KEY_ID ||
+    process.env.ESA_ACCESS_KEY_ID ||
+    cliConfig?.auth?.accessKeyId;
   let accessKeySecret =
-    process.env.ESA_ACCESS_KEY_SECRET || cliConfig?.auth?.accessKeySecret;
+    process.env.ALIBABA_CLOUD_ACCESS_KEY_SECRET ||
+    process.env.ESA_ACCESS_KEY_SECRET ||
+    cliConfig?.auth?.accessKeySecret;
   const securityToken =
-    process.env.ESA_SECURITY_TOKEN || cliConfig?.auth?.securityToken;
+    process.env.ALIBABA_CLOUD_SECURITY_TOKEN ||
+    process.env.ESA_SECURITY_TOKEN ||
+    cliConfig?.auth?.securityToken;
 
   if (accessKeyId && accessKeySecret) {
     const result = await validateCredentials(

@@ -15,7 +15,7 @@ const listRoute: CommandModule = {
   command: 'list',
   describe: `🔍 ${t('route_list_describe').d('List all related routes')}`,
   handler: async () => {
-    handleListRoutes();
+    await handleListRoutes();
   }
 };
 

@@ -42,7 +42,7 @@ const addDomain: CommandModule = {
       });
   },
   handler: async (argv: ArgumentsCamelCase) => {
-    handleAddDomain(argv);
+    await handleAddDomain(argv);
   }
 };
 

@@ -16,8 +16,8 @@ describe('handleDeleteDomain', () => {
             "📃 Related domains:",
           ],
           [
-            "╭─ test.com
-      ╰─ test2.com",
+            "╭ test.com
+      ╰ test2.com",
           ],
         ],
         "results": [

@@ -70,12 +70,10 @@ describe('handle delete deployments', async () => {
             "  Version ID            Description",
           ],
           [
-            "
-      🎉  SUCCESS  Delete success: v1",
+            "🎉  SUCCESS  Delete success: v1",
           ],
           [
-            "
-      🎉  SUCCESS  Delete success: v2",
+            "🎉  SUCCESS  Delete success: v2",
           ],
         ],
         "results": [

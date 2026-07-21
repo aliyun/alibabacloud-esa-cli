@@ -2,7 +2,7 @@ module.exports = {
   parser: '@typescript-eslint/parser',
   root: true,
   ignorePatterns: ['dist', '.eslintrc.cjs', 'devEntry.js', 'mock'],
-  plugins: ['react', 'react-hooks', 'import', '@typescript-eslint'],
+  plugins: ['import', '@typescript-eslint'],
   overrides: [
     {
       files: 'src/**/*.ts',
@@ -12,12 +12,29 @@ module.exports = {
         sourceType: 'module',
         project: true
       }
+    },
+    {
+      // 项目已去 ink 化（issue #40），禁止重新引入 react/ink，
+      // 避免发布产物运行时解析到宿主项目的 React
+      files: ['src/**/*.{ts,tsx}'],
+      rules: {
+        'no-restricted-imports': [
+          'error',
+          {
+            paths: ['react', 'ink', 'ink-text-input', 'ink-select-input'].map(
+              (name) => ({
+                name,
+                message: `'${name}' has been removed from this project (issue #40). Use '@clack/prompts' / chalk / readline instead.`
+              })
+            )
+          }
+        ]
+      }
     }
   ],
   rules: {
     // 基础规则
     'no-console': 'off',
-    'react-hooks/exhaustive-deps': 'off',
     'space-before-function-paren': 'off',
 
     // 引号检查 - 强制使用单引号

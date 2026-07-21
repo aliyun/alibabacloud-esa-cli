@@ -16,17 +16,16 @@ const deleteDomain: CommandModule = {
   command: 'delete <domain>',
   describe: `🗑  ${t('domain_delete_describe').d('Delete a related domain')}`,
   builder: (yargs: Argv) => {
-    return yargs.positional('domains', {
+    return yargs.positional('domain', {
       describe: t('domain_delete_positional_describe').d(
         'The names of the related domains to delete'
       ),
       type: 'string',
-      array: true,
       demandOption: true
     });
   },
   handler: async (argv: ArgumentsCamelCase) => {
-    handleDeleteDomain(argv);
+    await handleDeleteDomain(argv);
   }
 };
 

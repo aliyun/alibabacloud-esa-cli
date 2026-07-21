@@ -10,9 +10,11 @@ on:
       
 jobs:
   build:
-    runs-on: macos-latest
+    runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
+        os: [macos-latest, ubuntu-latest, windows-latest]
         node-version: [18.x, 20.x, 22.x]
     steps:
       - name: Checkout code
@@ -34,3 +36,97 @@ jobs:
         
       - name: Package CLI
         run: npm pack
+
+  install-smoke:
+    name: Install smoke tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 22.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.x
+
+      - name: Setup package managers
+        run: |
+          npm install --global yarn@1.22.22 pnpm@11.7.0
+          yarn --version
+          pnpm --version
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.11
+
+      - name: Build package tarball
+        run: |
+          npm install
+          npm run build
+          mkdir -p "$RUNNER_TEMP/esa-pack" "$RUNNER_TEMP/esa-cli-home"
+          npm pack --pack-destination "$RUNNER_TEMP/esa-pack"
+          TARBALL="$(find "$RUNNER_TEMP/esa-pack" -name 'esa-cli-*.tgz' -print -quit)"
+          test -n "$TARBALL"
+          echo "TARBALL=$TARBALL" >> "$GITHUB_ENV"
+
+      - name: Smoke test npm local install
+        run: |
+          TEST_DIR="$RUNNER_TEMP/install-smoke/npm-local"
+          mkdir -p "$TEST_DIR"
+          cd "$TEST_DIR"
+          npm init -y
+          npm install "$TARBALL"
+          HOME="$RUNNER_TEMP/esa-cli-home" ./node_modules/.bin/esa --version
+          HOME="$RUNNER_TEMP/esa-cli-home" ./node_modules/.bin/esa-cli --version
+
+      - name: Smoke test npm global install
+        run: |
+          PREFIX="$RUNNER_TEMP/install-smoke/npm-global"
+          npm install --global --prefix "$PREFIX" "$TARBALL"
+          HOME="$RUNNER_TEMP/esa-cli-home" "$PREFIX/bin/esa" --version
+          HOME="$RUNNER_TEMP/esa-cli-home" "$PREFIX/bin/esa-cli" --version
+
+      - name: Smoke test npm exec
+        run: |
+          HOME="$RUNNER_TEMP/esa-cli-home" npm exec --yes --package "$TARBALL" -- esa --version
+
+      - name: Smoke test yarn classic install
+        run: |
+          TEST_DIR="$RUNNER_TEMP/install-smoke/yarn-local"
+          mkdir -p "$TEST_DIR"
+          cd "$TEST_DIR"
+          yarn init -y
+          yarn add "file:$TARBALL" --cache-folder "$RUNNER_TEMP/yarn-cache" --non-interactive
+          HOME="$RUNNER_TEMP/esa-cli-home" ./node_modules/.bin/esa --version
+          HOME="$RUNNER_TEMP/esa-cli-home" ./node_modules/.bin/esa-cli --version
+
+      - name: Smoke test pnpm local install
+        run: |
+          TEST_DIR="$RUNNER_TEMP/install-smoke/pnpm-local"
+          mkdir -p "$TEST_DIR"
+          cd "$TEST_DIR"
+          npm init -y
+          pnpm add "$TARBALL" --store-dir "$RUNNER_TEMP/pnpm-store" --allow-build=esbuild --allow-build=@alicloud/openapi-core
+          HOME="$RUNNER_TEMP/esa-cli-home" ./node_modules/.bin/esa --version
+          HOME="$RUNNER_TEMP/esa-cli-home" ./node_modules/.bin/esa-cli --version
+
+      - name: Smoke test pnpm global install
+        run: |
+          export PNPM_HOME="$RUNNER_TEMP/install-smoke/pnpm-home"
+          mkdir -p "$PNPM_HOME/bin"
+          export PATH="$PNPM_HOME/bin:$PATH"
+          pnpm add --global "$TARBALL" --global-dir "$RUNNER_TEMP/install-smoke/pnpm-global" --store-dir "$RUNNER_TEMP/pnpm-store" --allow-build=esbuild --allow-build=@alicloud/openapi-core
+          HOME="$RUNNER_TEMP/esa-cli-home" "$PNPM_HOME/bin/esa" --version
+          HOME="$RUNNER_TEMP/esa-cli-home" "$PNPM_HOME/bin/esa-cli" --version
+
+      - name: Smoke test bun install
+        run: |
+          TEST_DIR="$RUNNER_TEMP/install-smoke/bun-local"
+          mkdir -p "$TEST_DIR"
+          cd "$TEST_DIR"
+          bun init -y
+          bun add "$TARBALL" --cache-dir "$RUNNER_TEMP/bun-cache"
+          HOME="$RUNNER_TEMP/esa-cli-home" ./node_modules/.bin/esa --version
+          HOME="$RUNNER_TEMP/esa-cli-home" ./node_modules/.bin/esa-cli --version

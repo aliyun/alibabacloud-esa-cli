@@ -1,21 +1,212 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { generateCodeVersion } from '../../../src/commands/common/routineUtils.js';
+import {
+  commitAndDeployVersion,
+  commitRoutineWithAssets,
+  deployCodeVersion,
+  deployCodeVersions,
+  deployWithVersionPercentages,
+  generateCodeVersion,
+  validateAndInitializeProject,
+  waitForCodeVersionReady
+} from '../../../src/commands/common/utils.js';
+import { checkIsLoginSuccess } from '../../../src/commands/utils.js';
 import { ApiService } from '../../../src/libs/apiService.js';
+import logger from '../../../src/libs/logger.js';
+import { ensureRoutineExists } from '../../../src/utils/checkIsRoutineCreated.js';
 import { getProjectConfig } from '../../../src/utils/fileUtils/index.js';
+import sleep from '../../../src/utils/sleep.js';
 
-// Mock dependencies
 vi.mock('../../../src/libs/apiService.js');
-vi.mock('../../../src/utils/compress.js');
+vi.mock('../../../src/commands/utils.js', () => ({
+  checkIsLoginSuccess: vi.fn()
+}));
+vi.mock('../../../src/utils/compress.js', () => ({
+  default: vi.fn().mockResolvedValue({
+    zip: { toBuffer: () => Buffer.from('test') },
+    sourceList: [],
+    dynamicSources: []
+  })
+}));
 vi.mock('../../../src/utils/fileUtils/index.js');
+vi.mock('../../../src/utils/checkIsRoutineCreated.js', () => ({
+  ensureRoutineExists: vi.fn()
+}));
+vi.mock('../../../src/utils/sleep.js', () => ({
+  default: vi.fn()
+}));
+vi.mock('../../../src/libs/logger.js', () => ({
+  default: {
+    log: vi.fn(),
+    error: vi.fn(),
+    block: vi.fn(),
+    startSubStep: vi.fn(),
+    endSubStep: vi.fn(),
+    notInProject: vi.fn()
+  }
+}));
 
 describe('routineUtils', () => {
+  const mockApiService = () => ({
+    CreateRoutineWithAssetsCodeVersion: vi.fn().mockResolvedValue({
+      code: '200',
+      data: {
+        CodeVersion: 'test-version',
+        OssPostConfig: {
+          Url: 'test-url',
+          OSSAccessKeyId: 'test-key',
+          Signature: 'test-signature',
+          Key: 'test-key',
+          Policy: 'test-policy'
+        }
+      }
+    }),
+    uploadToOss: vi.fn().mockResolvedValue(true),
+    getRoutineCodeVersionInfo: vi.fn().mockResolvedValue({
+      data: { Status: 'available' }
+    }),
+    createRoutineCodeDeployment: vi.fn().mockResolvedValue({ data: {} }),
+    getRoutine: vi.fn().mockResolvedValue({
+      data: { DefaultRelatedRecord: 'routine.example.com' }
+    }),
+    getRoutineAccessToken: vi.fn().mockResolvedValue({
+      data: { Token: 'token' }
+    })
+  });
+
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(checkIsLoginSuccess).mockResolvedValue(true);
+    vi.mocked(ensureRoutineExists).mockResolvedValue(undefined);
+    vi.mocked(sleep).mockResolvedValue(undefined);
+    vi.mocked(getProjectConfig).mockReturnValue({
+      name: 'test-project',
+      entry: 'src/index.ts',
+      assets: {
+        directory: 'dist'
+      }
+    } as any);
+  });
+
+  describe('commitRoutineWithAssets', () => {
+    it('should upload to oss when create response contains complete oss config', async () => {
+      const server = mockApiService();
+      (ApiService.getInstance as any).mockResolvedValue(server);
+
+      const result = await commitRoutineWithAssets(
+        { Name: 'test-project' },
+        Buffer.from('zip')
+      );
+
+      expect(server.CreateRoutineWithAssetsCodeVersion).toHaveBeenCalledWith({
+        Name: 'test-project'
+      });
+      expect(server.uploadToOss).toHaveBeenCalledWith(
+        {
+          OSSAccessKeyId: 'test-key',
+          Signature: 'test-signature',
+          Url: 'test-url',
+          Key: 'test-key',
+          Policy: 'test-policy',
+          XOssSecurityToken: ''
+        },
+        Buffer.from('zip')
+      );
+      expect(result?.isSuccess).toBe(true);
+    });
+
+    it('should return failed result when oss config is missing', async () => {
+      const server = mockApiService();
+      server.CreateRoutineWithAssetsCodeVersion.mockResolvedValue({
+        data: {}
+      });
+      (ApiService.getInstance as any).mockResolvedValue(server);
+
+      const result = await commitRoutineWithAssets(
+        { Name: 'test-project' },
+        Buffer.from('zip')
+      );
+
+      expect(server.uploadToOss).not.toHaveBeenCalled();
+      expect(result).toEqual({ isSuccess: false, res: null });
+    });
+
+    it('should return failed result when required oss fields are incomplete', async () => {
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const server = mockApiService();
+      server.CreateRoutineWithAssetsCodeVersion.mockResolvedValue({
+        data: {
+          OssPostConfig: {
+            Url: 'test-url',
+            OSSAccessKeyId: '',
+            Signature: 'test-signature',
+            Key: 'test-key',
+            Policy: 'test-policy'
+          }
+        }
+      });
+      (ApiService.getInstance as any).mockResolvedValue(server);
+
+      const result = await commitRoutineWithAssets(
+        { Name: 'test-project' },
+        Buffer.from('zip')
+      );
+
+      expect(consoleSpy).toHaveBeenCalledWith(
+        'Missing required OSS configuration fields'
+      );
+      expect(server.uploadToOss).not.toHaveBeenCalled();
+      expect(result).toEqual({ isSuccess: false, res: null });
+      consoleSpy.mockRestore();
+    });
+
+    it('should catch api errors and return failed result', async () => {
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      (ApiService.getInstance as any).mockRejectedValue(new Error('boom'));
+
+      const result = await commitRoutineWithAssets(
+        { Name: 'test-project' },
+        Buffer.from('zip')
+      );
+
+      expect(result).toEqual({ isSuccess: false, res: null });
+      expect(consoleSpy).toHaveBeenCalledWith(
+        'Error in createRoutineWithAssetsCodeVersion:',
+        expect.any(Error)
+      );
+      consoleSpy.mockRestore();
+    });
+  });
+
+  describe('validateAndInitializeProject', () => {
+    it('should derive project info, check login, and ensure the routine exists', async () => {
+      vi.mocked(getProjectConfig).mockReturnValue({
+        name: 'config-project'
+      } as any);
+
+      const result = await validateAndInitializeProject(undefined, '/project');
+
+      expect(result).toEqual({
+        projectConfig: { name: 'config-project' },
+        projectName: 'config-project'
+      });
+      expect(checkIsLoginSuccess).toHaveBeenCalled();
+      expect(ensureRoutineExists).toHaveBeenCalledWith('config-project');
+      expect(logger.endSubStep).toHaveBeenCalledWith('Logged in');
+    });
+
+    it('should return null when login check fails', async () => {
+      vi.mocked(checkIsLoginSuccess).mockResolvedValue(false);
+
+      const result = await validateAndInitializeProject('test-project');
+
+      expect(result).toBeNull();
+      expect(ensureRoutineExists).not.toHaveBeenCalled();
+      expect(logger.endSubStep).toHaveBeenCalledWith('You are not logged in');
+    });
   });
 
   describe('generateCodeVersion', () => {
     it('should normalize singlePageApplication to SinglePageApplication', async () => {
-      // Mock project config with notFoundStrategy
       const mockProjectConfig = {
         name: 'test-project',
         assets: {
@@ -26,7 +217,6 @@ describe('routineUtils', () => {
 
       (getProjectConfig as any).mockReturnValue(mockProjectConfig);
 
-      // Mock ApiService
       const mockApiService = {
         CreateRoutineWithAssetsCodeVersion: vi.fn().mockResolvedValue({
           code: '200',
@@ -46,15 +236,6 @@ describe('routineUtils', () => {
 
       (ApiService.getInstance as any).mockResolvedValue(mockApiService);
 
-      // Mock compress function
-      const mockCompress = vi.fn().mockResolvedValue({
-        toBuffer: () => Buffer.from('test')
-      });
-      vi.doMock('../../../src/utils/compress.js', () => ({
-        default: mockCompress
-      }));
-
-      // Call the function
       const result = await generateCodeVersion(
         'test-project',
         'test description',
@@ -64,22 +245,22 @@ describe('routineUtils', () => {
         undefined
       );
 
-      // Verify that CreateRoutineWithAssetsCodeVersion was called with ConfOptions
       expect(
         mockApiService.CreateRoutineWithAssetsCodeVersion
-      ).toHaveBeenCalledWith({
-        Name: 'test-project',
-        CodeDescription: 'test description',
-        ConfOptions: {
-          NotFoundStrategy: 'SinglePageApplication'
-        }
-      });
+      ).toHaveBeenCalledWith(
+        expect.objectContaining({
+          Name: 'test-project',
+          CodeDescription: 'test description',
+          ConfOptions: {
+            NotFoundStrategy: 'SinglePageApplication'
+          }
+        })
+      );
 
       expect(result?.isSuccess).toBe(true);
     });
 
     it('should pass any notFoundStrategy value to API', async () => {
-      // Mock project config with different notFoundStrategy value
       const mockProjectConfig = {
         name: 'test-project',
         assets: {
@@ -90,7 +271,6 @@ describe('routineUtils', () => {
 
       (getProjectConfig as any).mockReturnValue(mockProjectConfig);
 
-      // Mock ApiService
       const mockApiService = {
         CreateRoutineWithAssetsCodeVersion: vi.fn().mockResolvedValue({
           code: '200',
@@ -110,15 +290,6 @@ describe('routineUtils', () => {
 
       (ApiService.getInstance as any).mockResolvedValue(mockApiService);
 
-      // Mock compress function
-      const mockCompress = vi.fn().mockResolvedValue({
-        toBuffer: () => Buffer.from('test')
-      });
-      vi.doMock('../../../src/utils/compress.js', () => ({
-        default: mockCompress
-      }));
-
-      // Call the function
       const result = await generateCodeVersion(
         'test-project',
         'test description',
@@ -128,22 +299,22 @@ describe('routineUtils', () => {
         undefined
       );
 
-      // Verify that CreateRoutineWithAssetsCodeVersion was called with ConfOptions
       expect(
         mockApiService.CreateRoutineWithAssetsCodeVersion
-      ).toHaveBeenCalledWith({
-        Name: 'test-project',
-        CodeDescription: 'test description',
-        ConfOptions: {
-          NotFoundStrategy: 'customStrategy'
-        }
-      });
+      ).toHaveBeenCalledWith(
+        expect.objectContaining({
+          Name: 'test-project',
+          CodeDescription: 'test description',
+          ConfOptions: {
+            NotFoundStrategy: 'customStrategy'
+          }
+        })
+      );
 
       expect(result?.isSuccess).toBe(true);
     });
 
     it('should not pass ConfOptions when notFoundStrategy is not configured', async () => {
-      // Mock project config without notFoundStrategy
       const mockProjectConfig = {
         name: 'test-project',
         assets: {
@@ -153,7 +324,6 @@ describe('routineUtils', () => {
 
       (getProjectConfig as any).mockReturnValue(mockProjectConfig);
 
-      // Mock ApiService
       const mockApiService = {
         CreateRoutineWithAssetsCodeVersion: vi.fn().mockResolvedValue({
           code: '200',
@@ -173,15 +343,6 @@ describe('routineUtils', () => {
 
       (ApiService.getInstance as any).mockResolvedValue(mockApiService);
 
-      // Mock compress function
-      const mockCompress = vi.fn().mockResolvedValue({
-        toBuffer: () => Buffer.from('test')
-      });
-      vi.doMock('../../../src/utils/compress.js', () => ({
-        default: mockCompress
-      }));
-
-      // Call the function
       const result = await generateCodeVersion(
         'test-project',
         'test description',
@@ -191,15 +352,207 @@ describe('routineUtils', () => {
         undefined
       );
 
-      // Verify that CreateRoutineWithAssetsCodeVersion was called without ConfOptions
-      expect(
-        mockApiService.CreateRoutineWithAssetsCodeVersion
-      ).toHaveBeenCalledWith({
-        Name: 'test-project',
-        CodeDescription: 'test description'
-      });
+      const callArgs =
+        mockApiService.CreateRoutineWithAssetsCodeVersion.mock.calls[0][0];
+      expect(callArgs.Name).toBe('test-project');
+      expect(callArgs.CodeDescription).toBe('test description');
+      expect(callArgs.ConfOptions).toBeUndefined();
 
       expect(result?.isSuccess).toBe(true);
+    });
+  });
+
+  describe('waitForCodeVersionReady', () => {
+    it('should return false when name or code version is missing', async () => {
+      await expect(
+        waitForCodeVersionReady('', 'v1', 'production')
+      ).resolves.toBe(false);
+      await expect(
+        waitForCodeVersionReady('test-project', '', 'production')
+      ).resolves.toBe(false);
+    });
+
+    it('should poll while status is init and return true when available', async () => {
+      const server = mockApiService();
+      server.getRoutineCodeVersionInfo
+        .mockResolvedValueOnce({ data: { Status: 'init' } })
+        .mockResolvedValueOnce({ data: { Status: 'available' } });
+      (ApiService.getInstance as any).mockResolvedValue(server);
+
+      const result = await waitForCodeVersionReady(
+        'test-project',
+        'v1',
+        'staging',
+        100,
+        5
+      );
+
+      expect(result).toBe(true);
+      expect(sleep).toHaveBeenCalledWith(5);
+      expect(server.getRoutineCodeVersionInfo).toHaveBeenCalledTimes(2);
+    });
+
+    it('should return false when status is not available', async () => {
+      const server = mockApiService();
+      server.getRoutineCodeVersionInfo.mockResolvedValue({
+        data: { Status: 'failed' }
+      });
+      (ApiService.getInstance as any).mockResolvedValue(server);
+
+      await expect(
+        waitForCodeVersionReady('test-project', 'v1', 'production')
+      ).resolves.toBe(false);
+
+      expect(logger.error).toHaveBeenCalledWith(
+        expect.stringContaining('build failed')
+      );
+    });
+  });
+
+  describe('deploy helpers', () => {
+    it('should deploy a ready code version', async () => {
+      const server = mockApiService();
+      (ApiService.getInstance as any).mockResolvedValue(server);
+
+      const result = await deployCodeVersion('test-project', 'v1', 'staging');
+
+      expect(result).toBe(true);
+      expect(server.createRoutineCodeDeployment).toHaveBeenCalledWith({
+        Name: 'test-project',
+        CodeVersions: [{ Percentage: 100, CodeVersion: 'v1' }],
+        Strategy: 'percentage',
+        Env: 'staging'
+      });
+    });
+
+    it('should not deploy when code version is not ready', async () => {
+      const server = mockApiService();
+      server.getRoutineCodeVersionInfo.mockResolvedValue({
+        data: { Status: 'failed' }
+      });
+      (ApiService.getInstance as any).mockResolvedValue(server);
+
+      const result = await deployCodeVersion('test-project', 'v1', 'staging');
+
+      expect(result).toBe(false);
+      expect(server.createRoutineCodeDeployment).not.toHaveBeenCalled();
+    });
+
+    it('should deploy weighted versions to all environments', async () => {
+      const server = mockApiService();
+      (ApiService.getInstance as any).mockResolvedValue(server);
+
+      const result = await deployCodeVersions(
+        'test-project',
+        [
+          { codeVersion: 'v1', percentage: 80 },
+          { codeVersion: 'v2', percentage: 20 }
+        ],
+        'all'
+      );
+
+      expect(result).toBe(true);
+      expect(server.createRoutineCodeDeployment).toHaveBeenCalledTimes(2);
+      expect(server.createRoutineCodeDeployment).toHaveBeenNthCalledWith(
+        1,
+        expect.objectContaining({ Env: 'staging' })
+      );
+      expect(server.createRoutineCodeDeployment).toHaveBeenNthCalledWith(
+        2,
+        expect.objectContaining({ Env: 'production' })
+      );
+    });
+
+    it('should deploy an existing version through commitAndDeployVersion', async () => {
+      const server = mockApiService();
+      (ApiService.getInstance as any).mockResolvedValue(server);
+
+      const result = await commitAndDeployVersion(
+        'test-project',
+        undefined,
+        undefined,
+        '',
+        undefined,
+        'production',
+        false,
+        'v1'
+      );
+
+      expect(result).toBe(true);
+      expect(server.createRoutineCodeDeployment).toHaveBeenCalledWith(
+        expect.objectContaining({
+          Name: 'test-project',
+          Env: 'production'
+        })
+      );
+    });
+  });
+
+  describe('deployWithVersionPercentages', () => {
+    it('should reject more than two versions', async () => {
+      await expect(
+        deployWithVersionPercentages(
+          'test-project',
+          ['v1:50,v2:30,v3:20'],
+          'production'
+        )
+      ).resolves.toBe(false);
+
+      expect(logger.error).toHaveBeenCalledWith(
+        'Deploy failed: at most two versions are supported'
+      );
+    });
+
+    it('should reject invalid version percentage format', async () => {
+      await expect(
+        deployWithVersionPercentages('test-project', ['v1:not-a-number'], 'all')
+      ).resolves.toBe(false);
+
+      expect(logger.error).toHaveBeenCalledWith(
+        'Deploy failed: invalid --versions format. Use v1:80,v2:20'
+      );
+    });
+
+    it('should reject single version that is not 100 percent', async () => {
+      await expect(
+        deployWithVersionPercentages('test-project', ['v1:80'], 'production')
+      ).resolves.toBe(false);
+
+      expect(logger.error).toHaveBeenCalledWith(
+        'Deploy failed: single version must be 100%'
+      );
+    });
+
+    it('should reject two versions whose percentages do not sum to 100', async () => {
+      await expect(
+        deployWithVersionPercentages('test-project', ['v1:80,v2:10'], 'all')
+      ).resolves.toBe(false);
+
+      expect(logger.error).toHaveBeenCalledWith(
+        'Deploy failed: percentages must sum to 100'
+      );
+    });
+
+    it('should deploy valid version percentages and print the rollout', async () => {
+      const server = mockApiService();
+      (ApiService.getInstance as any).mockResolvedValue(server);
+
+      await expect(
+        deployWithVersionPercentages('test-project', ['v1:70,v2:30'], 'staging')
+      ).resolves.toBe(true);
+
+      expect(server.createRoutineCodeDeployment).toHaveBeenCalledWith(
+        expect.objectContaining({
+          Env: 'staging',
+          CodeVersions: [
+            { Percentage: 70, CodeVersion: 'v1' },
+            { Percentage: 30, CodeVersion: 'v2' }
+          ]
+        })
+      );
+      expect(logger.log).toHaveBeenCalledWith('📦 Versions rollout:');
+      expect(logger.log).toHaveBeenCalledWith('- v1: 70%');
+      expect(logger.log).toHaveBeenCalledWith('- v2: 30%');
     });
   });
 });

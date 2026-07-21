@@ -14,7 +14,7 @@ const list: CommandModule = {
     return yargs.usage(`${t('common_usage').d('Usage')}: \$0 list []`);
   },
   handler: async () => {
-    handleList();
+    await handleList();
   }
 };
 

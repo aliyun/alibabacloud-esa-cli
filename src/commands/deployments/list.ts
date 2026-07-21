@@ -18,7 +18,7 @@ const deploymentsList: CommandModule = {
   command: 'list',
   describe: `🔍 ${t('deployments_list_describe').d('List all deployments')}`,
   handler: async () => {
-    handleListDeployments();
+    await handleListDeployments();
   }
 };
 

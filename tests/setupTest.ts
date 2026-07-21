@@ -7,6 +7,9 @@ import {
   DeleteRoutineRelatedRouteRes
 } from '../src/libs/interface.js';
 
+process.env.NO_COLOR = '1';
+process.env.FORCE_COLOR = '0';
+
 const mockGlobal = () => {
   vi.mock('../src/libs/apiService.js', async (importOriginal) => {
     const mod =

@@ -29,7 +29,7 @@ const deleteRoute: CommandModule = {
       });
   },
   handler: async (argv: ArgumentsCamelCase) => {
-    handleDeleteRoute(argv);
+    await handleDeleteRoute(argv);
   }
 };
 

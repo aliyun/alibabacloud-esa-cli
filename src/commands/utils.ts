@@ -4,7 +4,6 @@ import fs from 'fs';
 import { ListRoutineCodeVersionsResponseBodyCodeVersions } from '@alicloud/esa20240910/dist/models/ListRoutineCodeVersionsResponseBodyCodeVersions.js';
 import chalk from 'chalk';
 
-import { Option } from '../components/filterSelector.js';
 import t from '../i18n/index.js';
 import api from '../libs/api.js';
 import { ApiService } from '../libs/apiService.js';
@@ -25,6 +24,11 @@ import {
 import { validateCredentials } from '../utils/validateCredentials.js';
 
 import { getRoutineDetails } from './common/utils.js';
+
+export interface Option {
+  label: string;
+  value: string;
+}
 
 export const checkDirectory = (isCheckGit = false): boolean => {
   const root = getRoot();

@@ -204,36 +204,6 @@ class Client {
     );
   }
 
-  createRoutineRelatedRoute(
-    params: OptionalProps<$ESA.CreateRoutineRelatedRouteRequest>
-  ): Promise<$ESA.CreateRoutineRelatedRouteResponse> {
-    const request = new $ESA.CreateRoutineRelatedRouteRequest(params);
-    return this.callApi(
-      this.client.createRoutineRelatedRouteWithOptions.bind(
-        this.client
-      ) as ApiMethod<
-        $ESA.CreateRoutineRelatedRouteRequest,
-        $ESA.CreateRoutineRelatedRouteResponse
-      >,
-      request
-    );
-  }
-
-  deleteRoutineRelatedRoute(
-    params: OptionalProps<$ESA.DeleteRoutineRelatedRouteRequest>
-  ): Promise<$ESA.DeleteRoutineRelatedRouteResponse> {
-    const request = new $ESA.DeleteRoutineRelatedRouteRequest(params);
-    return this.callApi(
-      this.client.deleteRoutineRelatedRouteWithOptions.bind(
-        this.client
-      ) as ApiMethod<
-        $ESA.DeleteRoutineRelatedRouteRequest,
-        $ESA.DeleteRoutineRelatedRouteResponse
-      >,
-      request
-    );
-  }
-
   listSites(
     params: OptionalProps<$ESA.ListSitesRequest>
   ): Promise<$ESA.ListSitesResponse> {

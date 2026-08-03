@@ -1,0 +1,173 @@
+name: Cross-Version Compatibility Tests
+
+on:
+  push:
+    branches:
+      - '**'
+  pull_request:
+    branches:
+      - '**'
+
+jobs:
+  # ─────────────────────────────────────────────────────────────
+  # Job 1-2: Contract Tests (no network, no credentials needed)
+  # ─────────────────────────────────────────────────────────────
+  contract-v1:
+    name: Contract Tests (v1)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install v1 dependencies
+        run: npm ci
+
+      - name: Build v1
+        run: npm run build
+
+      - name: Run contract tests against v1
+        env:
+          ESA_CLI_BIN: bin/enter.cjs
+        run: npx vitest run --config vitest.compat.config.ts
+
+  contract-v2:
+    name: Contract Tests (v2)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install v2 dependencies
+        working-directory: v2
+        run: npm ci
+
+      - name: Build v2
+        working-directory: v2
+        run: npm run build
+
+      - name: Install v1 dependencies (for vitest + @iarna/toml)
+        run: npm ci
+
+      - name: Run contract tests against v2
+        env:
+          ESA_CLI_BIN: v2/bin/esa.mjs
+        run: npx vitest run --config vitest.compat.config.ts
+
+  # ─────────────────────────────────────────────────────────────
+  # Job 3-4: Interactive E2E Tests (no network needed for login flow)
+  # ─────────────────────────────────────────────────────────────
+  e2e-v1:
+    name: Interactive E2E (v1)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install v1 dependencies
+        run: npm ci
+
+      - name: Build v1
+        run: npm run build
+
+      - name: Run v1 E2E tests
+        env:
+          ESA_TEST_SKIP_LOGIN: '1'
+        run: npx vitest run --config vitest.e2e.v1.config.ts
+
+  e2e-v2:
+    name: Interactive E2E (v2)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install v2 dependencies
+        working-directory: v2
+        run: npm ci
+
+      - name: Build v2
+        working-directory: v2
+        run: npm run build
+
+      - name: Install root dependencies (for vitest)
+        run: npm ci
+
+      - name: Run v2 E2E tests
+        env:
+          ESA_TEST_SKIP_LOGIN: '1'
+        run: npx vitest run --config vitest.e2e.v2.config.ts
+
+  # ─────────────────────────────────────────────────────────────
+  # Job 5-6: API Integration Tests (real API calls)
+  # ─────────────────────────────────────────────────────────────
+  integration-v1:
+    name: API Integration (v1)
+    runs-on: ubuntu-latest
+    # Only run on main branch or when explicitly triggered
+    if: github.ref == 'refs/heads/main' || contains(github.event.head_commit.message, '[run-integration]')
+    env:
+      ESA_TEST_ACCESS_KEY_ID: ${{ secrets.ESA_TEST_ACCESS_KEY_ID }}
+      ESA_TEST_ACCESS_KEY_SECRET: ${{ secrets.ESA_TEST_ACCESS_KEY_SECRET }}
+      ESA_TEST_SITE_ID: ${{ secrets.ESA_TEST_SITE_ID }}
+      ESA_TEST_PROJECT_NAME: ${{ secrets.ESA_TEST_PROJECT_NAME }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install v1 dependencies
+        run: npm ci
+
+      - name: Build v1
+        run: npm run build
+
+      - name: Run integration tests against v1
+        env:
+          ESA_CLI_BIN: bin/enter.cjs
+        run: npx vitest run --config vitest.integration.config.ts
+
+  integration-v2:
+    name: API Integration (v2)
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || contains(github.event.head_commit.message, '[run-integration]')
+    env:
+      ESA_TEST_ACCESS_KEY_ID: ${{ secrets.ESA_TEST_ACCESS_KEY_ID }}
+      ESA_TEST_ACCESS_KEY_SECRET: ${{ secrets.ESA_TEST_ACCESS_KEY_SECRET }}
+      ESA_TEST_SITE_ID: ${{ secrets.ESA_TEST_SITE_ID }}
+      ESA_TEST_PROJECT_NAME: ${{ secrets.ESA_TEST_PROJECT_NAME }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install v2 dependencies
+        working-directory: v2
+        run: npm ci
+
+      - name: Build v2
+        working-directory: v2
+        run: npm run build
+
+      - name: Install root dependencies (for vitest + @iarna/toml)
+        run: npm ci
+
+      - name: Run integration tests against v2
+        env:
+          ESA_CLI_BIN: v2/bin/esa.mjs
+        run: npx vitest run --config vitest.integration.config.ts

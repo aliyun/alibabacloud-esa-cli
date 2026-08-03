@@ -15,12 +15,66 @@ const __dirname = getDirName(import.meta.url);
 const root = getRoot();
 
 /**
- * Strip JSONC content (comments + trailing commas) to make it valid JSON
+ * Strip JSONC content (comments + trailing commas) to make it valid JSON.
+ *
+ * Uses a state machine to avoid stripping // or /* inside string literals.
+ * The previous regex-based approach broke URLs like "https://...".
  */
 function stripJsonc(content: string): string {
-  return content
-    .replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, '')
-    .replace(/,\s*([}\]])/g, '$1');
+  let result = '';
+  let i = 0;
+  const len = content.length;
+
+  while (i < len) {
+    const ch = content[i];
+    const next = content[i + 1];
+
+    // Inside a string literal — copy until closing quote (handle escapes)
+    if (ch === '"') {
+      result += ch;
+      i++;
+      while (i < len) {
+        const c = content[i];
+        result += c;
+        if (c === '\\' && i + 1 < len) {
+          // Escaped character — copy the next char too
+          result += content[i + 1];
+          i += 2;
+          continue;
+        }
+        if (c === '"') {
+          i++;
+          break;
+        }
+        i++;
+      }
+      continue;
+    }
+
+    // Line comment: // ... until end of line
+    if (ch === '/' && next === '/') {
+      while (i < len && content[i] !== '\n') {
+        i++;
+      }
+      continue;
+    }
+
+    // Block comment: /* ... */
+    if (ch === '/' && next === '*') {
+      i += 2;
+      while (i < len && !(content[i] === '*' && content[i + 1] === '/')) {
+        i++;
+      }
+      i += 2; // skip closing */
+      continue;
+    }
+
+    result += ch;
+    i++;
+  }
+
+  // Remove trailing commas before } or ]
+  return result.replace(/,\s*([}\]])/g, '$1');
 }
 
 // Function to get the actual project config file path (supports both .jsonc and .toml)

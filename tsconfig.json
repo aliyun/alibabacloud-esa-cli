@@ -1,12 +1,13 @@
 {
-  "exclude": ["tests", "template", "**/snippets"],
+  "exclude": ["tests", "template", "**/snippets", "vitest.*.config.*", "v2"],
   "compilerOptions": {
     /* Language and Environment */
     "target": "ES2016" /* Set the JavaScript language version for emitted JavaScript and include compatible library declarations. */,
 
     /* Modules */
-    "module": "NodeNext" /* Specify what module code is generated. */ /* Specify the root folder within your source files. */,
+    "module": "NodeNext" /* Specify what module code is generated. */,
     "moduleResolution": "NodeNext" /* Specify how TypeScript looks up a file from a given module specifier. */,
+    "rootDir": "src" /* Specify the root folder within your source files. */,
     "outDir": "./dist" /* Specify an output folder for all emitted files. */,
     "allowSyntheticDefaultImports": true /* Allow 'import x from y' when a module doesn't have a default export. */,
     "esModuleInterop": true /* Emit additional JavaScript to ease support for importing CommonJS modules. This enables 'allowSyntheticDefaultImports' for type compatibility. */,

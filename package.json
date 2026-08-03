@@ -24,7 +24,9 @@
     "test": "vitest --coverage",
     "coverage": "vitest --coverage",
     "lint": "eslint src/",
-    "lint:fix": "eslint src/ --fix"
+    "lint:fix": "eslint src/ --fix",
+    "test:compat:v1": "ESA_CLI_BIN=bin/enter.cjs vitest run --config vitest.compat.config.ts",
+    "test:integration:v1": "ESA_CLI_BIN=bin/enter.cjs vitest run --config vitest.integration.config.ts"
   },
   "keywords": [
     "cli",
@@ -75,6 +77,7 @@
     "@alicloud/esa20240910": "2.29.0",
     "@alicloud/openapi-client": "^0.4.7",
     "@alicloud/tea-util": "^1.4.9",
+    "@alife/framework-checker": "^0.0.1-beta.5",
     "@babel/generator": "^7.26.3",
     "@babel/parser": "^7.24.4",
     "@babel/traverse": "^7.24.1",
@@ -102,6 +105,8 @@
     "ora": "^7.0.1",
     "os-locale": "^6.0.2",
     "portscanner": "^2.2.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
     "winston": "^3.11.0",
     "winston-daily-rotate-file": "^5.0.0",
     "yargs": "^17.7.2"

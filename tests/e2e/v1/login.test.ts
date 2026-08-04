@@ -192,11 +192,12 @@ describeCli('login: interactive AK/SK flow', () => {
         ]
       );
 
-      // Only logger.error emits this, and only after all three prompts were
-      // consumed and validation rejected the pair. Matching the prompt label
-      // would be useless — 'AccessKey Secret' also appears in the login-method
-      // menu, so it shows up even if the flow never advanced.
-      expect(result.stdout + result.stderr).toMatch(/ERROR/);
+      // '◇' is the @clack/prompts submitted marker ('◆' means still waiting),
+      // so this proves all three prompts were consumed. Matching the label
+      // alone would be useless — 'AccessKey Secret' also appears in the
+      // login-method menu, and matching the validation error would make the
+      // assertion depend on reaching the ESA API.
+      expect(result.stdout + result.stderr).toMatch(/◇\s+AccessKey Secret/);
 
       // Empty credentials can never validate, so nothing may be stored
       expect(readAuth(emptyHome)?.accessKeyId ?? '').toBe('');

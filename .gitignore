@@ -4,5 +4,6 @@ logs/
 src/commands/dev/er/
 build/
 coverage/
+reports/
 test.txt
 .qoder/

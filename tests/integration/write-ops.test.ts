@@ -7,16 +7,18 @@
  * To run:
  *   ESA_TEST_ACCESS_KEY_ID=xxx ... npx vitest run --config vitest.integration.config.ts
  */
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { mkdtempSync, rmSync, writeFileSync } from 'fs';
-import { join } from 'path';
 import { tmpdir } from 'os';
-import { runCli, testEnv } from './helper';
+import { join } from 'path';
+
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+
 import {
   hasCredentials,
   skipIfNoCredentials,
   CREDENTIALS
 } from './credentials';
+import { runCli, testEnv } from './helper';
 
 const describeOrSkip = hasCredentials() ? describe : describe.skip;
 

@@ -6,14 +6,24 @@
  * via the ESA_CLI_BIN env var.
  */
 import { spawn } from 'child_process';
-import { resolve, join } from 'path';
-import { mkdtempSync, mkdirSync, rmSync } from 'fs';
+import { mkdtempSync, mkdirSync, rmSync, existsSync } from 'fs';
 import { tmpdir } from 'os';
+import { resolve, join } from 'path';
 
 /** Path to the CLI binary being tested */
 export const CLI_BIN = process.env.ESA_CLI_BIN
   ? resolve(process.cwd(), process.env.ESA_CLI_BIN)
   : resolve(process.cwd(), 'bin/enter.cjs');
+
+/**
+ * The CLI shell (bin/enter.cjs) throws when dist/index.js is absent, which
+ * would surface as ~150 unrelated assertion failures. Callers use this to skip
+ * the suite with a clear reason instead.
+ */
+export const isCliBuilt = existsSync(resolve(process.cwd(), 'dist/index.js'));
+
+export const NOT_BUILT_REASON =
+  'CLI is not built — run `npm run build` before the contract tests.';
 
 export interface CliResult {
   stdout: string;
@@ -27,6 +37,9 @@ export interface CliResult {
  * module load time. If the directory is missing or not writable, the
  * process crashes with EPERM.
  *
+ * `USERPROFILE` is set alongside `HOME` because Node's os.homedir() reads
+ * USERPROFILE on Windows, so setting HOME alone would not isolate the run.
+ *
  * If `env.HOME` is already set, use that (caller manages it).
  * Otherwise, create a temp HOME for the duration of this call.
  */
@@ -35,13 +48,13 @@ function ensureSafeHome(env?: Record<string, string>): {
   cleanup?: () => void;
 } {
   if (env?.HOME) {
-    return { env: env };
+    return { env: { USERPROFILE: env.HOME, ...env } };
   }
 
   const tmpHome = mkdtempSync(join(tmpdir(), 'esa-test-home-'));
   mkdirSync(join(tmpHome, '.esa-logs'), { recursive: true });
   return {
-    env: { ...env, HOME: tmpHome },
+    env: { ...env, HOME: tmpHome, USERPROFILE: tmpHome },
     cleanup: () => rmSync(tmpHome, { recursive: true, force: true })
   };
 }

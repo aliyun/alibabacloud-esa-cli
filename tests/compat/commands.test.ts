@@ -14,7 +14,15 @@
  *   npx vitest run --config vitest.compat.config.ts
  */
 import { describe, it, expect } from 'vitest';
-import { runCli } from './helper';
+
+import { runCli, isCliBuilt, NOT_BUILT_REASON } from './helper';
+
+// The contract tests drive the built CLI, so skip loudly rather than failing
+// ~150 assertions when dist/ is missing.
+const describeCli = isCliBuilt ? describe : describe.skip;
+if (!isCliBuilt) {
+  console.warn(`\n⚠ Skipping contract tests: ${NOT_BUILT_REASON}\n`);
+}
 
 // ─── Command Tree Definition ───────────────────────────────────────
 // This is the single source of truth for the CLI surface.
@@ -187,7 +195,7 @@ const PARENT_COMMANDS: string[][] = [
 
 // ─── Tests ──────────────────────────────────────────────────────────
 
-describe('root command', () => {
+describeCli('root command', () => {
   it('esa --version outputs a semver version', async () => {
     const result = await runCli(['--skip-update-check', '--version']);
     expect(result.exitCode).toBe(0);
@@ -238,7 +246,7 @@ describe('root command', () => {
 });
 
 // ── Parent command --help (site, project, domain, deployments, route) ──
-describe('parent command --help', () => {
+describeCli('parent command --help', () => {
   for (const parent of PARENT_COMMANDS) {
     const name = parent.join(' ');
 
@@ -269,7 +277,7 @@ describe('parent command --help', () => {
 });
 
 // ── Every command: --help and -h exit 0 ────────────────────────────
-describe('command --help does not crash', () => {
+describeCli('command --help does not crash', () => {
   for (const spec of COMMAND_TREE) {
     const name = cmdStr(spec);
 
@@ -295,7 +303,7 @@ describe('command --help does not crash', () => {
 });
 
 // ── Every option: appears in --help output ──────────────────────────
-describe('command options appear in --help', () => {
+describeCli('command options appear in --help', () => {
   for (const spec of COMMAND_TREE) {
     const name = cmdStr(spec);
 
@@ -328,7 +336,7 @@ describe('command options appear in --help', () => {
 });
 
 // ── Required positional args: missing them should error ─────────────
-describe('required positional args enforced', () => {
+describeCli('required positional args enforced', () => {
   // These commands have required positionals defined in the command spec.
   // Running without the required arg should exit non-zero.
   // We use --skip-update-check to avoid network calls during the test.
@@ -369,8 +377,29 @@ describe('required positional args enforced', () => {
   }
 });
 
+// ── Global options are documented in root --help ────────────────────
+describeCli('global options appear in root --help', () => {
+  for (const opt of GLOBAL_OPTIONS) {
+    it(`esa --help mentions ${opt.long}`, async () => {
+      const result = await runCli(['--skip-update-check', '--help']);
+      expect(result.exitCode).toBe(0);
+
+      const output = (result.stdout + result.stderr).toLowerCase();
+      expect(output).toContain(opt.long.replace(/^--/, '').toLowerCase());
+    });
+
+    if (opt.short) {
+      it(`esa --help mentions ${opt.short}`, async () => {
+        const result = await runCli(['--skip-update-check', '--help']);
+        expect(result.exitCode).toBe(0);
+        expect(result.stdout + result.stderr).toContain(opt.short);
+      });
+    }
+  }
+});
+
 // ── Global options work on all commands ────────────────────────────
-describe('global options on commands', () => {
+describeCli('global options on commands', () => {
   // Pick a few representative commands to test global options
   const sampleCommands = [
     ['login'],
@@ -403,7 +432,7 @@ describe('global options on commands', () => {
 // yargs strict mode rejects unknown options for commands with .fail()
 // handlers. The contract test verifies the CLI does not CRASH on
 // unknown options, regardless of whether it rejects or ignores them.
-describe('unknown options do not crash', () => {
+describeCli('unknown options do not crash', () => {
   // Only test commands that don't have interactive handlers (which would hang)
   const testCases = [
     { cmd: ['route', 'add'], option: '--invalid-opt', extraArgs: [] },

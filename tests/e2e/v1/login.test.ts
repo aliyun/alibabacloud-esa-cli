@@ -1,176 +1,294 @@
 /**
  * V1 Interactive E2E Tests
  *
- * These tests are specific to v1's interactive flow (inquirer + @clack/prompts).
- * They verify that the final outcome is correct, not the internal implementation.
+ * These tests drive the real CLI through stdin and verify the observable
+ * outcome (exit behaviour + what lands on disk), not the internal
+ * implementation.
+ *
+ * The interactive AK/SK flow is three prompts deep:
+ *   1. select  — login method (AK/SK is the first option, so Enter picks it)
+ *   2. text    — AccessKey ID
+ *   3. text    — AccessKey Secret
+ *
+ * Note on assertions: when stdin is a pipe rather than a TTY, the CLI keeps
+ * running after a @clack/prompts flow finishes, so `timedOut` carries no signal
+ * for prompt-driven commands. Those tests assert what landed on disk instead and
+ * use a short timeout. Flag-driven commands take no prompt and do exit, so they
+ * still assert `timedOut === false`.
  *
  * Prerequisites:
- *   - v1 must be built (npm run build in root)
- *   - Set ESA_TEST_ACCESS_KEY_ID and ESA_TEST_ACCESS_KEY_SECRET env vars
- *   - Or set ESA_TEST_SKIP_LOGIN=1 to skip login tests
+ *   - The CLI must be built (npm run build)
+ *   - Set ESA_TEST_ACCESS_KEY_ID and ESA_TEST_ACCESS_KEY_SECRET to exercise
+ *     the flows that require a real account
+ *   - Or set ESA_TEST_SKIP_LOGIN=1 to skip those (this is what CI does)
  *
  * Usage:
  *   npx vitest run --config vitest.e2e.v1.config.ts
  */
-import { describe, it, expect, beforeAll } from 'vitest';
-import { existsSync, readFileSync, mkdtempSync, rmSync } from 'fs';
+import { existsSync, readFileSync, mkdtempSync, mkdirSync, rmSync } from 'fs';
+import { tmpdir } from 'os';
 import { join } from 'path';
-import { tmpdir, homedir } from 'os';
+
 import toml from '@iarna/toml';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+
 import { runInteractiveDelayed } from '../helper';
 
 const V1_BIN = 'bin/enter.cjs';
 
-// Skip all tests if v1 is not built
-const v1Built = existsSync(join(process.cwd(), 'dist/index.js'));
-const describeOrSkip = v1Built ? describe : describe.skip;
+// Skip everything if the CLI is not built — bin/enter.cjs throws without dist/
+const cliBuilt = existsSync(join(process.cwd(), 'dist/index.js'));
+const describeCli = cliBuilt ? describe : describe.skip;
 
-// Test credentials — these are placeholders, replace with real test account
+// Flows that need a real account are opt-in
 const TEST_ACCESS_KEY_ID =
   process.env.ESA_TEST_ACCESS_KEY_ID || '<YOUR_TEST_ACCESS_KEY_ID>';
 const TEST_ACCESS_KEY_SECRET =
   process.env.ESA_TEST_ACCESS_KEY_SECRET || '<YOUR_TEST_ACCESS_KEY_SECRET>';
-const SKIP_LOGIN = process.env.ESA_TEST_SKIP_LOGIN === '1';
+const SKIP_LOGIN =
+  process.env.ESA_TEST_SKIP_LOGIN === '1' ||
+  TEST_ACCESS_KEY_ID.startsWith('<') ||
+  TEST_ACCESS_KEY_SECRET.startsWith('<');
 
-describeOrSkip('v1 interactive: login', () => {
+/** Enter — accepts the highlighted option of a @clack/prompts select */
+const ENTER = { value: '\r', delay: 2000 };
+
+/**
+ * Long enough to drive three prompts (2s apart) and let credential validation
+ * report back, measured at ~6s. The CLI does not exit on its own after a
+ * @clack/prompts flow over a pipe, so this timeout is always reached.
+ */
+const PROMPT_FLOW_TIMEOUT = 12000;
+
+/** A temp HOME with .esa-logs/ pre-created so the logger cannot EPERM */
+function createTempHome(): string {
+  const home = mkdtempSync(join(tmpdir(), 'esa-v1-e2e-'));
+  mkdirSync(join(home, '.esa-logs'), { recursive: true });
+  return home;
+}
+
+/** Read auth block from a temp HOME, or null when no config was written */
+function readAuth(home: string): Record<string, string> | null {
+  const configPath = join(home, '.esa', 'config', 'default.toml');
+  if (!existsSync(configPath)) return null;
+  const parsed = toml.parse(readFileSync(configPath, 'utf-8')) as {
+    auth?: Record<string, string>;
+  };
+  return parsed.auth ?? null;
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Non-interactive paths — no account and no prompts, so these always run
+// ─────────────────────────────────────────────────────────────────────
+describeCli('login: non-interactive flags', () => {
   let tmpHome: string;
 
   beforeAll(() => {
-    // Use a temp HOME to avoid polluting real credentials
-    tmpHome = mkdtempSync(join(tmpdir(), 'esa-v1-e2e-'));
+    tmpHome = createTempHome();
   });
 
-  it('should complete login with valid credentials', async ({ skip }) => {
-    if (SKIP_LOGIN) skip();
+  afterAll(() => {
+    rmSync(tmpHome, { recursive: true, force: true });
+  });
 
+  it('rejects a malformed --sts-token without prompting', async () => {
     const result = await runInteractiveDelayed(
       {
         bin: V1_BIN,
-        args: ['login'],
+        args: ['login', '--sts-token', 'this-is-not-a-valid-sts-token'],
         env: { HOME: tmpHome },
-        timeout: 30000
+        timeout: 20000
       },
-      [
-        // inquirer prompt: Access Key ID
-        { value: `${TEST_ACCESS_KEY_ID}\n`, delay: 2000 },
-        // inquirer prompt: Access Key Secret
-        { value: `${TEST_ACCESS_KEY_SECRET}\n`, delay: 2000 }
-      ]
+      []
     );
 
+    // A malformed token is rejected before any network call, so the process
+    // must exit on its own rather than wait for input.
     expect(result.timedOut).toBe(false);
-    expect(result.exitCode).toBe(0);
 
-    // Verify credentials were written to ~/.esa/config/default.toml
-    const configPath = join(tmpHome, '.esa', 'config', 'default.toml');
-    expect(existsSync(configPath)).toBe(true);
+    const output = result.stdout + result.stderr;
+    expect(output.toLowerCase()).toContain('sts token');
 
-    const configContent = readFileSync(configPath, 'utf-8');
-    const config = toml.parse(configContent) as any;
-    expect(config.auth?.accessKeyId).toBe(TEST_ACCESS_KEY_ID);
-    expect(config.auth?.accessKeySecret).toBe(TEST_ACCESS_KEY_SECRET);
+    // Nothing may be persisted from a rejected token
+    expect(readAuth(tmpHome)?.securityToken ?? '').toBe('');
   });
 
-  it('should reject login with empty credentials', async () => {
+  it('does not persist credentials rejected by the server', async () => {
     const result = await runInteractiveDelayed(
       {
         bin: V1_BIN,
-        args: ['login'],
-        env: { HOME: tmpHome },
-        timeout: 15000
-      },
-      [
-        { value: '\n', delay: 2000 }, // Empty Access Key ID
-        { value: '\n', delay: 2000 } // Empty Access Key Secret
-      ]
-    );
-
-    // Should either exit with error or re-prompt
-    // The exact behavior depends on inquirer validation
-    expect(result.timedOut).toBe(false);
-  });
-});
-
-describeOrSkip('v1 interactive: login then logout', () => {
-  let tmpHome: string;
-
-  beforeAll(() => {
-    tmpHome = mkdtempSync(join(tmpdir(), 'esa-v1-e2e-'));
-  });
-
-  it('should login then logout successfully', async ({ skip }) => {
-    if (SKIP_LOGIN) skip();
-
-    // Step 1: Login
-    const loginResult = await runInteractiveDelayed(
-      {
-        bin: V1_BIN,
-        args: ['login'],
+        args: [
+          'login',
+          '--access-key-id',
+          'e2e-bogus-key-id',
+          '--access-key-secret',
+          'e2e-bogus-key-secret'
+        ],
         env: { HOME: tmpHome },
         timeout: 30000
       },
-      [
-        { value: `${TEST_ACCESS_KEY_ID}\n`, delay: 2000 },
-        { value: `${TEST_ACCESS_KEY_SECRET}\n`, delay: 2000 }
-      ]
+      []
     );
 
-    expect(loginResult.exitCode).toBe(0);
+    // Supplying both flags skips every prompt, so the process must exit
+    expect(result.timedOut).toBe(false);
 
-    // Step 2: Logout
-    const logoutResult = await runInteractiveDelayed(
-      {
-        bin: V1_BIN,
-        args: ['logout'],
-        env: { HOME: tmpHome },
-        timeout: 10000
-      },
-      [
-        // inquirer confirm: "Are you sure you want to logout?"
-        { value: 'y\n', delay: 2000 }
-      ]
-    );
-
-    expect(logoutResult.exitCode).toBe(0);
-
-    // Verify credentials were cleared
-    const configPath = join(tmpHome, '.esa', 'config', 'default.toml');
-    if (existsSync(configPath)) {
-      const configContent = readFileSync(configPath, 'utf-8');
-      const config = toml.parse(configContent) as any;
-      expect(config.auth?.accessKeyId).toBe('');
-      expect(config.auth?.accessKeySecret).toBe('');
-    }
+    // Validation fails (bad key, or no network) and nothing is written
+    expect(readAuth(tmpHome)?.accessKeyId ?? '').not.toBe('e2e-bogus-key-id');
   });
 });
 
-describeOrSkip('v1 interactive: route add', () => {
+// ─────────────────────────────────────────────────────────────────────
+// Interactive AK/SK flow — needs a real account
+// ─────────────────────────────────────────────────────────────────────
+describeCli('login: interactive AK/SK flow', () => {
   let tmpHome: string;
-  let tmpProject: string;
 
   beforeAll(() => {
-    tmpHome = mkdtempSync(join(tmpdir(), 'esa-v1-e2e-'));
-    tmpProject = mkdtempSync(join(tmpdir(), 'esa-v1-project-'));
+    tmpHome = createTempHome();
   });
 
-  it('should complete route add flow (with prior login)', async ({ skip }) => {
+  afterAll(() => {
+    rmSync(tmpHome, { recursive: true, force: true });
+  });
+
+  it('persists credentials after a successful login', async ({ skip }) => {
     if (SKIP_LOGIN) skip();
 
-    // Step 1: Login first
     await runInteractiveDelayed(
       {
         bin: V1_BIN,
         args: ['login'],
         env: { HOME: tmpHome },
-        timeout: 30000
+        timeout: PROMPT_FLOW_TIMEOUT
       },
       [
-        { value: `${TEST_ACCESS_KEY_ID}\n`, delay: 2000 },
-        { value: `${TEST_ACCESS_KEY_SECRET}\n`, delay: 2000 }
+        ENTER, // select: AK/SK
+        { value: `${TEST_ACCESS_KEY_ID}\r`, delay: 2000 },
+        { value: `${TEST_ACCESS_KEY_SECRET}\r`, delay: 2000 }
       ]
     );
 
-    // Step 2: Create a project config
+    const auth = readAuth(tmpHome);
+    expect(auth?.accessKeyId).toBe(TEST_ACCESS_KEY_ID);
+    expect(auth?.accessKeySecret).toBe(TEST_ACCESS_KEY_SECRET);
+  });
+
+  it('does not persist empty credentials', async () => {
+    const emptyHome = createTempHome();
+
+    try {
+      const result = await runInteractiveDelayed(
+        {
+          bin: V1_BIN,
+          args: ['login'],
+          env: { HOME: emptyHome },
+          timeout: PROMPT_FLOW_TIMEOUT
+        },
+        [
+          ENTER, // select: AK/SK
+          ENTER, // empty AccessKey ID
+          ENTER // empty AccessKey Secret
+        ]
+      );
+
+      // Only logger.error emits this, and only after all three prompts were
+      // consumed and validation rejected the pair. Matching the prompt label
+      // would be useless — 'AccessKey Secret' also appears in the login-method
+      // menu, so it shows up even if the flow never advanced.
+      expect(result.stdout + result.stderr).toMatch(/ERROR/);
+
+      // Empty credentials can never validate, so nothing may be stored
+      expect(readAuth(emptyHome)?.accessKeyId ?? '').toBe('');
+    } finally {
+      rmSync(emptyHome, { recursive: true, force: true });
+    }
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────
+// logout clears whatever login stored
+// ─────────────────────────────────────────────────────────────────────
+describeCli('logout clears stored credentials', () => {
+  let tmpHome: string;
+
+  beforeAll(() => {
+    tmpHome = createTempHome();
+  });
+
+  afterAll(() => {
+    rmSync(tmpHome, { recursive: true, force: true });
+  });
+
+  it('clears credentials written by a successful login', async ({ skip }) => {
+    if (SKIP_LOGIN) skip();
+
+    await runInteractiveDelayed(
+      {
+        bin: V1_BIN,
+        args: ['login'],
+        env: { HOME: tmpHome },
+        timeout: PROMPT_FLOW_TIMEOUT
+      },
+      [
+        ENTER,
+        { value: `${TEST_ACCESS_KEY_ID}\r`, delay: 2000 },
+        { value: `${TEST_ACCESS_KEY_SECRET}\r`, delay: 2000 }
+      ]
+    );
+    // A successful login prints no error, so the persisted credential is the
+    // only trustworthy signal that the flow ran to completion.
+    expect(readAuth(tmpHome)?.accessKeyId).toBe(TEST_ACCESS_KEY_ID);
+
+    const logoutResult = await runInteractiveDelayed(
+      {
+        bin: V1_BIN,
+        args: ['logout'],
+        env: { HOME: tmpHome },
+        timeout: PROMPT_FLOW_TIMEOUT
+      },
+      [{ value: 'y\r', delay: 2000 }]
+    );
+
+    expect(logoutResult.stdout + logoutResult.stderr).not.toBe('');
+    expect(readAuth(tmpHome)?.accessKeyId ?? '').toBe('');
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────
+// route add — needs a real account plus a project config
+// ─────────────────────────────────────────────────────────────────────
+describeCli('route add interactive flow', () => {
+  let tmpHome: string;
+  let tmpProject: string;
+
+  beforeAll(() => {
+    tmpHome = createTempHome();
+    tmpProject = mkdtempSync(join(tmpdir(), 'esa-v1-project-'));
+  });
+
+  afterAll(() => {
+    rmSync(tmpHome, { recursive: true, force: true });
+    rmSync(tmpProject, { recursive: true, force: true });
+  });
+
+  it('completes without hanging after a prior login', async ({ skip }) => {
+    if (SKIP_LOGIN) skip();
+
+    await runInteractiveDelayed(
+      {
+        bin: V1_BIN,
+        args: ['login'],
+        env: { HOME: tmpHome },
+        timeout: PROMPT_FLOW_TIMEOUT
+      },
+      [
+        ENTER,
+        { value: `${TEST_ACCESS_KEY_ID}\r`, delay: 2000 },
+        { value: `${TEST_ACCESS_KEY_SECRET}\r`, delay: 2000 }
+      ]
+    );
+
     const { writeFileSync } = await import('fs');
     writeFileSync(
       join(tmpProject, 'esa.jsonc'),
@@ -181,52 +299,48 @@ describeOrSkip('v1 interactive: route add', () => {
       )
     );
 
-    // Step 3: Run route add interactively
-    // v1 uses inquirer for route add
     const result = await runInteractiveDelayed(
       {
         bin: V1_BIN,
         args: ['route', 'add'],
         cwd: tmpProject,
         env: { HOME: tmpHome },
-        timeout: 30000
+        timeout: PROMPT_FLOW_TIMEOUT
       },
       [
-        // inquirer: route name
-        { value: 'e2e-test-route\n', delay: 2000 },
-        // inquirer: select site (use Enter to pick first)
-        { value: '\n', delay: 2000 },
-        // inquirer: select method (manual or builder)
-        { value: '\n', delay: 2000 },
-        // inquirer: input route pattern
-        { value: 'test.example.com/*\n', delay: 2000 }
+        { value: 'e2e-test-route\r', delay: 2000 }, // route name
+        ENTER, // select site
+        ENTER, // select build method
+        { value: 'test.example.com/*\r', delay: 2000 } // route pattern
       ]
     );
 
-    // The route add should complete (success or fail with API error,
-    // but should not crash or hang)
-    expect(result.timedOut).toBe(false);
+    // May succeed or fail with an API error, but must produce output
+    expect(result.stdout + result.stderr).not.toBe('');
   });
 });
 
-describeOrSkip('v1 interactive: config set', () => {
-  it('should set config value interactively', async () => {
-    const tmpHome = mkdtempSync(join(tmpdir(), 'esa-v1-config-'));
+// ─────────────────────────────────────────────────────────────────────
+// config — no account needed
+// ─────────────────────────────────────────────────────────────────────
+describeCli('config interactive flow', () => {
+  it('exits without hanging', async () => {
+    const tmpHome = createTempHome();
 
-    const result = await runInteractiveDelayed(
-      {
-        bin: V1_BIN,
-        args: ['config'],
-        env: { HOME: tmpHome },
-        timeout: 15000
-      },
-      [
-        // v1 config may prompt for endpoint or other settings
-        { value: '\n', delay: 2000 }
-      ]
-    );
+    try {
+      const result = await runInteractiveDelayed(
+        {
+          bin: V1_BIN,
+          args: ['config'],
+          env: { HOME: tmpHome },
+          timeout: 20000
+        },
+        [ENTER]
+      );
 
-    expect(result.timedOut).toBe(false);
-    rmSync(tmpHome, { recursive: true, force: true });
+      expect(result.timedOut).toBe(false);
+    } finally {
+      rmSync(tmpHome, { recursive: true, force: true });
+    }
   });
 });

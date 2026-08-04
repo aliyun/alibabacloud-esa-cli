@@ -5,11 +5,12 @@
  * Provides utilities to run CLI commands and parse JSON output.
  */
 import { spawn } from 'child_process';
-import { resolve } from 'path';
 import { mkdtempSync, rmSync, existsSync } from 'fs';
-import { join } from 'path';
 import { tmpdir } from 'os';
+import { resolve , join } from 'path';
+
 import toml from '@iarna/toml';
+
 import { CREDENTIALS } from './credentials';
 
 export const CLI_BIN = process.env.ESA_CLI_BIN
@@ -66,6 +67,8 @@ export function getTestHome(): string {
   const configDir = join(_tmpHome, '.esa', 'config');
   const { mkdirSync, writeFileSync } = require('fs');
   mkdirSync(configDir, { recursive: true });
+  // The logger writes here at module load time; pre-create so it cannot EPERM.
+  mkdirSync(join(_tmpHome, '.esa-logs'), { recursive: true });
 
   const credConfig = {
     auth: {
@@ -91,9 +94,14 @@ export function getTestHome(): string {
   return _tmpHome;
 }
 
-/** Environment with HOME pointed to test home (with credentials) */
+/**
+ * Environment with HOME pointed to test home (with credentials).
+ * USERPROFILE mirrors HOME because Node's os.homedir() reads USERPROFILE on
+ * Windows, so setting HOME alone would leak into the real user directory.
+ */
 export function testEnv(): Record<string, string> {
-  return { HOME: getTestHome() };
+  const home = getTestHome();
+  return { HOME: home, USERPROFILE: home };
 }
 
 /**

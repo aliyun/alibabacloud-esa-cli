@@ -11,13 +11,9 @@
  *   - Real ESA test account with at least one site
  */
 import { describe, it, expect, beforeAll } from 'vitest';
-import {
-  runCli,
-  runCliJson,
-  testEnv,
-  stripNonDeterministic
-} from './helper';
+
 import { hasCredentials, skipIfNoCredentials } from './credentials';
+import { runCli, testEnv } from './helper';
 
 const describeOrSkip = hasCredentials() ? describe : describe.skip;
 

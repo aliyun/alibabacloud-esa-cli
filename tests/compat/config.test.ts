@@ -5,17 +5,16 @@
  * formats (JSONC with comments/trailing commas, TOML with nested tables).
  * Ensures users can configure their projects without the CLI crashing.
  */
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import {
-  mkdtempSync,
-  rmSync,
-  writeFileSync,
-  mkdirSync
-} from 'fs';
-import { join } from 'path';
+import { mkdtempSync, rmSync, writeFileSync, mkdirSync } from 'fs';
 import { tmpdir } from 'os';
+import { join } from 'path';
+
 import toml from '@iarna/toml';
-import { runCli } from './helper';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+
+import { runCli, isCliBuilt } from './helper';
+
+const describeCli = isCliBuilt ? describe : describe.skip;
 
 /** A complete esa.jsonc config that exercises all fields */
 const FULL_CONFIG = {
@@ -55,7 +54,7 @@ function createTempHome(): string {
   return home;
 }
 
-describe('esa.jsonc config file', () => {
+describeCli('esa.jsonc config file', () => {
   let tmpDir: string;
   let tmpHome: string;
 
@@ -122,7 +121,7 @@ describe('esa.jsonc config file', () => {
   });
 });
 
-describe('esa.toml config file', () => {
+describeCli('esa.toml config file', () => {
   let tmpDir: string;
   let tmpHome: string;
 
@@ -170,7 +169,7 @@ notFoundStrategy = "singlePageApplication"
   });
 });
 
-describe('config file priority', () => {
+describeCli('config file priority', () => {
   let tmpDir: string;
   let tmpHome: string;
 
@@ -210,7 +209,7 @@ describe('config file priority', () => {
   });
 });
 
-describe('CLI credentials config (~/.esa/config/)', () => {
+describeCli('CLI credentials config (~/.esa/config/)', () => {
   let tmpHome: string;
 
   beforeEach(() => {
@@ -221,7 +220,10 @@ describe('CLI credentials config (~/.esa/config/)', () => {
     rmSync(tmpHome, { recursive: true, force: true });
   });
 
-  it('reads credentials from default.toml', async () => {
+  // getCliConfig() runs during startup for every command, so `--help` is enough
+  // to exercise credential parsing. Interactive commands such as `lang` would
+  // block on stdin and cannot be used here.
+  it('parses credentials from default.toml at startup', async () => {
     const configDir = join(tmpHome, '.esa', 'config');
     mkdirSync(configDir, { recursive: true });
 
@@ -229,7 +231,7 @@ describe('CLI credentials config (~/.esa/config/)', () => {
     writeFileSync(join(configDir, 'default.toml'), tomlContent);
 
     const result = await runCli(
-      ['lang', '--skip-update-check'],
+      ['--help', '--skip-update-check'],
       { env: { HOME: tmpHome } }
     );
     expect(result.exitCode).toBe(0);

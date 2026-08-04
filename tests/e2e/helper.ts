@@ -2,8 +2,11 @@
  * Shared helper for interactive E2E tests.
  *
  * Spawns the CLI as a child process, sends keyboard input via stdin pipe,
- * and collects stdout. Each version (v1/v2) has its own test file that
- * uses this helper with different input sequences.
+ * and collects stdout.
+ *
+ * IMPORTANT: submit input with '\r', not '\n'. @clack/prompts reads keypresses
+ * and only treats carriage return as Enter, so a '\n' leaves the prompt open
+ * and the test times out.
  */
 import { spawn, ChildProcessWithoutNullStreams } from 'child_process';
 import { resolve } from 'path';
@@ -30,18 +33,27 @@ export interface E2EResult {
 }
 
 /**
+ * Mirror HOME onto USERPROFILE so a caller-supplied temp home also isolates the
+ * run on Windows, where Node's os.homedir() reads USERPROFILE rather than HOME.
+ */
+function normalizeHome(env?: Record<string, string>): Record<string, string> {
+  if (!env?.HOME) return env ?? {};
+  return { USERPROFILE: env.HOME, ...env };
+}
+
+/**
  * Run the CLI interactively, sending a sequence of inputs via stdin.
  *
  * @param inputs Array of strings to send to stdin. Each string is sent
- *               as a single write. Use '\n' for Enter, '\x1b[B' for down arrow,
- *               '\r' for Enter (some libraries prefer \r over \n).
+ *               as a single write. Use '\r' for Enter (@clack/prompts ignores
+ *               '\n'), '\x1b[B' for down arrow.
  *
  * @example
- * // Send "my-project\n" then press Enter again
+ * // Pick the first option, then type an access key
  * const result = await runInteractive({
- *   bin: 'v1/bin/enter.cjs',
+ *   bin: 'bin/enter.cjs',
  *   args: ['login'],
- *   inputs: ['my-access-key-id\n', 'my-access-key-secret\n'],
+ *   inputs: ['\r', 'my-access-key-id\r', 'my-access-key-secret\r'],
  * });
  */
 export function runInteractive(
@@ -57,7 +69,7 @@ export function runInteractive(
       [resolvedBin, ...args],
       {
         cwd,
-        env: { ...process.env, ...env },
+        env: { ...process.env, ...normalizeHome(env) },
         stdio: ['pipe', 'pipe', 'pipe']
       }
     );
@@ -143,7 +155,7 @@ export async function runInteractiveDelayed(
       [resolvedBin, ...args],
       {
         cwd,
-        env: { ...process.env, ...env },
+        env: { ...process.env, ...normalizeHome(env) },
         stdio: ['pipe', 'pipe', 'pipe']
       }
     );

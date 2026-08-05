@@ -19,8 +19,10 @@ import { getRoot } from '../utils/fileUtils/base.js';
 import {
   getApiConfig,
   getCliConfig,
+  getCliConfigPath,
   projectConfigPath
 } from '../utils/fileUtils/index.js';
+import { maskAccessKey } from '../utils/maskAccessKey.js';
 import { validateCredentials } from '../utils/validateCredentials.js';
 
 import { getRoutineDetails } from './common/utils.js';
@@ -121,7 +123,19 @@ export async function checkIsLoginSuccess(): Promise<boolean> {
     process.env.ESA_SECURITY_TOKEN ||
     cliConfig?.auth?.securityToken;
 
+  let failureMessage: string | undefined;
   if (accessKeyId && accessKeySecret) {
+    const credentialSource = process.env.ALIBABA_CLOUD_ACCESS_KEY_ID
+      ? 'environment variable ALIBABA_CLOUD_ACCESS_KEY_ID'
+      : process.env.ESA_ACCESS_KEY_ID
+        ? 'environment variable ESA_ACCESS_KEY_ID'
+        : `config file ${getCliConfigPath()}`;
+    const maskedAk = maskAccessKey(accessKeyId);
+    logger.log(
+      chalk.gray(
+        `🔑 ${t('utils_credentials_in_use', { maskedAk, credentialSource }).d(`Using credentials ${maskedAk} (from ${credentialSource})`)}`
+      )
+    );
     const result = await validateCredentials(
       accessKeyId,
       accessKeySecret,
@@ -129,24 +143,38 @@ export async function checkIsLoginSuccess(): Promise<boolean> {
     );
     const server = await ApiService.getInstance();
     if (result.valid) {
-      const auth: { accessKeyId: string; accessKeySecret: string; securityToken?: string } = {
+      const auth: {
+        accessKeyId: string;
+        accessKeySecret: string;
+        securityToken?: string;
+      } = {
         accessKeyId,
         accessKeySecret
       };
       if (securityToken) auth.securityToken = securityToken;
       const fileConfig = getApiConfig();
-      server.updateConfig({
+      const validatedConfig = {
         ...fileConfig,
+        ...(result.endpoint ? { endpoint: result.endpoint } : {}),
         auth
-      });
-      api.updateConfig({
-        ...fileConfig,
-        auth
-      });
+      };
+      server.updateConfig(validatedConfig);
+      api.updateConfig(validatedConfig);
       return true;
     }
+    failureMessage = result.message;
+  } else {
+    const configPath = getCliConfigPath();
+    logger.log(
+      chalk.gray(
+        `🔑 ${t('utils_credentials_not_found', { configPath }).d(`No credentials found in environment variables or config file ${configPath}`)}`
+      )
+    );
   }
 
+  if (failureMessage) {
+    logger.error(failureMessage);
+  }
   const namedCommand = chalk.green('esa-cli login');
   logger.log(
     `❌ ${t('utils_login_error').d('Maybe you are not logged in yet.')}`

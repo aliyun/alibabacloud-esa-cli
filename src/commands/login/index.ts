@@ -10,10 +10,19 @@ import t from '../../i18n/index.js';
 import logger from '../../libs/logger.js';
 import {
   getCliConfig,
+  getCliConfigPath,
   updateCliConfigFile,
   generateDefaultConfig
 } from '../../utils/fileUtils/index.js';
+import { maskAccessKey } from '../../utils/maskAccessKey.js';
 import { validateCredentials } from '../../utils/validateCredentials.js';
+
+const logCredentialSource = (source: string, accessKeyId: string) => {
+  const maskedAk = maskAccessKey(accessKeyId);
+  logger.log(
+    `🔑 ${t('login_credentials_source', { source, maskedAk }).d(`Using credentials from ${source} (AccessKey ID: ${maskedAk})`)}`
+  );
+};
 
 /** Parse STS token string: "AccessKeyId,AccessKeySecret,SecurityToken" or JSON */
 function parseStsToken(
@@ -80,6 +89,9 @@ export default login;
 
 export async function handleLogin(argv?: ArgumentsCamelCase): Promise<void> {
   generateDefaultConfig();
+  const envAkName = process.env.ALIBABA_CLOUD_ACCESS_KEY_ID
+    ? 'ALIBABA_CLOUD_ACCESS_KEY_ID'
+    : 'ESA_ACCESS_KEY_ID';
   const envAccessKeyId =
     process.env.ALIBABA_CLOUD_ACCESS_KEY_ID ||
     process.env.ESA_ACCESS_KEY_ID;
@@ -89,7 +101,23 @@ export async function handleLogin(argv?: ArgumentsCamelCase): Promise<void> {
   const envSecurityToken =
     process.env.ALIBABA_CLOUD_SECURITY_TOKEN ||
     process.env.ESA_SECURITY_TOKEN;
+
+  const stsTokenRaw = argv?.['sts-token'] as string | undefined;
+  const argAccessKeyId = argv?.['access-key-id'] as string;
+  const argAccessKeySecret = argv?.['access-key-secret'] as string;
+  const hasExplicitArgs = Boolean(
+    stsTokenRaw || (argAccessKeyId && argAccessKeySecret)
+  );
+
   if (envAccessKeyId && envAccessKeySecret) {
+    if (hasExplicitArgs) {
+      logger.warn(
+        t('login_args_ignored_by_env', { envAkName }).d(
+          `Credentials from environment variable ${envAkName} take precedence; command line arguments are ignored for this login`
+        )
+      );
+    }
+    logCredentialSource(`environment variable ${envAkName}`, envAccessKeyId);
     const result = await validateCredentials(
       envAccessKeyId,
       envAccessKeySecret,
@@ -108,7 +136,6 @@ export async function handleLogin(argv?: ArgumentsCamelCase): Promise<void> {
     return;
   }
 
-  const stsTokenRaw = argv?.['sts-token'] as string | undefined;
   if (stsTokenRaw) {
     const parsed = parseStsToken(stsTokenRaw);
     if (!parsed) {
@@ -119,6 +146,7 @@ export async function handleLogin(argv?: ArgumentsCamelCase): Promise<void> {
       );
       return;
     }
+    logCredentialSource('--sts-token', parsed.accessKeyId);
     const result = await validateCredentials(
       parsed.accessKeyId,
       parsed.accessKeySecret,
@@ -140,16 +168,15 @@ export async function handleLogin(argv?: ArgumentsCamelCase): Promise<void> {
     return;
   }
 
-  const accessKeyId = argv?.['access-key-id'] as string;
-  const accessKeySecret = argv?.['access-key-secret'] as string;
-  if (accessKeyId && accessKeySecret) {
-    const result = await validateCredentials(accessKeyId, accessKeySecret);
+  if (argAccessKeyId && argAccessKeySecret) {
+    logCredentialSource('command line arguments (--ak/--sk)', argAccessKeyId);
+    const result = await validateCredentials(argAccessKeyId, argAccessKeySecret);
     if (result.valid) {
       logger.success(t('login_success').d('Login success!'));
       updateCliConfigFile({
         auth: {
-          accessKeyId,
-          accessKeySecret
+          accessKeyId: argAccessKeyId,
+          accessKeySecret: argAccessKeySecret
         },
         ...(result.endpoint ? { endpoint: result.endpoint } : {})
       });
@@ -168,6 +195,10 @@ export async function handleLogin(argv?: ArgumentsCamelCase): Promise<void> {
     cliConfig.auth.accessKeyId &&
     cliConfig.auth.accessKeySecret
   ) {
+    logCredentialSource(
+      `config file ${getCliConfigPath()}`,
+      cliConfig.auth.accessKeyId
+    );
     const loginStatus = await validateCredentials(
       cliConfig.auth.accessKeyId,
       cliConfig.auth.accessKeySecret,

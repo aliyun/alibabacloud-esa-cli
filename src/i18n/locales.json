@@ -1358,5 +1358,41 @@
   "token_validity_tip": {
     "en": "Token is valid for 1 hour",
     "zh_CN": "该 URL 有效期为 1 小时"
+  },
+  "login_credentials_source": {
+    "en": "Using credentials from ${source} (AccessKey ID: ${maskedAk})",
+    "zh_CN": "本次登录使用的凭证来源：${source}（AccessKey ID: ${maskedAk}）"
+  },
+  "utils_credentials_in_use": {
+    "en": "Using credentials ${maskedAk} (from ${credentialSource})",
+    "zh_CN": "当前使用的凭证：${maskedAk}（来源：${credentialSource}）"
+  },
+  "utils_credentials_not_found": {
+    "en": "No credentials found in environment variables or config file ${configPath}",
+    "zh_CN": "未在环境变量或配置文件 ${configPath} 中找到凭证"
+  },
+  "validate_credentials_start": {
+    "en": "Validating credentials: AccessKey ID ${maskedAk}",
+    "zh_CN": "正在校验凭证：AccessKey ID ${maskedAk}"
+  },
+  "validate_credentials_with_sts": {
+    "en": "(with STS token)",
+    "zh_CN": "（携带 STS token）"
+  },
+  "validate_endpoint_ok": {
+    "en": "Credentials valid at ${endpoint}",
+    "zh_CN": "凭证校验通过：${endpoint}"
+  },
+  "validate_endpoint_failed": {
+    "en": "Credential check failed at ${endpoint}: ${message}",
+    "zh_CN": "凭证校验失败（${endpoint}）：${message}"
+  },
+  "validate_custom_endpoint": {
+    "en": "Using custom endpoint from CUSTOM_ENDPOINT: ${endpoint}",
+    "zh_CN": "使用 CUSTOM_ENDPOINT 环境变量指定的 endpoint：${endpoint}"
+  },
+  "login_args_ignored_by_env": {
+    "en": "Credentials from environment variable ${envAkName} take precedence; command line arguments are ignored for this login",
+    "zh_CN": "环境变量 ${envAkName} 中的凭证优先生效，本次登录将忽略命令行参数"
   }
 }

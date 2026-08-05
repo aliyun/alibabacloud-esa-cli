@@ -1,4 +1,10 @@
 import * as $OpenApi from '@alicloud/openapi-client';
+import chalk from 'chalk';
+
+import t from '../i18n/index.js';
+import logger from '../libs/logger.js';
+
+import { maskAccessKey } from './maskAccessKey.js';
 
 export type SiteType = 'domestic' | 'international';
 
@@ -102,13 +108,46 @@ export async function validateCredentials(
   accessKeySecret: string,
   securityToken?: string
 ): Promise<ValidateCredentialsResult> {
-  const withToken = (ep: string) =>
-    validateEndpoint(accessKeyId, accessKeySecret, ep, securityToken);
+  const maskedAk = maskAccessKey(accessKeyId);
+  logger.log(
+    chalk.gray(
+      `🔍 ${t('validate_credentials_start', { maskedAk }).d(`Validating credentials: AccessKey ID ${maskedAk}`)}${securityToken ? ` ${t('validate_credentials_with_sts').d('(with STS token)')}` : ''}`
+    )
+  );
+  const withToken = async (endpoint: string) => {
+    const result = await validateEndpoint(
+      accessKeyId,
+      accessKeySecret,
+      endpoint,
+      securityToken
+    );
+    if (result.valid) {
+      logger.log(
+        chalk.gray(
+          `  ✓ ${t('validate_endpoint_ok', { endpoint }).d(`Credentials valid at ${endpoint}`)}`
+        )
+      );
+    } else {
+      const message = result.message || '';
+      logger.log(
+        chalk.gray(
+          `  ✗ ${t('validate_endpoint_failed', { endpoint, message }).d(`Credential check failed at ${endpoint}: ${message}`)}`
+        )
+      );
+    }
+    return result;
+  };
 
   if (process.env.CUSTOM_ENDPOINT) {
-    const result = await withToken(process.env.CUSTOM_ENDPOINT);
+    const endpoint = process.env.CUSTOM_ENDPOINT;
+    logger.log(
+      chalk.gray(
+        `  ${t('validate_custom_endpoint', { endpoint }).d(`Using custom endpoint from CUSTOM_ENDPOINT: ${endpoint}`)}`
+      )
+    );
+    const result = await withToken(endpoint);
     if (result.valid) {
-      return { valid: true, endpoint: process.env.CUSTOM_ENDPOINT };
+      return { valid: true, endpoint };
     }
     return { valid: false, message: result.message };
   }

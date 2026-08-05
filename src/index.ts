@@ -1,4 +1,3 @@
-import { ProjectDetector } from '@alife/framework-checker';
 import chalk from 'chalk';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
@@ -99,13 +98,6 @@ const main = async () => {
       }
     }
   );
-
-  esa.command('check', false, () => {
-    const currentDir = process.cwd();
-    const projectDetector = new ProjectDetector(currentDir);
-    const projectInfo = projectDetector.detect();
-    console.log(projectInfo);
-  });
 
   esa.command(init);
 

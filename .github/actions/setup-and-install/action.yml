@@ -20,6 +20,27 @@ runs:
         node-version: ${{ inputs.node-version }}
         cache: npm
 
+    # A lockfile written behind a private mirror pins tarball hosts the runner
+    # cannot reach, and npm burns ~8 minutes per attempt before giving up. Fail
+    # here with the offending entries instead.
+    - name: Check the lockfile only references the public registry
+      shell: bash
+      run: |
+        node -e '
+          const lock = require("./package-lock.json");
+          const offenders = Object.entries(lock.packages || {})
+            .filter(([, meta]) => meta.resolved)
+            .filter(([, meta]) => !meta.resolved.startsWith("https://registry.npmjs.org/"))
+            .map(([name, meta]) => `  ${name} -> ${meta.resolved}`);
+          if (offenders.length) {
+            console.error(`::error::package-lock.json resolves ${offenders.length} package(s) outside registry.npmjs.org:`);
+            console.error(offenders.join("\n"));
+            console.error("Regenerate it with: npm install --registry=https://registry.npmjs.org");
+            process.exit(1);
+          }
+          console.log("Lockfile references only the public registry.");
+        '
+
     - name: Install dependencies
       shell: bash
       run: |

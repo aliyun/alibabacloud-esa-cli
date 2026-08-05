@@ -9,9 +9,22 @@ on:
   pull_request:
     branches:
       - '**'
+  # Lets a run be repeated from the Actions tab without pushing a new commit,
+  # which matters while the suite is still being stabilised.
+  workflow_dispatch:
+    inputs:
+      run-integration:
+        description: 'Also run the API integration job (needs repository secrets)'
+        type: boolean
+        default: false
 
 permissions:
   contents: read
+
+# Superseded runs on the same ref are pointless once a newer commit exists.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   # ─────────────────────────────────────────────────────────────
@@ -69,7 +82,11 @@ jobs:
     name: API integration
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    if: github.ref == 'refs/heads/master' || contains(github.event.head_commit.message, '[run-integration]')
+    # head_commit is null outside push events, which contains() treats as no match.
+    if: >
+      github.ref == 'refs/heads/master' ||
+      contains(github.event.head_commit.message, '[run-integration]') ||
+      github.event.inputs.run-integration == 'true'
     env:
       ESA_TEST_ACCESS_KEY_ID: ${{ secrets.ESA_TEST_ACCESS_KEY_ID }}
       ESA_TEST_ACCESS_KEY_SECRET: ${{ secrets.ESA_TEST_ACCESS_KEY_SECRET }}

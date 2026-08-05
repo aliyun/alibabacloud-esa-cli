@@ -33,6 +33,20 @@ export interface E2EResult {
 }
 
 /**
+ * Remove ANSI escape sequences so assertions survive colour changes.
+ *
+ * chalk enables colour whenever CI is set, so the same run is plain text
+ * locally and escape-laden on a runner. Matching prompt output without
+ * stripping first therefore passes locally and fails in CI.
+ */
+export function stripAnsi(text: string): string {
+  // Covers both CSI sequences (colour, cursor moves) and the private-mode
+  // toggles clack uses to hide the cursor, e.g. \u001b[?25l.
+  // eslint-disable-next-line no-control-regex
+  return text.replace(/\u001b\[[0-9;?]*[A-Za-z]/g, '');
+}
+
+/**
  * Mirror HOME onto USERPROFILE so a caller-supplied temp home also isolates the
  * run on Windows, where Node's os.homedir() reads USERPROFILE rather than HOME.
  */

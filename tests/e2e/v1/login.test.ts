@@ -32,7 +32,7 @@ import { join } from 'path';
 import toml from '@iarna/toml';
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 
-import { runInteractiveDelayed } from '../helper';
+import { runInteractiveDelayed, stripAnsi } from '../helper';
 
 const V1_BIN = 'bin/enter.cjs';
 
@@ -106,7 +106,7 @@ describeCli('login: non-interactive flags', () => {
     // must exit on its own rather than wait for input.
     expect(result.timedOut).toBe(false);
 
-    const output = result.stdout + result.stderr;
+    const output = stripAnsi(result.stdout + result.stderr);
     expect(output.toLowerCase()).toContain('sts token');
 
     // Nothing may be persisted from a rejected token
@@ -197,7 +197,8 @@ describeCli('login: interactive AK/SK flow', () => {
       // alone would be useless — 'AccessKey Secret' also appears in the
       // login-method menu, and matching the validation error would make the
       // assertion depend on reaching the ESA API.
-      expect(result.stdout + result.stderr).toMatch(/◇\s+AccessKey Secret/);
+      const output = stripAnsi(result.stdout + result.stderr);
+      expect(output).toMatch(/◇\s+AccessKey Secret/);
 
       // Empty credentials can never validate, so nothing may be stored
       expect(readAuth(emptyHome)?.accessKeyId ?? '').toBe('');

@@ -1,0 +1,42 @@
+name: Setup Node and install dependencies
+description: >
+  Installs dependencies with npm ci, then verifies the resulting tree.
+  npm 10.8.x can crash on exit ("Exit handler never called", npm/cli#7657)
+  while still reporting success, which leaves node_modules half-populated and
+  surfaces much later as a confusing "command not found" during the build.
+  Verifying and retrying here keeps that failure local and self-healing.
+
+inputs:
+  node-version:
+    description: Node.js version to install
+    required: false
+    default: '20'
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
+        cache: npm
+
+    - name: Install dependencies
+      shell: bash
+      run: |
+        for attempt in 1 2 3; do
+          npm ci || echo "::warning::npm ci exited non-zero (attempt ${attempt})"
+
+          # Exits non-zero when any package in the lockfile is missing from the
+          # tree, which is exactly what the npm exit-handler crash leaves behind.
+          if npm ls --depth=0 >/dev/null 2>&1; then
+            echo "Dependency tree verified on attempt ${attempt}."
+            exit 0
+          fi
+
+          echo "::warning::node_modules is incomplete after attempt ${attempt}; retrying."
+          rm -rf node_modules
+          sleep 5
+        done
+
+        echo "::error::npm ci could not produce a complete dependency tree after 3 attempts."
+        exit 1

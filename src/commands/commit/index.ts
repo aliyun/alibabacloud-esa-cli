@@ -1,5 +1,3 @@
-import { exit } from 'process';
-
 import { intro, outro } from '@clack/prompts';
 import chalk from 'chalk';
 import { CommandModule, Argv, ArgumentsCamelCase } from 'yargs';
@@ -48,7 +46,7 @@ const commit: CommandModule = {
   },
   handler: async (argv: ArgumentsCamelCase) => {
     const success = await handleCommit(argv);
-    exit(success ? 0 : 1);
+    if (!success) process.exitCode = 1;
   }
 };
 

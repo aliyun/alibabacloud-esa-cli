@@ -375,12 +375,12 @@ export interface CreateRoutineCodeDeploymentReq {
   CodeVersions: { Percentage: number; CodeVersion: string }[];
 }
 export interface CreateRoutineCodeDeploymentRes {
-  code: string;
+  code: number;
   data: {
-    RequestId: string;
-    Strategy: string;
-    DeploymentId: string;
-    CodeVersions: { Percentage: number; CodeVersion: string }[];
+    RequestId?: string;
+    Strategy?: string;
+    DeploymentId?: string;
+    CodeVersions?: { Percentage: number; CodeVersion: string }[];
   };
 }
 

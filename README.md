@@ -149,6 +149,56 @@ Split traffic between two versions:
 npx esa-cli deploy --versions v1:80,v2:20 --environment production
 ```
 
+For automation, request a stable JSON result:
+
+```bash
+npx esa-cli deploy --description "Automated release" --output json
+```
+
+Once the deploy handler produces a result, stdout contains exactly one JSON document:
+
+```json
+{
+  "schemaVersion": 1,
+  "app": "my-esa-app",
+  "url": "https://my-esa-app.example.com",
+  "deployments": [
+    {
+      "environment": "staging",
+      "deploymentId": "deployment-staging-id",
+      "codeVersions": [
+        {
+          "codeVersion": "version-id",
+          "percentage": 100
+        }
+      ]
+    },
+    {
+      "environment": "production",
+      "deploymentId": "deployment-production-id",
+      "codeVersions": [
+        {
+          "codeVersion": "version-id",
+          "percentage": 100
+        }
+      ]
+    }
+  ]
+}
+```
+
+Human-readable progress is written to stderr in JSON mode. `url` may be `null` when the post-deploy Routine lookup is not available yet. `deploymentId` may be `null` when the deployment API accepts the request without returning that optional field; neither case turns an accepted deployment into a failure.
+
+### Exit status for automation
+
+| Status | Meaning |
+| --- | --- |
+| `0` | Every requested environment accepted the deployment request. |
+| `1` | Argument validation, authentication, build, upload, version readiness, or at least one deployment request failed. |
+| `130` | The user cancelled an interactive command. |
+
+The exit status is authoritative and does not represent a later runtime health check. When only some environments accept an `all` deployment, status `1` is returned and `deployments` contains the accepted environments so callers can avoid replaying them. On any non-zero status, callers must allow either a JSON result or empty stdout: parser, configuration, Routine creation, build, startup, and unexpected errors can occur before a JSON result exists. Diagnostics are always written to stderr.
+
 ## Configuration
 
 ESA CLI looks for `esa.jsonc` or `esa.toml` from the current directory upward. `esa.jsonc` is recommended for new projects.

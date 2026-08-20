@@ -24,13 +24,20 @@ const cliName = process.env.ALIBABA_CLOUD_ESA_CLI_COMPAT_MODE || 'esa-cli';
 
 const main = async () => {
   const argv = hideBin(process.argv);
+  const outputIndex = argv.findIndex(
+    (arg) => arg === '--output' || arg.startsWith('--output=')
+  );
+  const isJsonOutput =
+    outputIndex >= 0 &&
+    (argv[outputIndex] === '--output=json' || argv[outputIndex + 1] === 'json');
+  if (isJsonOutput) {
+    logger.setOutputStream('stderr');
+  }
   const cliConfig = getCliConfig();
   const esa = yargs(argv)
     .strict()
     .fail((msg, err) => {
-      if (msg) console.error(msg);
-      if (err) console.error(err);
-      process.exit(1);
+      throw err || new Error(msg || 'Command failed');
     })
     .scriptName(cliName)
     .locale(cliConfig?.lang || 'en')
@@ -38,6 +45,9 @@ const main = async () => {
     .wrap(null)
     .help()
     .middleware(async (argv) => {
+      if (argv.output === 'json') {
+        logger.setOutputStream('stderr');
+      }
       if (argv.debug) {
         logger.setLogLevel('debug');
       }
@@ -50,8 +60,7 @@ const main = async () => {
           (argv._ && argv._[0] ? String(argv._[0]) : '') as string
         );
       } catch (e) {
-        console.log(e);
-        console.log('error');
+        console.error(e);
       }
     })
     .epilogue(
@@ -80,15 +89,18 @@ const main = async () => {
     '*',
     false,
     () => {},
-    (args) => {
+    async (args) => {
       if (args._.length > 0) {
         // Unknown command
         console.error(
-          t('common_sub_command_fail').d(`Use ${cliName} <command> -h to see help`)
+          t('common_sub_command_fail').d(
+            `Use ${cliName} <command> -h to see help`
+          )
         );
+        process.exitCode = 1;
       } else {
         if (args.v) {
-          handleCheckVersion();
+          await handleCheckVersion();
         } else if (args.h || args.help) {
           esa.showHelp('log');
         } else {
@@ -126,7 +138,11 @@ const main = async () => {
 
   esa.group(['help', 'version'], 'Options:');
 
-  esa.parse();
+  await esa.parseAsync();
 };
 
-main();
+main().catch((error: unknown) => {
+  logger.stopSpinner();
+  console.error(error instanceof Error ? error.message : String(error));
+  process.exitCode = 1;
+});

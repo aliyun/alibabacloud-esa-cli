@@ -1,6 +1,5 @@
 import { exit } from 'process';
 
-import { log } from '@clack/prompts';
 import chalk from 'chalk';
 
 import t from '../i18n/index.js';
@@ -48,9 +47,9 @@ export async function ensureRoutineExists(name: string) {
       logger.endSubStep('Routine created successfully');
     } else {
       logger.endSubStep('Routine created failed');
-      exit();
+      throw new Error(`Failed to create routine ${name}`);
     }
   } else {
-    log.step('Routine has already exists');
+    logger.log('Routine already exists');
   }
 }

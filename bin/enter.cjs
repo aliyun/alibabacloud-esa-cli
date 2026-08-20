@@ -35,19 +35,21 @@ const getRuntimeNodePath = () => {
   return nodePaths.size > 0 ? Array.from(nodePaths).join(path.delimiter) : '';
 };
 
-const main = () => {
-  let entryPath;
-  if (fs.existsSync(path.join(__dirname, '../dist/index.js'))) {
-    entryPath = path.join(__dirname, '../dist/index.js');
-  } else if (fs.existsSync(path.join(__dirname, '../index.js'))) {
-    entryPath = path.join(__dirname, '../index.js');
-  } else {
-    throw new Error('Neither dist/index.js nor index.js could be found.');
+const main = (entryPathOverride) => {
+  let entryPath = entryPathOverride;
+  if (!entryPath) {
+    if (fs.existsSync(path.join(__dirname, '../dist/index.js'))) {
+      entryPath = path.join(__dirname, '../dist/index.js');
+    } else if (fs.existsSync(path.join(__dirname, '../index.js'))) {
+      entryPath = path.join(__dirname, '../index.js');
+    } else {
+      throw new Error('Neither dist/index.js nor index.js could be found.');
+    }
   }
 
   const nodePath = getRuntimeNodePath();
 
-  return spawn(
+  const cliProcess = spawn(
     process.execPath,
     ['--no-warnings', ...process.execArgv, entryPath, ...process.argv.slice(2)],
     {
@@ -57,11 +59,32 @@ const main = () => {
         ...(nodePath ? { NODE_PATH: nodePath } : {})
       }
     }
-  )
+  );
+  const forwardSignal = (signal) => {
+    if (!cliProcess.killed) {
+      cliProcess.kill(signal);
+    }
+  };
+  const onSigint = () => forwardSignal('SIGINT');
+  const onSigterm = () => forwardSignal('SIGTERM');
+  const removeSignalHandlers = () => {
+    process.off('SIGINT', onSigint);
+    process.off('SIGTERM', onSigterm);
+  };
+  process.on('SIGINT', onSigint);
+  process.on('SIGTERM', onSigterm);
+
+  let spawnFailed = false;
+  return cliProcess
     .on('error', (err) => {
-      console.log('Get Error', err);
+      spawnFailed = true;
+      removeSignalHandlers();
+      console.error('Failed to start esa-cli:', err);
+      process.exitCode = 1;
     })
     .on('exit', (code, signal) => {
+      removeSignalHandlers();
+      if (spawnFailed) return;
       if (code !== null) {
         process.exit(code);
       } else if (signal) {
@@ -73,12 +96,7 @@ const main = () => {
 };
 
 if (require.main === module) {
-  const cliProcess = main();
-  // Normal
-  process.on('SIGINT', () => {
-    cliProcess && cliProcess.kill();
-  });
-  process.on('SIGTERM', () => {
-    cliProcess && cliProcess.kill();
-  });
+  main();
 }
+
+module.exports = { main, getRuntimeNodePath };

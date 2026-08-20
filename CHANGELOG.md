@@ -1,5 +1,22 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- Add `esa-cli deploy --output json` with stable per-environment deployment IDs, code versions, percentages, and a nullable preview URL.
+
+### Changed
+
+- Route human-readable deploy progress to stderr in JSON mode so stdout contains only the machine-readable result.
+- Preserve successful environment results when a multi-environment deployment is only partially accepted.
+
+### Fixed
+
+- Return a non-zero process status when Routine creation, login persistence, version lookup, argument validation, build, upload, version readiness, or a deployment request fails, and status `130` when interactive login is cancelled.
+- Propagate asynchronous command errors through the top-level parser instead of exiting successfully from nested helpers.
+- Keep JSON-mode startup diagnostics on stderr even when configuration parsing fails, and preserve child SIGINT/SIGTERM semantics in the package launcher.
+
 ## [1.0.11] - 2026-07-22
 
 ### Added

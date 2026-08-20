@@ -16,13 +16,9 @@ type CrossTableRow = Record<string, string[]>;
 type TableRow = HorizontalTableRow | VerticalTableRow | CrossTableRow;
 
 export type LogLevel =
-  | 'error'
-  | 'warn'
-  | 'info'
-  | 'http'
-  | 'verbose'
-  | 'debug'
-  | 'silly';
+  'error' | 'warn' | 'info' | 'http' | 'verbose' | 'debug' | 'silly';
+
+export type OutputStream = 'stdout' | 'stderr';
 
 const shouldWriteLogFile = () =>
   process.env.NODE_ENV !== 'test' &&
@@ -44,9 +40,11 @@ class Logger {
   private logger: WinstonLogger;
   private spinner: Ora;
   private spinnerText: string;
+  private outputStream: OutputStream;
 
   private constructor() {
     this.spinnerText = '';
+    this.outputStream = 'stdout';
     const { combine, timestamp, label, printf } = format;
     const customFormat = printf(
       ({ level, message, label: printLabel, timestamp: printTimestamp }) => {
@@ -106,6 +104,28 @@ class Logger {
     this.logger.level = level;
   }
 
+  getOutputStream(): OutputStream {
+    return this.outputStream;
+  }
+
+  setOutputStream(outputStream: OutputStream): void {
+    this.outputStream = outputStream;
+  }
+
+  private writeLine(message: string): void {
+    if (this.outputStream === 'stderr') {
+      console.error(message);
+    } else {
+      console.log(message);
+    }
+  }
+
+  private writeRaw(message: string): void {
+    const stream =
+      this.outputStream === 'stderr' ? process.stderr : process.stdout;
+    stream.write(message);
+  }
+
   /**
    * Start a sub-step: show a spinner with the provided message.
    * If a spinner is already running, just update its text.
@@ -129,9 +149,9 @@ class Logger {
         this.spinner.stop();
       }
     } catch {}
-    console.log(chalk.gray(`│ `));
-    console.log(chalk.gray('├  ') + this.spinnerText);
-    console.log(chalk.gray(`│  ${message}`));
+    this.writeLine(chalk.gray(`│ `));
+    this.writeLine(chalk.gray('├  ') + this.spinnerText);
+    this.writeLine(chalk.gray(`│  ${message}`));
   }
 
   stopSpinner(): void {
@@ -164,21 +184,21 @@ class Logger {
   }
 
   log(message: string) {
-    console.log(message);
+    this.writeLine(message);
   }
 
   subLog(message: string) {
-    console.log(`\t${message}`);
+    this.writeLine(`\t${message}`);
   }
 
   success(message: string) {
-    console.log(`🎉 ${chalk.bgGreen(' SUCCESS ')} ${chalk.green(message)}`);
+    this.writeLine(`🎉 ${chalk.bgGreen(' SUCCESS ')} ${chalk.green(message)}`);
   }
 
   debug(message: string) {
     this.logger.debug(message);
     if (this.logger.level === 'debug') {
-      console.log(`${chalk.grey('[DEBUG]')} ${message}`);
+      this.writeLine(`${chalk.grey('[DEBUG]')} ${message}`);
     }
   }
 
@@ -187,29 +207,29 @@ class Logger {
   }
 
   ask(message: string) {
-    console.log(`❓ ${message}`);
+    this.writeLine(`❓ ${message}`);
   }
 
   point(message: string) {
-    console.log(`👉🏻 ${chalk.green(message)}`);
+    this.writeLine(`👉🏻 ${chalk.green(message)}`);
   }
 
   block() {
-    console.log('\n');
+    this.writeLine('\n');
   }
 
   warn(message: string) {
     this.logger.warn(message);
-    console.log(`\n${chalk.bgYellow(' WARNING ')} ${chalk.yellow(message)}`);
+    this.writeLine(`\n${chalk.bgYellow(' WARNING ')} ${chalk.yellow(message)}`);
   }
 
   error(message: string) {
     this.logger.error(message);
-    console.log(`\n❌ ${chalk.bgRed(' ERROR ')} ${chalk.red(message)}`);
+    this.writeLine(`\n❌ ${chalk.bgRed(' ERROR ')} ${chalk.red(message)}`);
   }
 
   subError(message: string) {
-    console.log(`\n${chalk.red(message)}`);
+    this.writeLine(`\n${chalk.red(message)}`);
   }
 
   http(message: string) {
@@ -217,7 +237,7 @@ class Logger {
   }
 
   url(message: string) {
-    console.log(`🔗 ${chalk.blue(message)}`);
+    this.writeLine(`🔗 ${chalk.blue(message)}`);
   }
 
   verbose(message: string) {
@@ -230,7 +250,7 @@ class Logger {
 
   announcement(message: string) {
     // todo
-    console.log(message);
+    this.writeLine(message);
   }
 
   notInProject() {
@@ -245,7 +265,7 @@ class Logger {
       )})`
     );
     this.subLog('- Or create an "esa.jsonc" file (recommended):');
-    console.log(
+    this.writeLine(
       '```jsonc\n' +
         '{\n' +
         '  "name": "my-routine",\n' +
@@ -255,7 +275,7 @@ class Logger {
         '```'
     );
     this.subLog('- Or, if you prefer TOML, create an "esa.toml" file:');
-    console.log(
+    this.writeLine(
       '```toml\n' +
         'name = "my-routine"\n' +
         'entry = "src/index.ts"\n' +
@@ -273,7 +293,7 @@ class Logger {
         'esa-cli deploy -a ./dist'
       )}`
     );
-    console.log(
+    this.writeLine(
       '```jsonc\n' +
         '{\n' +
         '  "name": "my-routine",\n' +
@@ -286,7 +306,7 @@ class Logger {
     this.subLog(
       `- Or create an "esa.toml" file and run ${chalk.green('esa-cli deploy -a ./dist')}`
     );
-    console.log(
+    this.writeLine(
       '```toml\n' +
         'name = "my-routine"\n' +
         '\n' +
@@ -338,45 +358,45 @@ class Logger {
     if (messages.length > 1) {
       lines.push(`╰ ${messages[messages.length - 1]}`);
     }
-    console.log(lines.join('\n'));
+    this.writeLine(lines.join('\n'));
   }
 
   StepHeader(title: string, step: number, total: number): void {
-    console.log(`\n╭ ${title} ${chalk.green(`Step ${step} of ${total}`)}`);
-    console.log('│');
+    this.writeLine(`\n╭ ${title} ${chalk.green(`Step ${step} of ${total}`)}`);
+    this.writeLine('│');
   }
 
   StepItem(prompt: string): void {
-    console.log(`├ ${prompt}`);
+    this.writeLine(`├ ${prompt}`);
   }
 
   StepStart(prompt: string): void {
-    console.log(`╭ ${prompt}`);
+    this.writeLine(`╭ ${prompt}`);
   }
 
   StepKV(key: string, value: string): void {
     const orange = chalk.hex('#FFA500');
-    console.log(`│ ${orange(key)} ${value}`);
+    this.writeLine(`│ ${orange(key)} ${value}`);
   }
 
   StepSpacer(): void {
-    console.log('│');
+    this.writeLine('│');
   }
 
   StepEnd(str?: string): void {
-    console.log(`╰ ${str || ''}`);
+    this.writeLine(`╰ ${str || ''}`);
   }
 
   StepEndInline(): void {
     try {
-      process.stdout.write('╰ ');
+      this.writeRaw('╰ ');
     } catch {
-      console.log('╰');
+      this.writeLine('╰');
     }
   }
 
   divider(): void {
-    console.log(
+    this.writeLine(
       chalk.yellow('--------------------------------------------------------')
     );
   }
@@ -385,12 +405,12 @@ class Logger {
   replacePrevLine(content: string): void {
     try {
       // Move cursor up 1 line, clear it, carriage return, print new content
-      process.stdout.write('\x1b[1A');
-      process.stdout.write('\x1b[2K');
-      process.stdout.write('\r');
-      console.log(content);
+      this.writeRaw('\x1b[1A');
+      this.writeRaw('\x1b[2K');
+      this.writeRaw('\r');
+      this.writeLine(content);
     } catch {
-      console.log(content);
+      this.writeLine(content);
     }
   }
 
@@ -398,13 +418,13 @@ class Logger {
   replacePrevLines(linesToReplace: number, content: string): void {
     try {
       for (let i = 0; i < linesToReplace; i++) {
-        process.stdout.write('\x1b[1A'); // move up
-        process.stdout.write('\x1b[2K'); // clear line
+        this.writeRaw('\x1b[1A'); // move up
+        this.writeRaw('\x1b[2K'); // clear line
       }
-      process.stdout.write('\r');
-      console.log(content);
+      this.writeRaw('\r');
+      this.writeLine(content);
     } catch {
-      console.log(content);
+      this.writeLine(content);
     }
   }
 }

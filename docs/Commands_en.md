@@ -174,6 +174,39 @@ Description of the version
 **--minify, -m** _optional_  
 Whether to minify the code
 
+**--bundle / --no-bundle** _optional_
+
+Bundle the function with esbuild before uploading (default: true)
+
+**--versions** _optional_
+
+Deploy one or two existing versions with percentages, for example `--versions v1:80,v2:20`
+
+**--output** _optional_
+
+Output format. Choices: text | json (default: text)
+
+In JSON mode, once the deploy handler produces a result it writes exactly one JSON document to stdout. Progress and diagnostics are written to stderr.
+
+```json
+{
+  "schemaVersion": 1,
+  "app": "my-routine",
+  "url": "https://my-routine.example.com",
+  "deployments": [
+    {
+      "environment": "production",
+      "deploymentId": "deployment-id",
+      "codeVersions": [
+        { "codeVersion": "v1", "percentage": 100 }
+      ]
+    }
+  ]
+}
+```
+
+`url` may be `null` when the post-deploy Routine lookup is not available yet. `deploymentId` may be `null` when the deployment API accepts the request without returning that optional field. Exit status `0` means every requested environment accepted the deployment request; status `1` means validation, authentication, build, upload, readiness, or at least one deployment request failed; status `130` means the user cancelled an interactive command. The exit status is authoritative. On a partial `all` deployment, the JSON document retains accepted environments in `deployments`. On any non-zero status, callers must allow either a JSON result or empty stdout because parser, configuration, Routine creation, build, startup, and unexpected errors may happen before a JSON document can be emitted.
+
 ---
 
 ## deployments

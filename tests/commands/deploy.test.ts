@@ -1,7 +1,7 @@
 import { it, describe, expect, vi, afterEach, beforeEach } from 'vitest';
 
 import * as commonUtils from '../../src/commands/common/utils.js';
-import { handleDeploy } from '../../src/commands/deploy/index.js';
+import deploy, { handleDeploy } from '../../src/commands/deploy/index.js';
 import * as fileUtils from '../../src/utils/fileUtils/index.js';
 
 vi.mock('../../src/commands/common/utils.js');
@@ -35,17 +35,21 @@ vi.mock('../../src/libs/logger.js', () => ({
     log: vi.fn(),
     error: vi.fn(),
     startSubStep: vi.fn(),
-    endSubStep: vi.fn()
+    endSubStep: vi.fn(),
+    block: vi.fn(),
+    getOutputStream: vi.fn().mockReturnValue('stdout'),
+    setOutputStream: vi.fn()
   }
 }));
 
+const successfulDeploy = (app = 'test-project') => ({
+  success: true,
+  app,
+  deployments: []
+});
+
 async function callHandleDeploy(argv: any) {
-  try {
-    await handleDeploy(argv);
-  } catch (e: any) {
-    if (e?.message?.includes('process.exit')) return;
-    throw e;
-  }
+  await handleDeploy(argv);
 }
 
 describe('handleDeploy', () => {
@@ -54,11 +58,14 @@ describe('handleDeploy', () => {
   });
 
   afterEach(() => {
+    process.exitCode = undefined;
     vi.clearAllMocks();
   });
 
   it('should handle deploy with default parameters', async () => {
-    vi.mocked(commonUtils.commitAndDeployVersion).mockResolvedValue(true);
+    vi.mocked(commonUtils.commitAndDeployVersion).mockResolvedValue(
+      successfulDeploy()
+    );
     vi.mocked(fileUtils.getProjectConfig).mockReturnValue({
       name: 'test-project',
       entry: 'index.js',
@@ -83,7 +90,9 @@ describe('handleDeploy', () => {
   });
 
   it('should handle deploy with custom entry file', async () => {
-    vi.mocked(commonUtils.commitAndDeployVersion).mockResolvedValue(true);
+    vi.mocked(commonUtils.commitAndDeployVersion).mockResolvedValue(
+      successfulDeploy()
+    );
     vi.mocked(fileUtils.getProjectConfig).mockReturnValue({
       name: 'test-project'
     } as any);
@@ -105,7 +114,9 @@ describe('handleDeploy', () => {
   });
 
   it('should handle deploy with custom project name', async () => {
-    vi.mocked(commonUtils.commitAndDeployVersion).mockResolvedValue(true);
+    vi.mocked(commonUtils.commitAndDeployVersion).mockResolvedValue(
+      successfulDeploy('custom-name')
+    );
     vi.mocked(fileUtils.getProjectConfig).mockReturnValue({
       name: 'test-project'
     } as any);
@@ -132,7 +143,9 @@ describe('handleDeploy', () => {
   });
 
   it('should handle deploy with assets option', async () => {
-    vi.mocked(commonUtils.commitAndDeployVersion).mockResolvedValue(true);
+    vi.mocked(commonUtils.commitAndDeployVersion).mockResolvedValue(
+      successfulDeploy()
+    );
     vi.mocked(fileUtils.getProjectConfig).mockReturnValue({
       name: 'test-project'
     } as any);
@@ -154,7 +167,9 @@ describe('handleDeploy', () => {
   });
 
   it('should handle deploy with description', async () => {
-    vi.mocked(commonUtils.commitAndDeployVersion).mockResolvedValue(true);
+    vi.mocked(commonUtils.commitAndDeployVersion).mockResolvedValue(
+      successfulDeploy()
+    );
     vi.mocked(fileUtils.getProjectConfig).mockReturnValue({
       name: 'test-project'
     } as any);
@@ -176,7 +191,9 @@ describe('handleDeploy', () => {
   });
 
   it('should handle deploy with environment option', async () => {
-    vi.mocked(commonUtils.commitAndDeployVersion).mockResolvedValue(true);
+    vi.mocked(commonUtils.commitAndDeployVersion).mockResolvedValue(
+      successfulDeploy()
+    );
     vi.mocked(fileUtils.getProjectConfig).mockReturnValue({
       name: 'test-project'
     } as any);
@@ -198,7 +215,9 @@ describe('handleDeploy', () => {
   });
 
   it('should handle deploy with minify option', async () => {
-    vi.mocked(commonUtils.commitAndDeployVersion).mockResolvedValue(true);
+    vi.mocked(commonUtils.commitAndDeployVersion).mockResolvedValue(
+      successfulDeploy()
+    );
     vi.mocked(fileUtils.getProjectConfig).mockReturnValue({
       name: 'test-project'
     } as any);
@@ -220,7 +239,9 @@ describe('handleDeploy', () => {
   });
 
   it('should handle deploy with version option', async () => {
-    vi.mocked(commonUtils.commitAndDeployVersion).mockResolvedValue(true);
+    vi.mocked(commonUtils.commitAndDeployVersion).mockResolvedValue(
+      successfulDeploy()
+    );
     vi.mocked(fileUtils.getProjectConfig).mockReturnValue({
       name: 'test-project'
     } as any);
@@ -242,7 +263,9 @@ describe('handleDeploy', () => {
   });
 
   it('should handle deploy with all options', async () => {
-    vi.mocked(commonUtils.commitAndDeployVersion).mockResolvedValue(true);
+    vi.mocked(commonUtils.commitAndDeployVersion).mockResolvedValue(
+      successfulDeploy('custom-name')
+    );
     vi.mocked(fileUtils.getProjectConfig).mockReturnValue({
       name: 'test-project'
     } as any);
@@ -274,10 +297,133 @@ describe('handleDeploy', () => {
   });
 
   it('should not display success message if deployment fails', async () => {
-    vi.mocked(commonUtils.commitAndDeployVersion).mockResolvedValue(false);
+    vi.mocked(commonUtils.commitAndDeployVersion).mockResolvedValue({
+      success: false,
+      app: '',
+      deployments: []
+    });
 
     await callHandleDeploy({ _: [], $0: '' });
 
     expect(commonUtils.displayDeploySuccess).not.toHaveBeenCalled();
+  });
+
+  it('should emit one machine-readable JSON document in json output mode', async () => {
+    vi.mocked(commonUtils.commitAndDeployVersion).mockResolvedValue({
+      success: true,
+      app: 'test-project',
+      deployments: [
+        {
+          environment: 'staging',
+          deploymentId: 'deployment-staging',
+          codeVersions: [{ codeVersion: 'v1', percentage: 100 }]
+        }
+      ]
+    } as any);
+    vi.mocked(commonUtils.getDeployPreviewUrl).mockResolvedValue(
+      'https://test-project.example.com'
+    );
+    const stdoutSpy = vi
+      .spyOn(process.stdout, 'write')
+      .mockImplementation(() => true);
+
+    await callHandleDeploy({ output: 'json', _: [], $0: '' });
+
+    expect(commonUtils.displayDeploySuccess).not.toHaveBeenCalled();
+    expect(stdoutSpy).toHaveBeenCalledTimes(1);
+    expect(JSON.parse(String(stdoutSpy.mock.calls[0][0]))).toEqual({
+      schemaVersion: 1,
+      app: 'test-project',
+      url: 'https://test-project.example.com',
+      deployments: [
+        {
+          environment: 'staging',
+          deploymentId: 'deployment-staging',
+          codeVersions: [{ codeVersion: 'v1', percentage: 100 }]
+        }
+      ]
+    });
+    stdoutSpy.mockRestore();
+  });
+
+  it('should keep url nullable without changing deploy success', async () => {
+    vi.mocked(commonUtils.commitAndDeployVersion).mockResolvedValue(
+      successfulDeploy()
+    );
+    vi.mocked(commonUtils.getDeployPreviewUrl).mockResolvedValue(null);
+    const stdoutSpy = vi
+      .spyOn(process.stdout, 'write')
+      .mockImplementation(() => true);
+
+    const result = await handleDeploy({ output: 'json', _: [], $0: '' });
+
+    expect(result.success).toBe(true);
+    expect(JSON.parse(String(stdoutSpy.mock.calls[0][0])).url).toBeNull();
+    stdoutSpy.mockRestore();
+  });
+
+  it('should emit an empty deployment result when json deployment fails', async () => {
+    vi.mocked(commonUtils.commitAndDeployVersion).mockResolvedValue({
+      success: false,
+      app: 'test-project',
+      deployments: []
+    });
+    const stdoutSpy = vi
+      .spyOn(process.stdout, 'write')
+      .mockImplementation(() => true);
+
+    const result = await handleDeploy({ output: 'json', _: [], $0: '' });
+
+    expect(result.success).toBe(false);
+    expect(JSON.parse(String(stdoutSpy.mock.calls[0][0]))).toEqual({
+      schemaVersion: 1,
+      app: 'test-project',
+      url: null,
+      deployments: []
+    });
+    stdoutSpy.mockRestore();
+  });
+
+  it('should expose accepted environments when json deployment is partial', async () => {
+    vi.mocked(commonUtils.commitAndDeployVersion).mockResolvedValue({
+      success: false,
+      app: 'test-project',
+      deployments: [
+        {
+          environment: 'staging',
+          deploymentId: 'deployment-staging',
+          codeVersions: [{ codeVersion: 'v1', percentage: 100 }]
+        }
+      ]
+    });
+    vi.mocked(commonUtils.getDeployPreviewUrl).mockResolvedValue(null);
+    const stdoutSpy = vi
+      .spyOn(process.stdout, 'write')
+      .mockImplementation(() => true);
+
+    const result = await handleDeploy({ output: 'json', _: [], $0: '' });
+
+    expect(result.success).toBe(false);
+    expect(JSON.parse(String(stdoutSpy.mock.calls[0][0])).deployments).toEqual([
+      {
+        environment: 'staging',
+        deploymentId: 'deployment-staging',
+        codeVersions: [{ codeVersion: 'v1', percentage: 100 }]
+      }
+    ]);
+    stdoutSpy.mockRestore();
+  });
+
+  it('should set a non-zero exit code at the command boundary', async () => {
+    vi.mocked(commonUtils.commitAndDeployVersion).mockResolvedValue({
+      success: false,
+      app: 'test-project',
+      deployments: []
+    });
+    process.exitCode = undefined;
+
+    await (deploy.handler as (argv: any) => Promise<void>)({ _: [], $0: '' });
+
+    expect(process.exitCode).toBe(1);
   });
 });

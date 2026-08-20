@@ -19,6 +19,7 @@ export async function handleCheckVersion() {
     console.log(`v${packageJson.version}`);
   } catch (error) {
     console.error('Error reading version', error);
+    throw error;
   }
 }
 
@@ -42,12 +43,9 @@ export async function checkCLIVersion(
     const fetchTimeout = setTimeout(() => controller.abort(), 5000);
     let response;
     try {
-      response = await fetch(
-        'https://registry.npmmirror.com/esa-cli/latest',
-        {
-          signal: controller.signal as any
-        }
-      );
+      response = await fetch('https://registry.npmmirror.com/esa-cli/latest', {
+        signal: controller.signal as any
+      });
     } finally {
       clearTimeout(fetchTimeout);
     }

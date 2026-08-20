@@ -186,6 +186,39 @@ esa-cli deploy [<ENTRY>] [OPTIONS]
 **--minify, -m** _可选_
 **是否压缩代码**
 
+**--bundle / --no-bundle** _可选_
+
+**上传前是否使用 esbuild 打包函数（默认 true）**
+
+**--versions** _可选_
+
+**按比例部署一个或两个已有版本，例如 `--versions v1:80,v2:20`**
+
+**--output** _可选_
+
+**输出格式。可选：text | json（默认 text）**
+
+JSON 模式下，只要 deploy handler 已生成结果，stdout 就只输出一个 JSON 文档；进度和诊断信息写入 stderr。
+
+```json
+{
+  "schemaVersion": 1,
+  "app": "my-routine",
+  "url": "https://my-routine.example.com",
+  "deployments": [
+    {
+      "environment": "production",
+      "deploymentId": "deployment-id",
+      "codeVersions": [
+        { "codeVersion": "v1", "percentage": 100 }
+      ]
+    }
+  ]
+}
+```
+
+部署后的 Routine 查询尚未就绪时，`url` 可能为 `null`；部署 API 已接受请求但没有返回可选字段时，`deploymentId` 可能为 `null`，这两种情况都不会把已接受的部署反判为失败。退出码 `0` 表示所有目标环境都接受了部署请求；参数、鉴权、构建、上传、版本就绪或任一部署请求失败时返回 `1`；用户取消交互命令时返回 `130`。退出码是成功与否的权威信号。`all` 部署部分成功时仍返回 `1`，JSON 的 `deployments` 会保留已接受的环境。任何非零退出下，调用方都必须同时兼容“有 JSON 结果”和“stdout 为空”：解析、配置、Routine 创建、构建、启动或未预期异常都可能发生在生成 JSON 之前。
+
 ---
 
 ## deployments

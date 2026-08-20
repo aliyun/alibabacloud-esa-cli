@@ -243,7 +243,11 @@ beforeEach(() => {
   mockGetProjectConfig.mockReturnValue({ name: 'template-project' } as any);
   mockGenerateConfigFile.mockResolvedValue(undefined);
   mockUpdateProjectConfigFile.mockResolvedValue(undefined);
-  mockCommitAndDeployVersion.mockResolvedValue(true);
+  mockCommitAndDeployVersion.mockResolvedValue({
+    success: true,
+    app: 'test-project',
+    deployments: []
+  });
   vi.mocked(getCliConfig).mockReturnValue({ lang: 'en' } as any);
   vi.mocked(getTemplatesConfig).mockReturnValue([]);
 });

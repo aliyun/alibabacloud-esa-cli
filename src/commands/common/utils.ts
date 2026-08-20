@@ -2,7 +2,7 @@ import chalk from 'chalk';
 
 import t from '../../i18n/index.js';
 import { ApiService } from '../../libs/apiService.js';
-import {
+import type {
   CreateRoutineWithAssetsCodeVersionRes,
   GetRoutineReq,
   CreateRoutineWithAssetsCodeVersionReq
@@ -13,6 +13,13 @@ import compress from '../../utils/compress.js';
 import { getProjectConfig } from '../../utils/fileUtils/index.js';
 import { ProjectConfig } from '../../utils/fileUtils/interface.js';
 import sleep from '../../utils/sleep.js';
+import type {
+  DeployBatchResult,
+  DeployCodeVersion,
+  DeployEnvironment,
+  DeployExecutionResult,
+  EnvironmentDeploymentResult
+} from '../deploy/types.js';
 import { checkIsLoginSuccess } from '../utils.js';
 
 function normalizeNotFoundStrategy(value?: string): string | undefined {
@@ -303,21 +310,23 @@ export async function deployToEnvironments(
   name: string,
   codeVersion: string,
   env: 'staging' | 'production' | 'all'
-): Promise<boolean> {
+): Promise<DeployBatchResult> {
   if (env === 'all') {
-    const isStagingSuccess = await deployCodeVersion(
-      name,
-      codeVersion,
-      'staging'
+    const staging = await deployCodeVersion(name, codeVersion, 'staging');
+    const production = await deployCodeVersion(name, codeVersion, 'production');
+    const deployments = [staging, production].filter(
+      (result): result is EnvironmentDeploymentResult => result !== null
     );
-    const isProdSuccess = await deployCodeVersion(
-      name,
-      codeVersion,
-      'production'
-    );
-    return isStagingSuccess && isProdSuccess;
+    return {
+      success: deployments.length === 2,
+      deployments
+    };
   }
-  return await deployCodeVersion(name, codeVersion, env);
+  const deployment = await deployCodeVersion(name, codeVersion, env);
+  return {
+    success: deployment !== null,
+    deployments: deployment ? [deployment] : []
+  };
 }
 
 /**
@@ -334,14 +343,18 @@ export async function commitAndDeployVersion(
   minify = false,
   version?: string,
   noBundle = false
-): Promise<boolean> {
+): Promise<DeployExecutionResult> {
   const projectInfo = await validateAndInitializeProject(
     projectName,
     projectPath
   );
 
   if (!projectInfo) {
-    return false;
+    return {
+      success: false,
+      app: projectName || '',
+      deployments: []
+    };
   }
   const { projectConfig } = projectInfo;
 
@@ -353,8 +366,11 @@ export async function commitAndDeployVersion(
       version,
       env
     );
-    logger.endSubStep(deployed ? 'Deploy finished' : 'Deploy failed');
-    return deployed;
+    logger.endSubStep(deployed.success ? 'Deploy finished' : 'Deploy failed');
+    return {
+      ...deployed,
+      app: projectInfo.projectName
+    };
   }
 
   const res = await generateCodeVersion(
@@ -369,13 +385,21 @@ export async function commitAndDeployVersion(
   const isCommitSuccess = res?.isSuccess;
   if (!isCommitSuccess) {
     logger.endSubStep('Generate version failed');
-    return false;
+    return {
+      success: false,
+      app: projectInfo.projectName,
+      deployments: []
+    };
   }
 
   const codeVersion = res?.res?.data?.CodeVersion;
   if (!codeVersion) {
     logger.endSubStep('Missing CodeVersion in response');
-    return false;
+    return {
+      success: false,
+      app: projectInfo.projectName,
+      deployments: []
+    };
   }
   logger.endSubStep(`Version generated: ${codeVersion}`);
 
@@ -386,7 +410,10 @@ export async function commitAndDeployVersion(
     env
   );
 
-  return deployed;
+  return {
+    ...deployed,
+    app: projectInfo.projectName
+  };
 }
 
 /**
@@ -395,14 +422,14 @@ export async function commitAndDeployVersion(
 export async function deployCodeVersion(
   name: string,
   codeVersion: string,
-  environment: 'staging' | 'production'
-): Promise<boolean> {
+  environment: DeployEnvironment
+): Promise<EnvironmentDeploymentResult | null> {
   const server = await ApiService.getInstance();
   // Ensure the committed code version is ready before deploying
   const isReady = await waitForCodeVersionReady(name, codeVersion, environment);
   if (!isReady) {
     logger.error('The code version is not ready for deployment.');
-    return false;
+    return null;
   }
 
   const res = await server.createRoutineCodeDeployment({
@@ -412,11 +439,43 @@ export async function deployCodeVersion(
     Env: environment
   });
 
-  if (res) {
-    return true;
-  } else {
-    return false;
+  if (!res) return null;
+
+  return {
+    environment,
+    deploymentId: res.data?.DeploymentId || null,
+    codeVersions: normalizeDeploymentCodeVersions(res.data?.CodeVersions, [
+      { codeVersion, percentage: 100 }
+    ])
+  };
+}
+
+function normalizeDeploymentCodeVersions(
+  responseVersions: { Percentage: number; CodeVersion: string }[] | undefined,
+  fallback: DeployCodeVersion[]
+): DeployCodeVersion[] {
+  if (!Array.isArray(responseVersions) || responseVersions.length === 0) {
+    return fallback;
   }
+  const normalized = responseVersions.map(({ CodeVersion, Percentage }) => ({
+    codeVersion: typeof CodeVersion === 'string' ? CodeVersion.trim() : '',
+    percentage: Number(Percentage)
+  }));
+  const totalPercentage = normalized.reduce(
+    (total, { percentage }) => total + percentage,
+    0
+  );
+  const isComplete =
+    normalized.length <= 2 &&
+    normalized.every(
+      ({ codeVersion, percentage }) =>
+        codeVersion.length > 0 &&
+        Number.isFinite(percentage) &&
+        percentage >= 0 &&
+        percentage <= 100
+    ) &&
+    Math.abs(totalPercentage - 100) < 1e-6;
+  return isComplete ? normalized : fallback;
 }
 
 /**
@@ -426,12 +485,16 @@ export async function deployCodeVersions(
   name: string,
   versions: { codeVersion: string; percentage: number }[],
   env: 'staging' | 'production' | 'all'
-): Promise<boolean> {
+): Promise<DeployBatchResult> {
   const server = await ApiService.getInstance();
+  const codeVersions: DeployCodeVersion[] = versions.map((version) => ({
+    codeVersion: version.codeVersion,
+    percentage: version.percentage
+  }));
 
   const doDeploy = async (
-    targetEnv: 'staging' | 'production'
-  ): Promise<boolean> => {
+    targetEnv: DeployEnvironment
+  ): Promise<EnvironmentDeploymentResult | null> => {
     const res = await server.createRoutineCodeDeployment({
       Name: name,
       CodeVersions: versions.map((v) => ({
@@ -441,15 +504,33 @@ export async function deployCodeVersions(
       Strategy: 'percentage',
       Env: targetEnv
     });
-    return !!res;
+    if (!res) return null;
+    return {
+      environment: targetEnv,
+      deploymentId: res.data?.DeploymentId || null,
+      codeVersions: normalizeDeploymentCodeVersions(
+        res.data?.CodeVersions,
+        codeVersions
+      )
+    };
   };
 
   if (env === 'all') {
-    const s = await doDeploy('staging');
-    const p = await doDeploy('production');
-    return s && p;
+    const staging = await doDeploy('staging');
+    const production = await doDeploy('production');
+    const deployments = [staging, production].filter(
+      (result): result is EnvironmentDeploymentResult => result !== null
+    );
+    return {
+      success: deployments.length === 2,
+      deployments
+    };
   }
-  return await doDeploy(env);
+  const deployment = await doDeploy(env);
+  return {
+    success: deployment !== null,
+    deployments: deployment ? [deployment] : []
+  };
 }
 
 /**
@@ -511,9 +592,7 @@ export async function displayDeploySuccess(
   showRouteGuide = true
 ): Promise<void> {
   const service = await ApiService.getInstance();
-  const res = await service.getRoutine({ Name: projectName });
-  const defaultUrl = res?.data?.DefaultRelatedRecord;
-  let visitUrl = defaultUrl ? 'https://' + defaultUrl : '';
+  let visitUrl = (await getDeployPreviewUrl(projectName)) || '';
 
   // Get access token for the visit URL
   let hasToken = false;
@@ -539,9 +618,13 @@ export async function displayDeploySuccess(
   logger.block();
   logger.log(`${label('APP')}  ${chalk.cyan(projectName || '-')}`);
   if (hasToken) {
-    logger.log(orange(`⏰  ${t('token_validity_tip').d('Token is valid for 1 hour')}`));
+    logger.log(
+      orange(`⏰  ${t('token_validity_tip').d('Token is valid for 1 hour')}`)
+    );
   }
-  logger.log(`${label('URL')}  ${visitUrl ? chalk.yellowBright(visitUrl) : subtle('-')}`);
+  logger.log(
+    `${label('URL')}  ${visitUrl ? chalk.yellowBright(visitUrl) : subtle('-')}`
+  );
 
   if (projectName) {
     logger.block();
@@ -570,19 +653,46 @@ export async function displayDeploySuccess(
   logger.block();
 }
 
+/** Get a stable, token-free preview URL without affecting deploy success. */
+export async function getDeployPreviewUrl(
+  projectName: string
+): Promise<string | null> {
+  try {
+    const service = await ApiService.getInstance();
+    const res = await service.getRoutine({ Name: projectName }, false);
+    const defaultRecord = res?.data?.DefaultRelatedRecord;
+    if (typeof defaultRecord !== 'string' || !defaultRecord.trim()) return null;
+    const normalizedRecord = defaultRecord.trim();
+    return /^https?:\/\//i.test(normalizedRecord)
+      ? normalizedRecord
+      : `https://${normalizedRecord}`;
+  } catch {
+    return null;
+  }
+}
+
 /**
- * Parse --versions parameter and execute distributed deployment by percentage; print display and percentage allocation after successful deployment
+ * Parse --versions and return the per-environment deployment results.
  */
 export async function deployWithVersionPercentages(
   nameArg: string | undefined,
   versionsArg: (string | number)[] | undefined,
   env: 'staging' | 'production' | 'all',
   projectPath?: string
-): Promise<boolean> {
+): Promise<DeployExecutionResult> {
+  const failed = (app = nameArg || ''): DeployExecutionResult => ({
+    success: false,
+    app,
+    deployments: []
+  });
   const raw = (versionsArg || [])
     .flatMap((v) => String(v).split(','))
     .map((s) => s.trim())
     .filter(Boolean);
+  if (raw.length === 0) {
+    logger.error('Deploy failed: --versions requires at least one version');
+    return failed();
+  }
   const pairs = raw.map((s) => {
     const [codeVersion, percentStr] = s.split(':');
     return {
@@ -593,7 +703,7 @@ export async function deployWithVersionPercentages(
 
   if (pairs.length > 2) {
     logger.error('Deploy failed: at most two versions are supported');
-    return false;
+    return failed();
   }
   if (
     pairs.some(
@@ -601,35 +711,29 @@ export async function deployWithVersionPercentages(
     )
   ) {
     logger.error('Deploy failed: invalid --versions format. Use v1:80,v2:20');
-    return false;
+    return failed();
   }
   if (pairs.length === 1) {
     if (pairs[0].percentage !== 100) {
       logger.error('Deploy failed: single version must be 100%');
-      return false;
+      return failed();
     }
   } else if (pairs.length === 2) {
     const sum = pairs[0].percentage + pairs[1].percentage;
     if (sum !== 100) {
       logger.error('Deploy failed: percentages must sum to 100');
-      return false;
+      return failed();
     }
   }
 
   const projectInfo = await validateAndInitializeProject(nameArg, projectPath);
   if (!projectInfo) {
-    return false;
+    return failed();
   }
 
-  const ok = await deployCodeVersions(projectInfo.projectName, pairs, env);
-  if (!ok) return false;
-
-  await displayDeploySuccess(projectInfo.projectName, true, true);
-  logger.block();
-  logger.log('📦 Versions rollout:');
-  pairs.forEach((p) => {
-    logger.log(`- ${p.codeVersion}: ${p.percentage}%`);
-  });
-  logger.block();
-  return true;
+  const result = await deployCodeVersions(projectInfo.projectName, pairs, env);
+  return {
+    ...result,
+    app: projectInfo.projectName
+  };
 }

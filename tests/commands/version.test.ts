@@ -24,7 +24,7 @@ describe('handleCheckVersion', () => {
   it('should log an error if reading the version fails', async () => {
     const error = new Error('Failed to read file');
     mockReadFile.mockRejectedValue(error);
-    await handleCheckVersion();
+    await expect(handleCheckVersion()).rejects.toThrow('Failed to read file');
     expect(mockReadFile).toHaveBeenCalledWith(expect.any(String), 'utf-8');
     expect(std.out).not.toHaveBeenCalled();
     expect(std.err).toHaveBeenCalledWith('Error reading version', error);

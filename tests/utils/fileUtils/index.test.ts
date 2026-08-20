@@ -93,6 +93,19 @@ describe('fileUtils config paths', () => {
 });
 
 describe('fileUtils config readers and writers', () => {
+  it('creates the default CLI config with its endpoint synchronously', async () => {
+    const projectRoot = makeTempDir();
+    const home = makeTempDir('esa-cli-home-');
+    const fileUtils = await loadFileUtils({ cwd: projectRoot, home });
+
+    fileUtils.generateDefaultConfig();
+
+    const configPath = path.join(home, '.esa', 'config', 'default.toml');
+    expect(toml.parse(fs.readFileSync(configPath, 'utf-8'))).toEqual({
+      endpoint: 'esa.cn-hangzhou.aliyuncs.com'
+    });
+  });
+
   it('reads JSONC config with comments and trailing commas', async () => {
     const projectRoot = makeTempDir();
     const configPath = path.join(projectRoot, 'esa.jsonc');
@@ -206,8 +219,19 @@ describe('fileUtils config readers and writers', () => {
     const projectRoot = makeTempDir();
     const fileUtils = await loadFileUtils({ cwd: projectRoot });
 
-    expect(fileUtils.readConfigFile(path.join(projectRoot, 'missing.toml'))).toBe(
-      null
+    expect(
+      fileUtils.readConfigFile(path.join(projectRoot, 'missing.toml'))
+    ).toBe(null);
+  });
+
+  it('throws when a config file cannot be parsed', async () => {
+    const projectRoot = makeTempDir();
+    const configPath = path.join(projectRoot, 'broken.toml');
+    fs.writeFileSync(configPath, 'endpoint = [');
+    const fileUtils = await loadFileUtils({ cwd: projectRoot });
+
+    expect(() => fileUtils.readConfigFile(configPath)).toThrow(
+      `Error parsing config file ${configPath}`
     );
   });
 });

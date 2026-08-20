@@ -16,20 +16,19 @@ import {
 import { validateCredentials } from '../../utils/validateCredentials.js';
 
 /** Parse STS token string: "AccessKeyId,AccessKeySecret,SecurityToken" or JSON */
-function parseStsToken(
-  raw: string
-): { accessKeyId: string; accessKeySecret: string; securityToken: string } | null {
+function parseStsToken(raw: string): {
+  accessKeyId: string;
+  accessKeySecret: string;
+  securityToken: string;
+} | null {
   const s = raw.trim();
   if (!s) return null;
   if (s.startsWith('{')) {
     try {
       const o = JSON.parse(s) as Record<string, string>;
-      const accessKeyId =
-        o.AccessKeyId ?? o.accessKeyId;
-      const accessKeySecret =
-        o.AccessKeySecret ?? o.accessKeySecret;
-      const securityToken =
-        o.SecurityToken ?? o.securityToken;
+      const accessKeyId = o.AccessKeyId ?? o.accessKeyId;
+      const accessKeySecret = o.AccessKeySecret ?? o.accessKeySecret;
+      const securityToken = o.SecurityToken ?? o.securityToken;
       if (accessKeyId && accessKeySecret && securityToken) {
         return { accessKeyId, accessKeySecret, securityToken };
       }
@@ -72,23 +71,37 @@ const login: CommandModule = {
       });
   },
   handler: async (argv: ArgumentsCamelCase) => {
-    await handleLogin(argv);
+    const result = await handleLogin(argv);
+    if (result === null) {
+      process.exitCode = 130;
+    } else if (!result) {
+      process.exitCode = 1;
+    }
   }
 };
 
 export default login;
 
-export async function handleLogin(argv?: ArgumentsCamelCase): Promise<void> {
+export async function handleLogin(
+  argv?: ArgumentsCamelCase
+): Promise<boolean | null> {
   generateDefaultConfig();
   const envAccessKeyId =
-    process.env.ALIBABA_CLOUD_ACCESS_KEY_ID ||
-    process.env.ESA_ACCESS_KEY_ID;
+    process.env.ALIBABA_CLOUD_ACCESS_KEY_ID || process.env.ESA_ACCESS_KEY_ID;
   const envAccessKeySecret =
     process.env.ALIBABA_CLOUD_ACCESS_KEY_SECRET ||
     process.env.ESA_ACCESS_KEY_SECRET;
   const envSecurityToken =
-    process.env.ALIBABA_CLOUD_SECURITY_TOKEN ||
-    process.env.ESA_SECURITY_TOKEN;
+    process.env.ALIBABA_CLOUD_SECURITY_TOKEN || process.env.ESA_SECURITY_TOKEN;
+  if (
+    (envAccessKeyId || envAccessKeySecret || envSecurityToken) &&
+    !(envAccessKeyId && envAccessKeySecret)
+  ) {
+    logger.error(
+      'Both AccessKey ID and AccessKey Secret are required in environment variables'
+    );
+    return false;
+  }
   if (envAccessKeyId && envAccessKeySecret) {
     const result = await validateCredentials(
       envAccessKeyId,
@@ -105,11 +118,11 @@ export async function handleLogin(argv?: ArgumentsCamelCase): Promise<void> {
     } else {
       logger.error(result.message || 'Login failed');
     }
-    return;
+    return result.valid;
   }
 
   const stsTokenRaw = argv?.['sts-token'] as string | undefined;
-  if (stsTokenRaw) {
+  if (stsTokenRaw !== undefined) {
     const parsed = parseStsToken(stsTokenRaw);
     if (!parsed) {
       logger.error(
@@ -117,7 +130,7 @@ export async function handleLogin(argv?: ArgumentsCamelCase): Promise<void> {
           'Invalid STS token format. Use: AccessKeyId,AccessKeySecret,SecurityToken'
         )
       );
-      return;
+      return false;
     }
     const result = await validateCredentials(
       parsed.accessKeyId,
@@ -125,8 +138,7 @@ export async function handleLogin(argv?: ArgumentsCamelCase): Promise<void> {
       parsed.securityToken
     );
     if (result.valid) {
-      logger.success(t('login_success').d('Login success!'));
-      updateCliConfigFile({
+      await updateCliConfigFile({
         auth: {
           accessKeyId: parsed.accessKeyId,
           accessKeySecret: parsed.accessKeySecret,
@@ -134,34 +146,39 @@ export async function handleLogin(argv?: ArgumentsCamelCase): Promise<void> {
         },
         ...(result.endpoint ? { endpoint: result.endpoint } : {})
       });
+      logger.success(t('login_success').d('Login success!'));
     } else {
       logger.error(result.message || 'Login failed');
     }
-    return;
+    return result.valid;
   }
 
   const accessKeyId = argv?.['access-key-id'] as string;
   const accessKeySecret = argv?.['access-key-secret'] as string;
+  if ((accessKeyId || accessKeySecret) && !(accessKeyId && accessKeySecret)) {
+    logger.error('Both --access-key-id and --access-key-secret are required');
+    return false;
+  }
   if (accessKeyId && accessKeySecret) {
     const result = await validateCredentials(accessKeyId, accessKeySecret);
     if (result.valid) {
-      logger.success(t('login_success').d('Login success!'));
-      updateCliConfigFile({
+      await updateCliConfigFile({
         auth: {
           accessKeyId,
           accessKeySecret
         },
         ...(result.endpoint ? { endpoint: result.endpoint } : {})
       });
+      logger.success(t('login_success').d('Login success!'));
     } else {
       logger.error(result.message || 'Login failed');
     }
-    return;
+    return result.valid;
   }
 
   // interactive login
   const cliConfig = getCliConfig();
-  if (!cliConfig) return;
+  if (!cliConfig) return false;
   if (
     cliConfig &&
     cliConfig.auth &&
@@ -175,7 +192,7 @@ export async function handleLogin(argv?: ArgumentsCamelCase): Promise<void> {
     );
     if (loginStatus.valid) {
       logger.warn(t('login_already').d('You are already logged in.'));
-      const selected = (await clackSelect({
+      const selected = await clackSelect({
         message: t('login_existing_credentials_message').d(
           'Existing credentials found. What do you want to do?'
         ),
@@ -188,9 +205,12 @@ export async function handleLogin(argv?: ArgumentsCamelCase): Promise<void> {
           },
           { label: t('common_exit').d('Exit'), value: 'exit' }
         ]
-      })) as 'overwrite' | 'exit';
-      if (isCancel(selected) || selected === 'exit') {
-        return;
+      });
+      if (isCancel(selected)) {
+        return null;
+      }
+      if (selected === 'exit') {
+        return true;
       }
     } else {
       logger.error(
@@ -200,15 +220,17 @@ export async function handleLogin(argv?: ArgumentsCamelCase): Promise<void> {
       );
     }
   }
-  await interactiveLogin();
+  return await interactiveLogin();
 }
 
-export async function interactiveLogin(): Promise<void> {
-  const loginMethod = (await clackSelect({
+export async function interactiveLogin(): Promise<boolean | null> {
+  const loginMethod = await clackSelect({
     message: t('login_method_select').d('Choose login method'),
     options: [
       {
-        label: t('login_method_aksk').d('AK/SK (AccessKey ID + AccessKey Secret)'),
+        label: t('login_method_aksk').d(
+          'AK/SK (AccessKey ID + AccessKey Secret)'
+        ),
         value: 'aksk'
       },
       {
@@ -218,19 +240,19 @@ export async function interactiveLogin(): Promise<void> {
         value: 'sts'
       }
     ]
-  })) as 'aksk' | 'sts';
+  });
 
   if (isCancel(loginMethod)) {
-    return;
+    return null;
   }
 
   if (loginMethod === 'sts') {
-    const stsInput = (await clackText({
+    const stsInput = await clackText({
       message: t('login_sts_token_prompt').d(
         'Enter STS token (AccessKeyId,AccessKeySecret,SecurityToken):'
       )
-    })) as string;
-    if (isCancel(stsInput)) return;
+    });
+    if (isCancel(stsInput)) return null;
     const parsed = parseStsToken(stsInput);
     if (!parsed) {
       logger.error(
@@ -238,7 +260,7 @@ export async function interactiveLogin(): Promise<void> {
           'Invalid STS token format. Use: AccessKeyId,AccessKeySecret,SecurityToken'
         )
       );
-      return;
+      return false;
     }
     const loginStatus = await validateCredentials(
       parsed.accessKeyId,
@@ -258,7 +280,7 @@ export async function interactiveLogin(): Promise<void> {
     } else {
       logger.error(loginStatus.message || 'Login failed');
     }
-    return;
+    return loginStatus.valid;
   }
 
   const styledUrl = chalk.underline.blue(
@@ -269,10 +291,12 @@ export async function interactiveLogin(): Promise<void> {
     `🔑 ${chalk.underline(t('login_get_ak_sk').d(`Please go to the following link to get your account's AccessKey ID and AccessKey Secret`))}`
   );
   logger.log(`👉 ${styledUrl}`);
-  const accessKeyId = (await clackText({ message: 'AccessKey ID:' })) as string;
-  const accessKeySecret = (await clackText({
+  const accessKeyId = await clackText({ message: 'AccessKey ID:' });
+  if (isCancel(accessKeyId)) return null;
+  const accessKeySecret = await clackText({
     message: 'AccessKey Secret:'
-  })) as string;
+  });
+  if (isCancel(accessKeySecret)) return null;
 
   const loginStatus = await validateCredentials(accessKeyId, accessKeySecret);
 
@@ -288,4 +312,5 @@ export async function interactiveLogin(): Promise<void> {
   } else {
     logger.error(loginStatus.message || 'Login failed');
   }
+  return loginStatus.valid;
 }

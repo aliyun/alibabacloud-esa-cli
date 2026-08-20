@@ -66,12 +66,10 @@ export const generateHiddenConfigDir = () => {
 
 export const generateToml = (path: string) => {
   if (!fs.existsSync(path)) {
-    fs.writeFileSync(path, '', 'utf-8');
-    // Add default endpoint
     const defaultConfig = {
       endpoint: 'esa.cn-hangzhou.aliyuncs.com'
     };
-    updateCliConfigFile(defaultConfig);
+    fs.writeFileSync(path, toml.stringify(defaultConfig), 'utf-8');
   }
 };
 
@@ -158,8 +156,7 @@ export function readConfigFile(
         return config as CliConfig | ProjectConfig;
       }
     } catch (error) {
-      logger.error(`Error parsing config file: ${error}`);
-      process.exit(1);
+      throw new Error(`Error parsing config file ${configPath}: ${error}`);
     }
   }
   return null;
@@ -302,14 +299,12 @@ export function getDevOpenBrowserUrl(): string {
 
 export const getApiConfig = () => {
   const envAccessKeyId =
-    process.env.ALIBABA_CLOUD_ACCESS_KEY_ID ||
-    process.env.ESA_ACCESS_KEY_ID;
+    process.env.ALIBABA_CLOUD_ACCESS_KEY_ID || process.env.ESA_ACCESS_KEY_ID;
   const envAccessKeySecret =
     process.env.ALIBABA_CLOUD_ACCESS_KEY_SECRET ||
     process.env.ESA_ACCESS_KEY_SECRET;
   const envSecurityToken =
-    process.env.ALIBABA_CLOUD_SECURITY_TOKEN ||
-    process.env.ESA_SECURITY_TOKEN;
+    process.env.ALIBABA_CLOUD_SECURITY_TOKEN || process.env.ESA_SECURITY_TOKEN;
 
   if (envAccessKeyId && envAccessKeySecret) {
     const [cliConfig, projectConfig] = getConfigurations();

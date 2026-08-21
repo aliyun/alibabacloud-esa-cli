@@ -37,6 +37,7 @@ vi.mock('../../src/libs/logger.js', () => ({
     startSubStep: vi.fn(),
     endSubStep: vi.fn(),
     block: vi.fn(),
+    stopSpinner: vi.fn(),
     getOutputStream: vi.fn().mockReturnValue('stdout'),
     setOutputStream: vi.fn()
   }
@@ -414,16 +415,176 @@ describe('handleDeploy', () => {
     stdoutSpy.mockRestore();
   });
 
-  it('should set a non-zero exit code at the command boundary', async () => {
+  it.each([
+    {
+      label: 'text output',
+      argv: { _: [], $0: '' },
+      setup: () => {
+        vi.mocked(commonUtils.commitAndDeployVersion).mockResolvedValue(
+          successfulDeploy()
+        );
+        vi.mocked(commonUtils.displayDeploySuccess).mockResolvedValue();
+      }
+    },
+    {
+      label: 'json output',
+      argv: { output: 'json', _: [], $0: '' },
+      setup: () => {
+        vi.mocked(commonUtils.commitAndDeployVersion).mockResolvedValue(
+          successfulDeploy()
+        );
+        vi.mocked(commonUtils.getDeployPreviewUrl).mockResolvedValue(null);
+      }
+    },
+    {
+      label: 'versions output',
+      argv: { versions: ['v1:100'], _: [], $0: '' },
+      setup: () => {
+        vi.mocked(commonUtils.deployWithVersionPercentages).mockResolvedValue(
+          successfulDeploy()
+        );
+        vi.mocked(commonUtils.displayDeploySuccess).mockResolvedValue();
+      }
+    }
+  ])(
+    'should exit zero after a successful $label deploy',
+    async ({ argv, setup }) => {
+      setup();
+      const stdoutSpy = vi.spyOn(process.stdout, 'write').mockImplementation(((
+        _chunk: unknown,
+        callback?: () => void
+      ) => {
+        callback?.();
+        return true;
+      }) as typeof process.stdout.write);
+      const stderrSpy = vi.spyOn(process.stderr, 'write').mockImplementation(((
+        _chunk: unknown,
+        callback?: () => void
+      ) => {
+        callback?.();
+        return true;
+      }) as typeof process.stderr.write);
+      const exitSpy = vi
+        .spyOn(process, 'exit')
+        .mockImplementation(() => undefined as never);
+
+      await (deploy.handler as (argv: any) => Promise<void>)(argv);
+
+      expect(exitSpy).toHaveBeenCalledOnce();
+      expect(exitSpy).toHaveBeenCalledWith(0);
+      stdoutSpy.mockRestore();
+      stderrSpy.mockRestore();
+      exitSpy.mockRestore();
+    }
+  );
+
+  it('should wait for JSON stdout and stderr to flush before exiting', async () => {
+    vi.mocked(commonUtils.commitAndDeployVersion).mockResolvedValue(
+      successfulDeploy()
+    );
+    vi.mocked(commonUtils.getDeployPreviewUrl).mockResolvedValue(null);
+    const flushCallbacks: Array<() => void> = [];
+    const stdoutSpy = vi.spyOn(process.stdout, 'write').mockImplementation(((
+      _chunk: unknown,
+      callback?: () => void
+    ) => {
+      if (callback) flushCallbacks.push(callback);
+      return true;
+    }) as typeof process.stdout.write);
+    const stderrSpy = vi.spyOn(process.stderr, 'write').mockImplementation(((
+      _chunk: unknown,
+      callback?: () => void
+    ) => {
+      if (callback) flushCallbacks.push(callback);
+      return true;
+    }) as typeof process.stderr.write);
+    const exitSpy = vi
+      .spyOn(process, 'exit')
+      .mockImplementation(() => undefined as never);
+
+    const execution = (deploy.handler as (argv: any) => Promise<void>)({
+      output: 'json',
+      _: [],
+      $0: ''
+    });
+    await vi.waitFor(() => expect(flushCallbacks).toHaveLength(2));
+
+    expect(exitSpy).not.toHaveBeenCalled();
+    flushCallbacks.forEach((callback) => callback());
+    await execution;
+
+    expect(exitSpy).toHaveBeenCalledWith(0);
+    stdoutSpy.mockRestore();
+    stderrSpy.mockRestore();
+    exitSpy.mockRestore();
+  });
+
+  it('should exit one at the command boundary when deployment fails', async () => {
     vi.mocked(commonUtils.commitAndDeployVersion).mockResolvedValue({
       success: false,
       app: 'test-project',
       deployments: []
     });
-    process.exitCode = undefined;
+    const stdoutSpy = vi.spyOn(process.stdout, 'write').mockImplementation(((
+      _chunk: unknown,
+      callback?: () => void
+    ) => {
+      callback?.();
+      return true;
+    }) as typeof process.stdout.write);
+    const stderrSpy = vi.spyOn(process.stderr, 'write').mockImplementation(((
+      _chunk: unknown,
+      callback?: () => void
+    ) => {
+      callback?.();
+      return true;
+    }) as typeof process.stderr.write);
+    const exitSpy = vi
+      .spyOn(process, 'exit')
+      .mockImplementation(() => undefined as never);
 
     await (deploy.handler as (argv: any) => Promise<void>)({ _: [], $0: '' });
 
-    expect(process.exitCode).toBe(1);
+    expect(exitSpy).toHaveBeenCalledOnce();
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    stdoutSpy.mockRestore();
+    stderrSpy.mockRestore();
+    exitSpy.mockRestore();
+  });
+
+  it('should report an unexpected deploy error and exit one', async () => {
+    vi.mocked(commonUtils.commitAndDeployVersion).mockRejectedValue(
+      new Error('deploy exploded')
+    );
+    const stdoutSpy = vi.spyOn(process.stdout, 'write').mockImplementation(((
+      _chunk: unknown,
+      callback?: () => void
+    ) => {
+      callback?.();
+      return true;
+    }) as typeof process.stdout.write);
+    const stderrSpy = vi.spyOn(process.stderr, 'write').mockImplementation(((
+      _chunk: unknown,
+      callback?: () => void
+    ) => {
+      callback?.();
+      return true;
+    }) as typeof process.stderr.write);
+    const consoleErrorSpy = vi
+      .spyOn(console, 'error')
+      .mockImplementation(() => {});
+    const exitSpy = vi
+      .spyOn(process, 'exit')
+      .mockImplementation(() => undefined as never);
+
+    await (deploy.handler as (argv: any) => Promise<void>)({ _: [], $0: '' });
+
+    expect(consoleErrorSpy).toHaveBeenCalledWith('deploy exploded');
+    expect(exitSpy).toHaveBeenCalledOnce();
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    stdoutSpy.mockRestore();
+    stderrSpy.mockRestore();
+    consoleErrorSpy.mockRestore();
+    exitSpy.mockRestore();
   });
 });

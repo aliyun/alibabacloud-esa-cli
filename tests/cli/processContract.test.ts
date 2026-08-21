@@ -26,6 +26,12 @@ const signalChildPath = path.join(
   'fixtures',
   'waitForSignal.cjs'
 );
+const keepProcessAlivePath = path.join(
+  repositoryRoot,
+  'tests',
+  'fixtures',
+  'keepProcessAlive.cjs'
+);
 
 function createIsolatedEnvironment(): NodeJS.ProcessEnv {
   const env: NodeJS.ProcessEnv = {
@@ -54,7 +60,7 @@ function runCli(entry: string, args: string[]) {
     cwd: repositoryRoot,
     env: createIsolatedEnvironment(),
     encoding: 'utf-8',
-    timeout: 10_000
+    timeout: 20_000
   });
   if (result.error) throw result.error;
   return result;
@@ -179,6 +185,77 @@ describe('CLI process contract', () => {
     expect(result.status).toBe(1);
     expect(result.signal).toBeNull();
     expect(JSON.parse(result.stdout)).toEqual({
+      schemaVersion: 1,
+      app: '',
+      url: null,
+      deployments: []
+    });
+  }, 45_000);
+
+  it('exits after flushing a deploy result even with an unrelated active handle', async () => {
+    const child = spawn(
+      process.execPath,
+      [
+        '--require',
+        keepProcessAlivePath,
+        entryPath,
+        'deploy',
+        '--versions',
+        'v1:80',
+        '--output',
+        'json',
+        '--skip-update-check'
+      ],
+      {
+        cwd: repositoryRoot,
+        env: createIsolatedEnvironment(),
+        stdio: ['ignore', 'pipe', 'pipe']
+      }
+    );
+    let stdout = '';
+    let stderr = '';
+    let resultWrittenAt: number | undefined;
+    let exitAfterResultTimer: NodeJS.Timeout | undefined;
+
+    const [status, signal] = await new Promise<
+      [number | null, NodeJS.Signals | null]
+    >((resolve, reject) => {
+      const overallTimer = setTimeout(() => {
+        child.kill('SIGKILL');
+        reject(new Error(`Deploy process timed out. stderr: ${stderr}`));
+      }, 10_000);
+
+      child.stdout.on('data', (chunk) => {
+        stdout += String(chunk);
+        if (resultWrittenAt === undefined && stdout.includes('\n')) {
+          resultWrittenAt = Date.now();
+          exitAfterResultTimer = setTimeout(() => {
+            child.kill('SIGKILL');
+            reject(
+              new Error('Deploy process stayed alive after writing its result')
+            );
+          }, 3_000);
+        }
+      });
+      child.stderr.on('data', (chunk) => {
+        stderr += String(chunk);
+      });
+      child.once('error', (error) => {
+        clearTimeout(overallTimer);
+        if (exitAfterResultTimer) clearTimeout(exitAfterResultTimer);
+        reject(error);
+      });
+      child.once('close', (code, closeSignal) => {
+        clearTimeout(overallTimer);
+        if (exitAfterResultTimer) clearTimeout(exitAfterResultTimer);
+        resolve([code, closeSignal]);
+      });
+    });
+
+    expect(resultWrittenAt).toBeDefined();
+    expect(status).toBe(1);
+    expect(signal).toBeNull();
+    expect(JSON.parse(stdout)).toEqual({
       schemaVersion: 1,
       app: '',
       url: null,

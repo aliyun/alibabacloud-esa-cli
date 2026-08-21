@@ -13,6 +13,48 @@ import {
 
 import type { DeployExecutionResult, DeployJsonOutput } from './types.js';
 
+const DEPLOY_OUTPUT_FLUSH_TIMEOUT_MS = 1_000;
+
+function flushProcessStream(stream: NodeJS.WriteStream): Promise<void> {
+  return new Promise((resolve) => {
+    if (!stream.writable || stream.destroyed) {
+      resolve();
+      return;
+    }
+
+    let settled = false;
+    const done = () => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      stream.off('error', done);
+      resolve();
+    };
+    const timer = setTimeout(done, DEPLOY_OUTPUT_FLUSH_TIMEOUT_MS);
+    timer.unref();
+    stream.once('error', done);
+    try {
+      // Empty writes are ordered behind earlier writes and provide a flush barrier
+      // without adding another byte to JSON or human-readable output.
+      stream.write('', done);
+    } catch {
+      done();
+    }
+  });
+}
+
+export async function exitDeployProcess(exitCode: number): Promise<never> {
+  // Keep a correct fallback status even if a broken output stream prevents the
+  // explicit exit call from being reached.
+  process.exitCode = exitCode;
+  logger.stopSpinner();
+  await Promise.all([
+    flushProcessStream(process.stdout),
+    flushProcessStream(process.stderr)
+  ]);
+  process.exit(exitCode);
+}
+
 const deploy: CommandModule = {
   command: 'deploy [entry]',
   builder: (yargs: Argv) => {
@@ -79,8 +121,15 @@ const deploy: CommandModule = {
   },
   describe: `🚀 ${t('deploy_describe').d('Deploy your project')}`,
   handler: async (argv: ArgumentsCamelCase) => {
-    const result = await handleDeploy(argv);
-    if (!result.success) process.exitCode = 1;
+    let exitCode = 1;
+    try {
+      const result = await handleDeploy(argv);
+      exitCode = result.success ? 0 : 1;
+    } catch (error: unknown) {
+      logger.stopSpinner();
+      console.error(error instanceof Error ? error.message : String(error));
+    }
+    await exitDeployProcess(exitCode);
   }
 };
 

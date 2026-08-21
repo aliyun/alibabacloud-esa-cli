@@ -16,6 +16,7 @@
 - Return a non-zero process status when Routine creation, login persistence, version lookup, argument validation, build, upload, version readiness, or a deployment request fails, and status `130` when interactive login is cancelled.
 - Propagate asynchronous command errors through the top-level parser instead of exiting successfully from nested helpers.
 - Keep JSON-mode startup diagnostics on stderr even when configuration parsing fails, and preserve child SIGINT/SIGTERM semantics in the package launcher.
+- Exit the deploy command immediately after its JSON or text result has been flushed instead of waiting for unrelated event-loop handles.
 
 ## [1.0.11] - 2026-07-22
 

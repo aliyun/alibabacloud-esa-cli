@@ -10,6 +10,10 @@
 
 **deploy** - 将您的 Functions & Pages 部署到阿里云。
 
+**env** - 管理指定环境的普通变量。
+
+**secret** - 管理指定环境的加密 Secret。
+
 **deployments** - 管理您的部署和版本。
 
 **project** - 管理您的 Functions & Pages 项目。
@@ -159,7 +163,7 @@ esa-cli commit [<ENTRY>] [OPTIONS]
 
 ## deploy
 
-**生成一个代码版本，并同时部署项目到仿真和线上环境。**
+**生成一个代码版本，并部署到指定环境；未指定环境时同时部署到仿真和线上环境。**
 
 ```
 esa-cli deploy [<ENTRY>] [OPTIONS]
@@ -185,6 +189,145 @@ esa-cli deploy [<ENTRY>] [OPTIONS]
 
 **--minify, -m** _可选_
 **是否压缩代码**
+
+当命令生成新版本并指定 `--environment production` 时，新版本会绑定当前 production 环境的变量和 Secret 快照。之后修改变量或 Secret 不会改变已有版本；需要再次执行对应环境的 deploy，创建新版本后才会生效。
+
+```
+esa-cli deploy --environment production
+```
+
+使用 `--version` 部署已有版本时，不会重新创建或绑定变量快照。
+
+如需使用运行时变量或 Secret，必须显式选择一个环境。省略 `--environment` 时保留原有行为：CLI 创建一个不绑定任何环境变量快照的版本，并将同一版本部署到两个环境。
+
+---
+
+## env
+
+**管理指定部署环境的普通文本变量。所有 env 子命令都必须指定 `--environment, -e`。变量修改后，只有下一次对应环境的 deploy 创建新版本时才会生效。**
+
+### env list
+
+**列出指定环境的变量和 Secret。Secret 的值始终以遮蔽形式显示。**
+
+```
+esa-cli env list --environment production [OPTIONS]
+```
+
+**--environment, -e** _必需_
+**目标环境。可选：staging | production**
+
+**--name, -n** _可选_
+**函数和Pages名称**
+
+### env set
+
+**设置或更新指定环境的普通文本变量。**
+
+```
+esa-cli env set <KEY=VALUE> --environment production [OPTIONS]
+```
+
+例如：
+
+```
+esa-cli env set LOG_LEVEL=info -e production
+```
+
+**KEY=VALUE** _必需_
+**要设置的变量名称和值**
+
+**--environment, -e** _必需_
+**目标环境。可选：staging | production**
+
+**--name, -n** _可选_
+**函数和Pages名称**
+
+### env delete
+
+**删除指定环境的变量或 Secret。**
+
+```
+esa-cli env delete <KEY> --environment production [OPTIONS]
+```
+
+例如：
+
+```
+esa-cli env delete LOG_LEVEL -e production
+```
+
+**KEY** _必需_
+**要删除的变量或 Secret 名称**
+
+**--environment, -e** _必需_
+**目标环境。可选：staging | production**
+
+**--name, -n** _可选_
+**函数和Pages名称**
+
+---
+
+## secret
+
+**管理指定部署环境的加密 Secret。Secret 更新后，只有下一次对应环境的 deploy 创建新版本时才会生效。使用 `env list` 查看时，Secret 值始终被遮蔽。**
+
+### secret put
+
+**设置或更新一个 Secret。默认通过隐藏输入的交互提示读取值，不会将值显示在终端中。**
+
+```
+esa-cli secret put <KEY> --environment production [OPTIONS]
+```
+
+例如，通过隐藏交互输入 Secret：
+
+```
+esa-cli secret put API_TOKEN -e production
+```
+
+也可以通过标准输入传值：
+
+```
+printf '%s' "$API_TOKEN" | esa-cli secret put API_TOKEN -e production --stdin
+```
+
+**KEY** _必需_
+**要设置的 Secret 名称**
+
+**--stdin** _可选_
+**从标准输入读取 Secret 值，不显示交互提示**
+
+**--environment, -e** _必需_
+**目标环境。可选：staging | production**
+
+**--name, -n** _可选_
+**函数和Pages名称**
+
+### secret bulk
+
+**从 dotenv 文件批量导入 Secret。**
+
+**请勿将该 dotenv 文件提交到版本控制。如果使用 `.env.production` 等文件名，请显式将其加入项目的 `.gitignore`。**
+
+```
+esa-cli secret bulk <FILE> --environment production [OPTIONS]
+```
+
+例如：
+
+```
+esa-cli secret bulk .env.production -e production
+```
+
+**FILE** _必需_
+**要导入的 dotenv 文件路径**
+
+**--environment, -e** _必需_
+**目标环境。可选：staging | production**
+
+**--name, -n** _可选_
+**函数和Pages名称**
 
 ---
 

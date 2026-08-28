@@ -26,6 +26,7 @@ It helps you create projects from templates, run Functions & Pages locally, pack
 - **Local development**: run a local ESA-compatible server with automatic rebuilds, local upstream proxying, mock KV, and cache support.
 - **Static + dynamic deployments**: deploy static Pages, edge functions, or hybrid Functions & Pages projects.
 - **Versioned releases**: create code versions with `commit`, deploy existing versions, or split traffic between two versions by percentage.
+- **Runtime configuration**: manage environment-specific variables and encrypted secrets from the CLI.
 - **Account operations**: login with AK/SK or STS credentials, list projects and sites, and manage custom domains and routes.
 - **Bilingual CLI**: switch the CLI language between English and Simplified Chinese.
 
@@ -149,6 +150,28 @@ Split traffic between two versions:
 npx esa-cli deploy --versions v1:80,v2:20 --environment production
 ```
 
+Manage runtime variables and secrets for an environment:
+
+```bash
+npx esa-cli env list --environment production
+npx esa-cli env set LOG_LEVEL=info --environment production
+npx esa-cli env delete LEGACY_FLAG --environment production
+npx esa-cli secret put API_TOKEN --environment production
+npx esa-cli secret bulk .env.production --environment production
+```
+
+Values are stored independently for staging and production. Changes take effect only after the next deployment creates a version for that environment. For example, `deploy --environment production` binds a snapshot of the current production variables and secrets to the newly created version:
+
+```bash
+npx esa-cli deploy --environment production
+```
+
+To include runtime variables or secrets, always select one environment. A deploy without `--environment` keeps the legacy behavior: it creates one unbound version without a variable snapshot and deploys that version to both environments.
+
+Use `env list` to inspect the environment. Secret values are always masked in its output.
+
+Keep files used by `secret bulk` out of version control. If you use a name such as `.env.production`, add it to your project's `.gitignore` explicitly.
+
 ## Configuration
 
 ESA CLI looks for `esa.jsonc` or `esa.toml` from the current directory upward. `esa.jsonc` is recommended for new projects.
@@ -185,6 +208,8 @@ See the [ESA Configuration Guide](https://github.com/aliyun/alibabacloud-esa-cli
 | `esa-cli dev [entry]` | Start a local server for Functions & Pages development. |
 | `esa-cli commit [entry]` | Package code and assets, then save them as a new version. |
 | `esa-cli deploy [entry]` | Generate or select a version and deploy it to staging, production, or both. |
+| `esa-cli env list/set/delete` | Manage plain-text variables for a staging or production environment. |
+| `esa-cli secret put/bulk` | Store encrypted secrets for a staging or production environment. |
 | `esa-cli deployments list` | List code versions for the current Functions & Pages project. |
 | `esa-cli deployments delete` | Delete one or more code versions. |
 | `esa-cli project list` | List Functions & Pages projects in the current account. |

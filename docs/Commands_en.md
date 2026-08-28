@@ -6,6 +6,8 @@ ESA CLI offers a number of commands to manage your Alibaba Cloud ESA Functions &
 **dev** - Start a local server for developing your Functions & Pages.
 **commit** - Commit your code and save as a new version.
 **deploy** - Deploy your Functions & Pages to Alibaba Cloud.
+**env** - Manage plain-text variables for a specific environment.
+**secret** - Manage encrypted secrets for a specific environment.
 **deployments** - Manage your deployments and versions.
 **project** - Manage your Functions & Pages projects.
 **site** - List your activated sites.
@@ -147,7 +149,7 @@ Functions & Pages name
 
 ## deploy
 
-Generate a code version and deploy the project to both staging and production environments.
+Generate a code version and deploy it to a selected environment, or to both staging and production when no environment is specified.
 
 ```
 esa-cli deploy [<ENTRY>] [OPTIONS]
@@ -173,6 +175,130 @@ Description of the version
 
 **--minify, -m** _optional_  
 Whether to minify the code
+
+When the command generates a new version with `--environment production`, that version is bound to a snapshot of the current production variables and secrets. Later variable or secret changes do not modify an existing version; run deploy for the same environment again to create a new version before those changes take effect.
+
+```
+esa-cli deploy --environment production
+```
+
+Deploying an existing version with `--version` does not recreate or rebind its variable snapshot.
+
+To include runtime variables or secrets, select one environment explicitly. Omitting `--environment` preserves the legacy behavior: the CLI creates one unbound version without an environment-variable snapshot and deploys it to both environments.
+
+---
+
+## env
+
+Manage plain-text variables for a deployment environment. Every env subcommand requires `--environment, -e`. Changes take effect only after the next deploy for that environment creates a new version.
+
+### env list
+
+List variables and secrets for an environment. Secret values are always masked.
+
+```
+esa-cli env list --environment production [OPTIONS]
+```
+
+**--environment, -e** _required_: Target environment. Choices: staging | production
+
+**--name, -n** _optional_: Name of Functions & Pages
+
+### env set
+
+Set or update a plain-text variable for an environment.
+
+```
+esa-cli env set <KEY=VALUE> --environment production [OPTIONS]
+```
+
+Example:
+
+```
+esa-cli env set LOG_LEVEL=info -e production
+```
+
+**KEY=VALUE** _required_: Variable name and value to set
+
+**--environment, -e** _required_: Target environment. Choices: staging | production
+
+**--name, -n** _optional_: Name of Functions & Pages
+
+### env delete
+
+Delete a variable or secret from an environment.
+
+```
+esa-cli env delete <KEY> --environment production [OPTIONS]
+```
+
+Example:
+
+```
+esa-cli env delete LOG_LEVEL -e production
+```
+
+**KEY** _required_: Name of the variable or secret to delete
+
+**--environment, -e** _required_: Target environment. Choices: staging | production
+
+**--name, -n** _optional_: Name of Functions & Pages
+
+---
+
+## secret
+
+Manage encrypted secrets for a deployment environment. Secret changes take effect only after the next deploy for that environment creates a new version. Secret values are always masked by `env list`.
+
+### secret put
+
+Set or update one secret. By default, its value is read from a hidden interactive prompt and is not displayed in the terminal.
+
+```
+esa-cli secret put <KEY> --environment production [OPTIONS]
+```
+
+Enter a secret through the hidden interactive prompt:
+
+```
+esa-cli secret put API_TOKEN -e production
+```
+
+Alternatively, read the value from standard input:
+
+```
+printf '%s' "$API_TOKEN" | esa-cli secret put API_TOKEN -e production --stdin
+```
+
+**KEY** _required_: Name of the secret to set
+
+**--stdin** _optional_: Read the secret value from standard input without an interactive prompt
+
+**--environment, -e** _required_: Target environment. Choices: staging | production
+
+**--name, -n** _optional_: Name of Functions & Pages
+
+### secret bulk
+
+Import multiple secrets from a dotenv file.
+
+Keep the dotenv file out of version control. If you use a name such as `.env.production`, add it to the project's `.gitignore` explicitly.
+
+```
+esa-cli secret bulk <FILE> --environment production [OPTIONS]
+```
+
+Example:
+
+```
+esa-cli secret bulk .env.production -e production
+```
+
+**FILE** _required_: Path to the dotenv file to import
+
+**--environment, -e** _required_: Target environment. Choices: staging | production
+
+**--name, -n** _optional_: Name of Functions & Pages
 
 ---
 

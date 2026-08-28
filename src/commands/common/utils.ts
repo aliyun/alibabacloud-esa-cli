@@ -5,7 +5,8 @@ import { ApiService } from '../../libs/apiService.js';
 import {
   CreateRoutineWithAssetsCodeVersionRes,
   GetRoutineReq,
-  CreateRoutineWithAssetsCodeVersionReq
+  CreateRoutineWithAssetsCodeVersionReq,
+  RoutineEnvironment
 } from '../../libs/interface.js';
 import logger from '../../libs/logger.js';
 import { ensureRoutineExists } from '../../utils/checkIsRoutineCreated.js';
@@ -146,7 +147,8 @@ export async function generateCodeVersion(
   assets?: string,
   minify = false,
   projectPath?: string,
-  noBundle = false
+  noBundle = false,
+  deployEnv?: RoutineEnvironment
 ): Promise<{
   isSuccess: boolean;
   res: CreateRoutineWithAssetsCodeVersionRes | null;
@@ -269,7 +271,8 @@ export async function generateCodeVersion(
   const requestParams: CreateRoutineWithAssetsCodeVersionReq = {
     Name: projectName,
     CodeDescription: description,
-    ExtraInfo: JSON.stringify({ Source: 'CLI' })
+    ExtraInfo: JSON.stringify({ Source: 'CLI' }),
+    ...(deployEnv ? { DeployEnv: deployEnv } : {})
   };
 
   if (notFoundStrategy) {
@@ -364,7 +367,8 @@ export async function commitAndDeployVersion(
     assets || projectConfig?.assets?.directory,
     minify || projectConfig?.minify,
     projectPath,
-    noBundle
+    noBundle,
+    env === 'all' ? undefined : env
   );
   const isCommitSuccess = res?.isSuccess;
   if (!isCommitSuccess) {

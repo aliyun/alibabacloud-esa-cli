@@ -347,6 +347,7 @@ export interface CreateRoutineWithAssetsCodeVersionReq {
   CodeDescription?: string;
   BuildId?: string;
   ExtraInfo?: string;
+  DeployEnv?: RoutineEnvironment;
   ConfOptions?: {
     NotFoundStrategy: string;
   };
@@ -407,4 +408,64 @@ export interface GetRoutineAccessTokenReq {
 export interface GetRoutineAccessTokenRes {
   code: string;
   data: { RequestId?: string; Token?: string; DefaultRelatedRecord?: string };
+}
+
+export type RoutineEnvironment = 'staging' | 'production';
+
+export type RoutineEnvironmentVariableType = 'plain_text' | 'secret_text';
+
+export interface RoutineEnvironmentVariable {
+  Type: RoutineEnvironmentVariableType;
+  Value?: string;
+  CreatedAt?: string;
+  UpdatedAt?: string;
+}
+
+export interface ListRoutineEnvironmentVariablesReq {
+  Name: string;
+  Env: RoutineEnvironment;
+  KeyWord?: string;
+  PageNumber?: number;
+  PageSize?: number;
+}
+
+export interface ListRoutineEnvironmentVariablesRes {
+  code: string;
+  data: {
+    RequestId?: string;
+    Count: number;
+    TotalCount: number;
+    PageNumber: number;
+    PageSize: number;
+    EnvironmentVariables: Record<string, RoutineEnvironmentVariable>;
+  };
+}
+
+export interface SetRoutineEnvironmentVariablesReq {
+  Name: string;
+  Env: RoutineEnvironment;
+  EnvironmentVariables: Record<string, RoutineEnvironmentVariable>;
+}
+
+export interface SetRoutineEnvironmentVariablesRes {
+  code: string;
+  data: {
+    RequestId?: string;
+    SetKeys: string[];
+  };
+}
+
+export interface DeleteRoutineEnvironmentVariablesReq {
+  Name: string;
+  Env: RoutineEnvironment;
+  EnvironmentVariableKeys: string[];
+}
+
+export interface DeleteRoutineEnvironmentVariablesRes {
+  code: string;
+  data: {
+    RequestId?: string;
+    DeletedKeys: string[];
+    FailedKeys: string[];
+  };
 }

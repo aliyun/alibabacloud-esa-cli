@@ -146,4 +146,65 @@ describe('ApiService routine environment variables', () => {
       })
     );
   });
+
+  it('lists code version metadata with DeployEnv and HasEnvVars', async () => {
+    callApi.mockResolvedValue({
+      statusCode: 200,
+      body: {
+        RequestId: 'metadata-request-id',
+        PageNumber: 2,
+        PageSize: 20,
+        TotalCount: 21,
+        CodeVersions: [
+          {
+            CodeVersion: 'version-21',
+            CodeDescription: 'production release',
+            CreateTime: '2026-08-28T01:00:00Z',
+            DeployEnv: 'production',
+            HasEnvVars: true
+          }
+        ]
+      }
+    });
+
+    const result = await service.listRoutineCodeVersionsMetadata({
+      Name: 'my-routine',
+      PageNumber: 2,
+      PageSize: 20,
+      SearchKeyWord: 'version-21'
+    });
+
+    const [params, request] = callApi.mock.calls[0];
+    expect(params).toMatchObject({
+      action: 'ListRoutineCodeVersions',
+      method: 'POST',
+      reqBodyType: 'formData'
+    });
+    expect(request.body).toEqual(
+      expect.objectContaining({
+        Name: 'my-routine',
+        PageNumber: 2,
+        PageSize: 20,
+        SearchKeyWord: 'version-21'
+      })
+    );
+    expect(result).toEqual({
+      code: '200',
+      data: {
+        RequestId: 'metadata-request-id',
+        PageNumber: 2,
+        PageSize: 20,
+        TotalCount: 21,
+        CodeVersions: [
+          {
+            CodeVersion: 'version-21',
+            CodeDescription: 'production release',
+            CreateTime: '2026-08-28T01:00:00Z',
+            DeployEnv: 'production',
+            HasEnvVars: true
+          }
+        ]
+      }
+    });
+  });
 });

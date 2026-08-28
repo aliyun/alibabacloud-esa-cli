@@ -38,6 +38,7 @@ vi.mock('../../../src/libs/logger.js', () => ({
   default: {
     log: vi.fn(),
     error: vi.fn(),
+    warn: vi.fn(),
     block: vi.fn(),
     startSubStep: vi.fn(),
     endSubStep: vi.fn(),
@@ -63,6 +64,19 @@ describe('routineUtils', () => {
     uploadToOss: vi.fn().mockResolvedValue(true),
     getRoutineCodeVersionInfo: vi.fn().mockResolvedValue({
       data: { Status: 'available' }
+    }),
+    listRoutineCodeVersionsMetadata: vi.fn().mockResolvedValue({
+      code: '200',
+      data: {
+        PageNumber: 1,
+        PageSize: 100,
+        TotalCount: 3,
+        CodeVersions: [
+          { CodeVersion: 'test-version' },
+          { CodeVersion: 'v1' },
+          { CodeVersion: 'v2' }
+        ]
+      }
     }),
     createRoutineCodeDeployment: vi.fn().mockResolvedValue({ data: {} }),
     getRoutine: vi.fn().mockResolvedValue({

@@ -54,7 +54,9 @@ import {
   SetRoutineEnvironmentVariablesReq,
   SetRoutineEnvironmentVariablesRes,
   DeleteRoutineEnvironmentVariablesReq,
-  DeleteRoutineEnvironmentVariablesRes
+  DeleteRoutineEnvironmentVariablesRes,
+  ListRoutineCodeVersionsMetadataReq,
+  ListRoutineCodeVersionsMetadataRes
 } from './interface.js';
 
 export class ApiService {
@@ -1353,6 +1355,66 @@ export class ApiService {
       console.log(error);
     }
     return null;
+  }
+
+  async listRoutineCodeVersionsMetadata(
+    requestParams: ListRoutineCodeVersionsMetadataReq
+  ): Promise<ListRoutineCodeVersionsMetadataRes | null> {
+    try {
+      const params = {
+        action: 'ListRoutineCodeVersions',
+        version: '2024-09-10',
+        protocol: 'https',
+        method: 'POST',
+        authType: 'AK',
+        bodyType: 'json',
+        reqBodyType: 'formData',
+        style: 'RPC',
+        pathname: '/',
+        toMap: function () {
+          return this;
+        }
+      };
+      const request = new $OpenApi.OpenApiRequest({
+        body: {
+          Name: requestParams.Name,
+          PageNumber: requestParams.PageNumber,
+          PageSize: requestParams.PageSize,
+          SearchKeyWord: requestParams.SearchKeyWord
+        }
+      });
+      const runtime = {
+        toMap: function () {
+          return this;
+        }
+      };
+      const result = await this.client.callApi(params, request, runtime);
+      if (result.statusCode !== 200 || !result.body) return null;
+
+      return {
+        code: result.statusCode.toString(),
+        data: {
+          RequestId: result.body.RequestId,
+          PageNumber: result.body.PageNumber ?? 1,
+          PageSize: result.body.PageSize ?? 20,
+          TotalCount: result.body.TotalCount ?? 0,
+          CodeVersions: (result.body.CodeVersions ?? []).map(
+            (version: Record<string, unknown>) => ({
+              CodeDescription: version.CodeDescription as string | undefined,
+              CreateTime: version.CreateTime as string | undefined,
+              CodeVersion: version.CodeVersion as string | undefined,
+              Status: version.Status as string | undefined,
+              DeployEnv: version.DeployEnv as
+                'staging' | 'production' | undefined,
+              HasEnvVars: version.HasEnvVars as boolean | undefined
+            })
+          )
+        }
+      };
+    } catch {
+      console.error('Failed to list routine code version metadata.');
+      return null;
+    }
   }
 
   async getRoutineAccessToken(

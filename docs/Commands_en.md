@@ -4,7 +4,7 @@ ESA CLI offers a number of commands to manage your Alibaba Cloud ESA Functions &
 
 **init** - Create a new project from a variety of web frameworks and templates.
 **dev** - Start a local server for developing your Functions & Pages.
-**commit** - Commit your code and save as a new version.
+**commit** - Save an environment-bound code version without deploying it.
 **deploy** - Deploy your Functions & Pages to Alibaba Cloud.
 **env** - Manage plain-text variables for a specific environment.
 **secret** - Manage encrypted secrets for a specific environment.
@@ -124,7 +124,7 @@ Output debug logs (default: false)
 
 ## commit
 
-Commit your code and save as a new version.
+Commit your code as a new version with an environment-variable snapshot, without deploying it. Production is the default environment.
 
 ```
 esa-cli commit [<ENTRY>] [OPTIONS]
@@ -142,14 +142,24 @@ Assets directory
 **--description, -d** _optional_  
 Description for Functions & Pages/version (skip interactive input)
 
+**--environment, -e** _optional_
+Environment whose variables and secrets are bound to the version. Choices: staging | production. Default: production
+
 **--name, -n** _optional_  
 Functions & Pages name
+
+Omitting `--environment` binds a snapshot of the current production variables and secrets. Select staging explicitly to bind its snapshot instead. Neither command deploys the new version.
+
+```
+esa-cli commit
+esa-cli commit --environment staging
+```
 
 ---
 
 ## deploy
 
-Generate a code version and deploy it to a selected environment, or to both staging and production when no environment is specified.
+Generate a code version and deploy it to production by default, or to staging when selected explicitly.
 
 ```
 esa-cli deploy [<ENTRY>] [OPTIONS]
@@ -162,7 +172,7 @@ Entry file of Functions & Pages, defaults to entry configuration in `esa.jsonc`
 Version to deploy (skip interactive selection)
 
 **--environment, -e** _optional_  
-Environment to deploy to. Choices: staging | production
+Environment to deploy to. Choices: staging | production. Default: production
 
 **--name, -n** _optional_  
 Name of Functions & Pages
@@ -176,21 +186,22 @@ Description of the version
 **--minify, -m** _optional_  
 Whether to minify the code
 
-When the command generates a new version with `--environment production`, that version is bound to a snapshot of the current production variables and secrets. Later variable or secret changes do not modify an existing version; run deploy for the same environment again to create a new version before those changes take effect.
+When the command generates a new version, that version is bound to a snapshot of the target environment's current variables and secrets. Omitting `--environment` targets production and binds the production snapshot. Use `--environment staging` to target staging and bind the staging snapshot.
 
 ```
-esa-cli deploy --environment production
+esa-cli deploy
+esa-cli deploy --environment staging
 ```
 
-Deploying an existing version with `--version` does not recreate or rebind its variable snapshot.
+Later variable or secret changes do not modify an existing version; run deploy for the same environment again to create a new version before those changes take effect.
 
-To include runtime variables or secrets, select one environment explicitly. Omitting `--environment` preserves the legacy behavior: the CLI creates one unbound version without an environment-variable snapshot and deploys it to both environments.
+Deploying an existing version with `--version` does not recreate or rebind its variable snapshot. The CLI rejects deployment when the version's bound environment differs from the target environment; older versions without an environment binding remain compatible.
 
 ---
 
 ## env
 
-Manage plain-text variables for a deployment environment. Every env subcommand requires `--environment, -e`. Changes take effect only after the next deploy for that environment creates a new version.
+Manage plain-text variables for a deployment environment. Every env subcommand requires `--environment, -e`. Changes do not modify existing versions; create a new snapshot with `commit` or `deploy`, then deploy that version to the matching environment.
 
 ### env list
 
@@ -248,7 +259,7 @@ esa-cli env delete LOG_LEVEL -e production
 
 ## secret
 
-Manage encrypted secrets for a deployment environment. Secret changes take effect only after the next deploy for that environment creates a new version. Secret values are always masked by `env list`.
+Manage encrypted secrets for a deployment environment. Secret changes do not modify existing versions; create a new snapshot with `commit` or `deploy`, then deploy that version to the matching environment. Secret values are always masked by `env list`.
 
 ### secret put
 

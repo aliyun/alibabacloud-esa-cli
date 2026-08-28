@@ -402,6 +402,33 @@ export interface GetRoutineCodeVersionInfoRes {
   };
 }
 
+export interface ListRoutineCodeVersionsMetadataReq {
+  Name: string;
+  PageNumber?: number;
+  PageSize?: number;
+  SearchKeyWord?: string;
+}
+
+export interface RoutineCodeVersionMetadata {
+  CodeDescription?: string;
+  CreateTime?: string;
+  CodeVersion?: string;
+  Status?: string;
+  DeployEnv?: RoutineEnvironment;
+  HasEnvVars?: boolean;
+}
+
+export interface ListRoutineCodeVersionsMetadataRes {
+  code: string;
+  data: {
+    RequestId?: string;
+    PageNumber: number;
+    PageSize: number;
+    TotalCount: number;
+    CodeVersions: RoutineCodeVersionMetadata[];
+  };
+}
+
 export interface GetRoutineAccessTokenReq {
   Name: string;
 }

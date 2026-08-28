@@ -6,7 +6,7 @@
 
 **dev** - 启动本地开发服务器。
 
-**commit** - 提交代码并保存为新版本。
+**commit** - 保存绑定指定环境快照的新版本，但不部署。
 
 **deploy** - 将您的 Functions & Pages 部署到阿里云。
 
@@ -138,7 +138,7 @@ esa-cli dev [<ENTRY>] [OPTIONS]
 
 ## commit
 
-**提交代码并保存为新版本。**
+**提交代码并保存为带环境变量快照的新版本，但不部署。默认环境为 production。**
 
 ```
 esa-cli commit [<ENTRY>] [OPTIONS]
@@ -156,14 +156,24 @@ esa-cli commit [<ENTRY>] [OPTIONS]
 **--description, -d** _可选_
 **版本/例程描述（跳过交互输入）**
 
+**--environment, -e** _可选_
+**绑定到版本的变量和 Secret 所属环境。可选：staging | production。默认：production**
+
 **--name, -n** _可选_
 **函数和Pages名称**
+
+省略 `--environment` 时，新版本绑定当前 production 环境的变量和 Secret 快照；显式选择 staging 时绑定 staging 快照。两种用法都只创建版本，不执行部署。
+
+```
+esa-cli commit
+esa-cli commit --environment staging
+```
 
 ---
 
 ## deploy
 
-**生成一个代码版本，并部署到指定环境；未指定环境时同时部署到仿真和线上环境。**
+**生成一个代码版本并部署；默认部署到 production，也可以显式选择 staging。**
 
 ```
 esa-cli deploy [<ENTRY>] [OPTIONS]
@@ -176,7 +186,7 @@ esa-cli deploy [<ENTRY>] [OPTIONS]
 **指定要部署的版本（跳过交互选择）**
 
 **--environment, -e** _可选_
-**部署环境。可选：staging | production**
+**部署环境。可选：staging | production。默认：production**
 
 **--name, -n** _可选_
 **函数和Pages名称**
@@ -190,21 +200,22 @@ esa-cli deploy [<ENTRY>] [OPTIONS]
 **--minify, -m** _可选_
 **是否压缩代码**
 
-当命令生成新版本并指定 `--environment production` 时，新版本会绑定当前 production 环境的变量和 Secret 快照。之后修改变量或 Secret 不会改变已有版本；需要再次执行对应环境的 deploy，创建新版本后才会生效。
+当命令生成新版本时，新版本会绑定目标环境当前的变量和 Secret 快照。省略 `--environment` 时以 production 为目标并绑定 production 快照；使用 `--environment staging` 时则以 staging 为目标并绑定 staging 快照。
 
 ```
-esa-cli deploy --environment production
+esa-cli deploy
+esa-cli deploy --environment staging
 ```
 
-使用 `--version` 部署已有版本时，不会重新创建或绑定变量快照。
+之后修改变量或 Secret 不会改变已有版本；需要通过 `commit` 或 `deploy` 创建新的环境快照，并将该版本部署到匹配的环境后才会生效。
 
-如需使用运行时变量或 Secret，必须显式选择一个环境。省略 `--environment` 时保留原有行为：CLI 创建一个不绑定任何环境变量快照的版本，并将同一版本部署到两个环境。
+使用 `--version` 部署已有版本时，不会重新创建或绑定变量快照。如果版本绑定的环境与目标环境不同，CLI 会拒绝部署；没有环境绑定信息的旧版本仍保持兼容。
 
 ---
 
 ## env
 
-**管理指定部署环境的普通文本变量。所有 env 子命令都必须指定 `--environment, -e`。变量修改后，只有下一次对应环境的 deploy 创建新版本时才会生效。**
+**管理指定部署环境的普通文本变量。所有 env 子命令都必须指定 `--environment, -e`。变量修改不会改变已有版本；需要通过 `commit` 或 `deploy` 创建新的环境快照，并将该版本部署到匹配的环境。**
 
 ### env list
 
@@ -270,7 +281,7 @@ esa-cli env delete LOG_LEVEL -e production
 
 ## secret
 
-**管理指定部署环境的加密 Secret。Secret 更新后，只有下一次对应环境的 deploy 创建新版本时才会生效。使用 `env list` 查看时，Secret 值始终被遮蔽。**
+**管理指定部署环境的加密 Secret。Secret 更新不会改变已有版本；需要通过 `commit` 或 `deploy` 创建新的环境快照，并将该版本部署到匹配的环境。使用 `env list` 查看时，Secret 值始终被遮蔽。**
 
 ### secret put
 

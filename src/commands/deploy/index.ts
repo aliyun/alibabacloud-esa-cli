@@ -34,7 +34,8 @@ const deploy: CommandModule = {
           'Environment to deploy to: staging or production (skip interactive selection)'
         ),
         type: 'string',
-        choices: ['staging', 'production']
+        choices: ['staging', 'production'],
+        default: 'production'
       })
       .option('name', {
         alias: 'n',
@@ -84,7 +85,7 @@ export async function handleDeploy(argv: ArgumentsCamelCase) {
   intro(`Deploy an application with ESA`);
 
   if (versionsArg.length > 0) {
-    const env = (argv.environment as 'staging' | 'production' | 'all') || 'all';
+    const env = (argv.environment as 'staging' | 'production') || 'production';
     const ok = await deployWithVersionPercentages(
       (argv.name as string) || undefined,
       versionsArg,
@@ -101,7 +102,7 @@ export async function handleDeploy(argv: ArgumentsCamelCase) {
     assets,
     (argv.description as string) || '',
     getRoot(),
-    (argv.environment as 'staging' | 'production') || 'all',
+    (argv.environment as 'staging' | 'production') || 'production',
     argv.minify as boolean,
     argv.version as string,
     (argv.bundle === false) as boolean

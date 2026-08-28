@@ -68,7 +68,8 @@ describe('handleCommit', () => {
       undefined,
       undefined,
       undefined,
-      false
+      false,
+      'production'
     );
   });
 
@@ -100,7 +101,8 @@ describe('handleCommit', () => {
       undefined,
       undefined,
       undefined,
-      false
+      false,
+      'production'
     );
   });
 
@@ -129,7 +131,8 @@ describe('handleCommit', () => {
       undefined,
       undefined,
       undefined,
-      false
+      false,
+      'production'
     );
   });
 
@@ -158,7 +161,8 @@ describe('handleCommit', () => {
       'custom-assets',
       undefined,
       undefined,
-      false
+      false,
+      'production'
     );
   });
 
@@ -187,7 +191,8 @@ describe('handleCommit', () => {
       undefined,
       undefined,
       undefined,
-      false
+      false,
+      'production'
     );
   });
 
@@ -216,7 +221,8 @@ describe('handleCommit', () => {
       undefined,
       true,
       undefined,
-      false
+      false,
+      'production'
     );
   });
 
@@ -252,7 +258,41 @@ describe('handleCommit', () => {
       'custom-assets',
       true,
       undefined,
-      false
+      false,
+      'production'
+    );
+  });
+
+  it('should bind a commit to an explicit staging environment', async () => {
+    vi.mocked(commonUtils.validateAndInitializeProject).mockResolvedValue({
+      projectConfig: {
+        name: 'test-project',
+        entry: 'index.js',
+        assets: { directory: 'assets' }
+      },
+      projectName: 'test-project'
+    });
+    vi.mocked(commonUtils.generateCodeVersion).mockResolvedValue({
+      isSuccess: true,
+      res: { data: { CodeVersion: 'v1' } } as any
+    });
+
+    await handleCommit({
+      description: 'Staging commit',
+      environment: 'staging',
+      _: [],
+      $0: ''
+    });
+
+    expect(commonUtils.generateCodeVersion).toHaveBeenCalledWith(
+      'test-project',
+      'Staging commit',
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      false,
+      'staging'
     );
   });
 

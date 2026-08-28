@@ -130,7 +130,10 @@ Create a code version without deploying it:
 
 ```bash
 npx esa-cli commit --description "Prepare release"
+npx esa-cli commit --environment staging --description "Prepare staging release"
 ```
+
+`commit` defaults to production and binds a snapshot of the current production variables and secrets to the new version without deploying it. Use `--environment staging` to bind the staging snapshot instead.
 
 Deploy the current project:
 
@@ -138,11 +141,15 @@ Deploy the current project:
 npx esa-cli deploy --description "Initial release"
 ```
 
+Production is the default deployment environment. When this command creates a new version, it binds a snapshot of the current production variables and secrets to that version. Use `--environment staging` to create and deploy a version with the staging snapshot instead.
+
 Deploy an existing version:
 
 ```bash
 npx esa-cli deploy --version <VERSION_ID> --environment production
 ```
+
+An existing version bound to staging or production cannot be deployed to the other environment; the CLI rejects an environment mismatch. Older versions without an environment binding remain compatible.
 
 Split traffic between two versions:
 
@@ -160,13 +167,12 @@ npx esa-cli secret put API_TOKEN --environment production
 npx esa-cli secret bulk .env.production --environment production
 ```
 
-Values are stored independently for staging and production. Changes take effect only after the next deployment creates a version for that environment. For example, `deploy --environment production` binds a snapshot of the current production variables and secrets to the newly created version:
+Values are stored independently for staging and production. Changes do not modify existing versions: create a new snapshot with `commit` or `deploy`, then deploy that version to the matching environment. `deploy` defaults to production, while `deploy --environment staging` selects staging explicitly:
 
 ```bash
-npx esa-cli deploy --environment production
+npx esa-cli deploy
+npx esa-cli deploy --environment staging
 ```
-
-To include runtime variables or secrets, always select one environment. A deploy without `--environment` keeps the legacy behavior: it creates one unbound version without a variable snapshot and deploys that version to both environments.
 
 Use `env list` to inspect the environment. Secret values are always masked in its output.
 
@@ -206,8 +212,8 @@ See the [ESA Configuration Guide](https://github.com/aliyun/alibabacloud-esa-cli
 | `esa-cli init [name]` | Create a new project from framework templates. |
 | `esa-cli login` | Authenticate with AK/SK, STS token, or supported environment variables. |
 | `esa-cli dev [entry]` | Start a local server for Functions & Pages development. |
-| `esa-cli commit [entry]` | Package code and assets, then save them as a new version. |
-| `esa-cli deploy [entry]` | Generate or select a version and deploy it to staging, production, or both. |
+| `esa-cli commit [entry]` | Save a new environment-bound version without deploying it; production is the default. |
+| `esa-cli deploy [entry]` | Generate or select a version and deploy it to production by default, or to staging when selected. |
 | `esa-cli env list/set/delete` | Manage plain-text variables for a staging or production environment. |
 | `esa-cli secret put/bulk` | Store encrypted secrets for a staging or production environment. |
 | `esa-cli deployments list` | List code versions for the current Functions & Pages project. |

@@ -930,7 +930,7 @@ describe('git, build, and deploy helpers', () => {
     expect(commitAndDeployVersion).not.toHaveBeenCalled();
   });
 
-  it('should deploy initialized project to all environments', async () => {
+  it('should deploy initialized project to production by default', async () => {
     vi.spyOn(process, 'cwd').mockReturnValue(workspacePath);
 
     await deployProject({ name: 'demo', deploy: true });
@@ -941,7 +941,7 @@ describe('git, build, and deploy helpers', () => {
       undefined,
       'Init project',
       demoPath,
-      'all'
+      'production'
     );
   });
 });

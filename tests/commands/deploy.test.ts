@@ -74,7 +74,7 @@ describe('handleDeploy', () => {
       undefined,
       '',
       '/test/root',
-      'all',
+      'production',
       undefined,
       undefined,
       false
@@ -97,7 +97,7 @@ describe('handleDeploy', () => {
       undefined,
       '',
       '/test/root',
-      'all',
+      'production',
       undefined,
       undefined,
       false
@@ -119,7 +119,7 @@ describe('handleDeploy', () => {
       undefined,
       '',
       '/test/root',
-      'all',
+      'production',
       undefined,
       undefined,
       false
@@ -146,7 +146,7 @@ describe('handleDeploy', () => {
       'custom-assets',
       '',
       '/test/root',
-      'all',
+      'production',
       undefined,
       undefined,
       false
@@ -168,7 +168,7 @@ describe('handleDeploy', () => {
       undefined,
       'Test deployment',
       '/test/root',
-      'all',
+      'production',
       undefined,
       undefined,
       false
@@ -212,7 +212,7 @@ describe('handleDeploy', () => {
       undefined,
       '',
       '/test/root',
-      'all',
+      'production',
       true,
       undefined,
       false
@@ -234,7 +234,7 @@ describe('handleDeploy', () => {
       undefined,
       '',
       '/test/root',
-      'all',
+      'production',
       undefined,
       'v1.0.0',
       false
@@ -270,6 +270,42 @@ describe('handleDeploy', () => {
       true,
       'v2.0.0',
       false
+    );
+  });
+
+  it('should deploy weighted versions to production by default', async () => {
+    vi.mocked(commonUtils.deployWithVersionPercentages).mockResolvedValue(true);
+
+    await callHandleDeploy({
+      versions: ['v1:80,v2:20'],
+      _: [],
+      $0: ''
+    });
+
+    expect(commonUtils.deployWithVersionPercentages).toHaveBeenCalledWith(
+      undefined,
+      ['v1:80,v2:20'],
+      'production',
+      '/test/root'
+    );
+    expect(commonUtils.commitAndDeployVersion).not.toHaveBeenCalled();
+  });
+
+  it('should keep an explicit staging target for weighted versions', async () => {
+    vi.mocked(commonUtils.deployWithVersionPercentages).mockResolvedValue(true);
+
+    await callHandleDeploy({
+      versions: ['v1:100'],
+      environment: 'staging',
+      _: [],
+      $0: ''
+    });
+
+    expect(commonUtils.deployWithVersionPercentages).toHaveBeenCalledWith(
+      undefined,
+      ['v1:100'],
+      'staging',
+      '/test/root'
     );
   });
 

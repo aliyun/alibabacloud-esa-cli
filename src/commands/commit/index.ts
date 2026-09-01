@@ -40,6 +40,13 @@ const commit: CommandModule = {
         describe: t('commit_option_name').d('Functions& Pages name'),
         type: 'string'
       })
+      .option('environment', {
+        alias: 'e',
+        describe: 'Environment whose variables and secrets are bound',
+        type: 'string',
+        choices: ['staging', 'production'],
+        default: 'production'
+      })
       .option('bundle', {
         describe: 'Bundle with esbuild (use --no-bundle to skip)',
         type: 'boolean',
@@ -80,7 +87,8 @@ export async function handleCommit(argv: ArgumentsCamelCase): Promise<boolean> {
     argv?.assets as string,
     argv?.minify as boolean,
     undefined,
-    argv.bundle === false
+    argv.bundle === false,
+    (argv.environment as 'staging' | 'production') || 'production'
   );
   const { isSuccess } = res || {};
   if (!isSuccess) {

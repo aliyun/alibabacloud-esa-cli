@@ -339,6 +339,82 @@
     "en": "Login success!",
     "zh_CN": "登录成功！"
   },
+  "login_summary_source": {
+    "en": "Source",
+    "zh_CN": "凭据来源"
+  },
+  "login_summary_authentication": {
+    "en": "Authentication",
+    "zh_CN": "认证类型"
+  },
+  "login_summary_access_key_id": {
+    "en": "AccessKey ID",
+    "zh_CN": "AccessKey ID"
+  },
+  "login_summary_access_key_secret": {
+    "en": "AccessKey Secret",
+    "zh_CN": "AccessKey Secret"
+  },
+  "login_summary_security_token": {
+    "en": "Security Token",
+    "zh_CN": "Security Token"
+  },
+  "login_summary_validated_endpoint": {
+    "en": "Validated endpoint",
+    "zh_CN": "验证 Endpoint"
+  },
+  "login_summary_saved_locally": {
+    "en": "Saved locally",
+    "zh_CN": "已保存到本地"
+  },
+  "login_summary_configured": {
+    "en": "Configured",
+    "zh_CN": "已配置"
+  },
+  "login_summary_yes": {
+    "en": "Yes",
+    "zh_CN": "是"
+  },
+  "login_summary_no": {
+    "en": "No",
+    "zh_CN": "否"
+  },
+  "login_summary_unknown": {
+    "en": "Unknown",
+    "zh_CN": "未知"
+  },
+  "login_source_cli_arguments": {
+    "en": "CLI arguments",
+    "zh_CN": "CLI 参数"
+  },
+  "login_source_environment_alibaba_cloud": {
+    "en": "Environment variables (ALIBABA_CLOUD_*)",
+    "zh_CN": "环境变量（ALIBABA_CLOUD_*）"
+  },
+  "login_source_environment_esa": {
+    "en": "Environment variables (ESA_*)",
+    "zh_CN": "环境变量（ESA_*）"
+  },
+  "credentials_incomplete": {
+    "en": "Incomplete credentials in ${source}. AccessKey ID and AccessKey Secret must be provided together.",
+    "zh_CN": "${source} 中的凭据不完整。AccessKey ID 和 AccessKey Secret 必须同时提供。"
+  },
+  "login_saved_credentials_shadowed": {
+    "en": "Credentials were saved, but ${source} will override or block them in subsequent commands. Unset those environment variables to use the saved login.",
+    "zh_CN": "凭据已保存，但后续命令会优先使用 ${source}，或因其中的凭据不完整而停止。若要使用本次保存的登录凭据，请取消设置这些环境变量。"
+  },
+  "login_explicit_credentials_conflict": {
+    "en": "Both --sts-token and --ak/--sk were provided. --sts-token takes precedence; --ak/--sk are ignored.",
+    "zh_CN": "同时提供了 --sts-token 和 --ak/--sk。将优先使用 --sts-token，并忽略 --ak/--sk。"
+  },
+  "login_source_saved_config": {
+    "en": "Saved config",
+    "zh_CN": "本地已保存配置"
+  },
+  "login_source_interactive_input": {
+    "en": "Interactive input",
+    "zh_CN": "交互输入"
+  },
   "login_failed": {
     "en": "An error occurred while trying to log in.",
     "zh_CN": "尝试登录时发生错误。"
@@ -350,6 +426,14 @@
   "logout_success": {
     "en": "Logout successfully",
     "zh_CN": "注销成功"
+  },
+  "logout_environment_credentials_active": {
+    "en": "Environment credentials are still configured. Subsequent commands may remain authenticated; unset ESA_* and ALIBABA_CLOUD_* to fully log out.",
+    "zh_CN": "环境变量凭据仍已配置，后续命令可能仍处于登录状态；请取消设置 ESA_* 和 ALIBABA_CLOUD_* 以完全退出。"
+  },
+  "cli_config_permissions_warning": {
+    "en": "Could not restrict permissions on ${configPath}. Set the config directory to 0700 and the credential file to 0600.",
+    "zh_CN": "无法收紧 ${configPath} 的访问权限。请将配置目录权限设置为 0700，并将凭据文件权限设置为 0600。"
   },
   "route_add_describe": {
     "en": "Bind a Route to a project",

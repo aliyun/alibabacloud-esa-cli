@@ -48,7 +48,15 @@ import {
   GetRoutineCodeVersionInfoRes,
   GetRoutineCodeVersionInfoReq,
   GetRoutineAccessTokenReq,
-  GetRoutineAccessTokenRes
+  GetRoutineAccessTokenRes,
+  ListRoutineEnvironmentVariablesReq,
+  ListRoutineEnvironmentVariablesRes,
+  SetRoutineEnvironmentVariablesReq,
+  SetRoutineEnvironmentVariablesRes,
+  DeleteRoutineEnvironmentVariablesReq,
+  DeleteRoutineEnvironmentVariablesRes,
+  ListRoutineCodeVersionsMetadataReq,
+  ListRoutineCodeVersionsMetadataRes
 } from './interface.js';
 
 export class ApiService {
@@ -1009,7 +1017,7 @@ export class ApiService {
         method: 'POST',
         authType: 'AK',
         bodyType: 'json',
-        reqBodyType: 'json',
+        reqBodyType: 'formData',
         style: 'RPC',
         pathname: '/',
         toMap: function () {
@@ -1020,11 +1028,21 @@ export class ApiService {
       let request = new $OpenApi.OpenApiRequest({
         body: {
           Name: requestParams.Name,
-          CodeDescription: requestParams.CodeDescription,
-          ExtraInfo: requestParams.ExtraInfo,
-          ConfOptions: {
-            NotFoundStrategy: requestParams.ConfOptions?.NotFoundStrategy
-          }
+          ...(requestParams.BuildId !== undefined
+            ? { BuildId: requestParams.BuildId }
+            : {}),
+          ...(requestParams.CodeDescription !== undefined
+            ? { CodeDescription: requestParams.CodeDescription }
+            : {}),
+          ...(requestParams.ExtraInfo !== undefined
+            ? { ExtraInfo: requestParams.ExtraInfo }
+            : {}),
+          ...(requestParams.DeployEnv
+            ? { DeployEnv: requestParams.DeployEnv }
+            : {}),
+          ...(requestParams.ConfOptions
+            ? { ConfOptions: JSON.stringify(requestParams.ConfOptions) }
+            : {})
         }
       });
       let runtime = {
@@ -1049,6 +1067,156 @@ export class ApiService {
       return null;
     } catch (error) {
       console.error('Error calling CreateRoutineWithAssetsCodeVersion:', error);
+      return null;
+    }
+  }
+
+  async listRoutineEnvironmentVariables(
+    requestParams: ListRoutineEnvironmentVariablesReq
+  ): Promise<ListRoutineEnvironmentVariablesRes | null> {
+    try {
+      const params = {
+        action: 'ListRoutineEnvironmentVariables',
+        version: '2024-09-10',
+        protocol: 'https',
+        method: 'POST',
+        authType: 'AK',
+        bodyType: 'json',
+        reqBodyType: 'formData',
+        style: 'RPC',
+        pathname: '/',
+        toMap: function () {
+          return this;
+        }
+      };
+      const request = new $OpenApi.OpenApiRequest({
+        body: {
+          Name: requestParams.Name,
+          Env: requestParams.Env,
+          KeyWord: requestParams.KeyWord,
+          PageNumber: requestParams.PageNumber,
+          PageSize: requestParams.PageSize
+        }
+      });
+      const runtime = {
+        toMap: function () {
+          return this;
+        }
+      };
+      const result = await this.client.callApi(params, request, runtime);
+      if (result.statusCode !== 200 || !result.body) return null;
+
+      return {
+        code: result.statusCode.toString(),
+        data: {
+          RequestId: result.body.RequestId,
+          Count: result.body.Count ?? 0,
+          TotalCount: result.body.TotalCount ?? 0,
+          PageNumber: result.body.PageNumber ?? 1,
+          PageSize: result.body.PageSize ?? 20,
+          EnvironmentVariables: result.body.EnvironmentVariables ?? {}
+        }
+      };
+    } catch {
+      console.error('Failed to list routine environment variables.');
+      return null;
+    }
+  }
+
+  async setRoutineEnvironmentVariables(
+    requestParams: SetRoutineEnvironmentVariablesReq
+  ): Promise<SetRoutineEnvironmentVariablesRes | null> {
+    try {
+      const params = {
+        action: 'SetRoutineEnvironmentVariables',
+        version: '2024-09-10',
+        protocol: 'https',
+        method: 'POST',
+        authType: 'AK',
+        bodyType: 'json',
+        reqBodyType: 'formData',
+        style: 'RPC',
+        pathname: '/',
+        toMap: function () {
+          return this;
+        }
+      };
+      const request = new $OpenApi.OpenApiRequest({
+        body: {
+          Name: requestParams.Name,
+          Env: requestParams.Env,
+          EnvironmentVariables: JSON.stringify(
+            requestParams.EnvironmentVariables
+          )
+        }
+      });
+      const runtime = {
+        toMap: function () {
+          return this;
+        }
+      };
+      const result = await this.client.callApi(params, request, runtime);
+      if (result.statusCode !== 200 || !result.body) return null;
+
+      return {
+        code: result.statusCode.toString(),
+        data: {
+          RequestId: result.body.RequestId,
+          SetKeys: result.body.SetKeys ?? []
+        }
+      };
+    } catch {
+      // Do not print the SDK error object: it can contain secret request data.
+      console.error('Failed to set routine environment variables.');
+      return null;
+    }
+  }
+
+  async deleteRoutineEnvironmentVariables(
+    requestParams: DeleteRoutineEnvironmentVariablesReq
+  ): Promise<DeleteRoutineEnvironmentVariablesRes | null> {
+    try {
+      const params = {
+        action: 'DeleteRoutineEnvironmentVariables',
+        version: '2024-09-10',
+        protocol: 'https',
+        method: 'POST',
+        authType: 'AK',
+        bodyType: 'json',
+        reqBodyType: 'formData',
+        style: 'RPC',
+        pathname: '/',
+        toMap: function () {
+          return this;
+        }
+      };
+      const request = new $OpenApi.OpenApiRequest({
+        body: {
+          Name: requestParams.Name,
+          Env: requestParams.Env,
+          EnvironmentVariableKeys: JSON.stringify(
+            requestParams.EnvironmentVariableKeys
+          )
+        }
+      });
+      const runtime = {
+        toMap: function () {
+          return this;
+        }
+      };
+      const result = await this.client.callApi(params, request, runtime);
+      if (result.statusCode !== 200 || !result.body) return null;
+
+      return {
+        code: result.statusCode.toString(),
+        data: {
+          RequestId: result.body.RequestId,
+          DeletedKeys: result.body.DeletedKeys ?? [],
+          FailedKeys: result.body.FailedKeys ?? []
+        }
+      };
+    } catch {
+      console.error('Failed to delete routine environment variables.');
       return null;
     }
   }
@@ -1187,6 +1355,66 @@ export class ApiService {
       console.log(error);
     }
     return null;
+  }
+
+  async listRoutineCodeVersionsMetadata(
+    requestParams: ListRoutineCodeVersionsMetadataReq
+  ): Promise<ListRoutineCodeVersionsMetadataRes | null> {
+    try {
+      const params = {
+        action: 'ListRoutineCodeVersions',
+        version: '2024-09-10',
+        protocol: 'https',
+        method: 'POST',
+        authType: 'AK',
+        bodyType: 'json',
+        reqBodyType: 'formData',
+        style: 'RPC',
+        pathname: '/',
+        toMap: function () {
+          return this;
+        }
+      };
+      const request = new $OpenApi.OpenApiRequest({
+        body: {
+          Name: requestParams.Name,
+          PageNumber: requestParams.PageNumber,
+          PageSize: requestParams.PageSize,
+          SearchKeyWord: requestParams.SearchKeyWord
+        }
+      });
+      const runtime = {
+        toMap: function () {
+          return this;
+        }
+      };
+      const result = await this.client.callApi(params, request, runtime);
+      if (result.statusCode !== 200 || !result.body) return null;
+
+      return {
+        code: result.statusCode.toString(),
+        data: {
+          RequestId: result.body.RequestId,
+          PageNumber: result.body.PageNumber ?? 1,
+          PageSize: result.body.PageSize ?? 20,
+          TotalCount: result.body.TotalCount ?? 0,
+          CodeVersions: (result.body.CodeVersions ?? []).map(
+            (version: Record<string, unknown>) => ({
+              CodeDescription: version.CodeDescription as string | undefined,
+              CreateTime: version.CreateTime as string | undefined,
+              CodeVersion: version.CodeVersion as string | undefined,
+              Status: version.Status as string | undefined,
+              DeployEnv: version.DeployEnv as
+                'staging' | 'production' | undefined,
+              HasEnvVars: version.HasEnvVars as boolean | undefined
+            })
+          )
+        }
+      };
+    } catch {
+      console.error('Failed to list routine code version metadata.');
+      return null;
+    }
   }
 
   async getRoutineAccessToken(

@@ -8,12 +8,14 @@ import deploy from './commands/deploy/index.js';
 import deployments from './commands/deployments/index.js';
 import dev from './commands/dev/index.js';
 import domainCommand from './commands/domain/index.js';
+import environmentCommand from './commands/env/index.js';
 import init from './commands/init/index.js';
 import lang from './commands/lang.js';
 import login from './commands/login/index.js';
 import logout from './commands/logout.js';
 import routeCommand from './commands/route/index.js';
 import routine from './commands/routine/index.js';
+import secretCommand from './commands/secret/index.js';
 import site from './commands/site/index.js';
 import t from './i18n/index.js';
 import logger from './libs/logger.js';
@@ -107,6 +109,10 @@ const main = async () => {
   esa.command(deploy);
 
   esa.command(deployments);
+
+  esa.command(environmentCommand);
+
+  esa.command(secretCommand);
 
   esa.command(routine);
 

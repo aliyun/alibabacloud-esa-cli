@@ -5,7 +5,9 @@ import { ApiService } from '../../libs/apiService.js';
 import {
   CreateRoutineWithAssetsCodeVersionRes,
   GetRoutineReq,
-  CreateRoutineWithAssetsCodeVersionReq
+  CreateRoutineWithAssetsCodeVersionReq,
+  RoutineEnvironment,
+  RoutineCodeVersionMetadata
 } from '../../libs/interface.js';
 import logger from '../../libs/logger.js';
 import { ensureRoutineExists } from '../../utils/checkIsRoutineCreated.js';
@@ -146,7 +148,8 @@ export async function generateCodeVersion(
   assets?: string,
   minify = false,
   projectPath?: string,
-  noBundle = false
+  noBundle = false,
+  deployEnv?: RoutineEnvironment
 ): Promise<{
   isSuccess: boolean;
   res: CreateRoutineWithAssetsCodeVersionRes | null;
@@ -269,7 +272,8 @@ export async function generateCodeVersion(
   const requestParams: CreateRoutineWithAssetsCodeVersionReq = {
     Name: projectName,
     CodeDescription: description,
-    ExtraInfo: JSON.stringify({ Source: 'CLI' })
+    ExtraInfo: JSON.stringify({ Source: 'CLI' }),
+    ...(deployEnv ? { DeployEnv: deployEnv } : {})
   };
 
   if (notFoundStrategy) {
@@ -364,7 +368,8 @@ export async function commitAndDeployVersion(
     assets || projectConfig?.assets?.directory,
     minify || projectConfig?.minify,
     projectPath,
-    noBundle
+    noBundle,
+    env === 'all' ? undefined : env
   );
   const isCommitSuccess = res?.isSuccess;
   if (!isCommitSuccess) {
@@ -404,6 +409,12 @@ export async function deployCodeVersion(
     logger.error('The code version is not ready for deployment.');
     return false;
   }
+  const isCompatible = await validateCodeVersionTargets(
+    name,
+    [codeVersion],
+    environment
+  );
+  if (!isCompatible) return false;
 
   const res = await server.createRoutineCodeDeployment({
     Name: name,
@@ -432,6 +443,23 @@ export async function deployCodeVersions(
   const doDeploy = async (
     targetEnv: 'staging' | 'production'
   ): Promise<boolean> => {
+    const readiness = await Promise.all(
+      versions.map((version) =>
+        waitForCodeVersionReady(name, version.codeVersion, targetEnv)
+      )
+    );
+    if (readiness.some((ready) => !ready)) {
+      logger.error('One or more code versions are not ready for deployment.');
+      return false;
+    }
+
+    const isCompatible = await validateCodeVersionTargets(
+      name,
+      versions.map((version) => version.codeVersion),
+      targetEnv
+    );
+    if (!isCompatible) return false;
+
     const res = await server.createRoutineCodeDeployment({
       Name: name,
       CodeVersions: versions.map((v) => ({
@@ -450,6 +478,85 @@ export async function deployCodeVersions(
     return s && p;
   }
   return await doDeploy(env);
+}
+
+export async function validateCodeVersionTargets(
+  name: string,
+  codeVersions: string[],
+  environment: RoutineEnvironment
+): Promise<boolean> {
+  const server = await ApiService.getInstance();
+  const requestedVersions = new Set(codeVersions);
+  const metadata = new Map<string, RoutineCodeVersionMetadata>();
+  let foundAllVersions = false;
+  let lastRequestFailed = false;
+
+  for (let attempt = 0; attempt < 3; attempt++) {
+    metadata.clear();
+    let listedCount = 0;
+    lastRequestFailed = false;
+
+    for (let pageNumber = 1; pageNumber <= 100; pageNumber++) {
+      const result = await server.listRoutineCodeVersionsMetadata({
+        Name: name,
+        PageNumber: pageNumber,
+        PageSize: 20
+      });
+      if (!result) {
+        lastRequestFailed = true;
+        break;
+      }
+
+      for (const version of result.data.CodeVersions) {
+        if (version.CodeVersion) metadata.set(version.CodeVersion, version);
+      }
+      listedCount += result.data.CodeVersions.length;
+      foundAllVersions = codeVersions.every((codeVersion) =>
+        metadata.has(codeVersion)
+      );
+
+      if (
+        foundAllVersions ||
+        result.data.CodeVersions.length === 0 ||
+        listedCount >= result.data.TotalCount
+      ) {
+        break;
+      }
+    }
+
+    if (foundAllVersions) break;
+    if (attempt < 2) await sleep(500);
+  }
+
+  if (lastRequestFailed) {
+    logger.error('Unable to verify code version environment bindings.');
+    return false;
+  }
+
+  const missingVersions = [...requestedVersions].filter(
+    (codeVersion) => !metadata.has(codeVersion)
+  );
+  if (missingVersions.length > 0) {
+    logger.error(`Code version not found: ${missingVersions.join(', ')}.`);
+    return false;
+  }
+
+  for (const codeVersion of requestedVersions) {
+    const deployEnv = metadata.get(codeVersion)?.DeployEnv;
+    if (deployEnv && deployEnv !== environment) {
+      logger.error(
+        `Code version ${chalk.cyan(codeVersion)} is bound to ${deployEnv} and cannot be deployed to ${environment}.`
+      );
+      return false;
+    }
+    if (!deployEnv) {
+      logger.warn(
+        `Code version ${chalk.cyan(codeVersion)} has no environment binding; deploying without an environment-variable snapshot.`
+      );
+    }
+  }
+
+  return true;
 }
 
 /**
@@ -482,7 +589,7 @@ export async function waitForCodeVersionReady(
         continue;
       } else if (status === 'available') {
         logger.endSubStep(
-          `Code version ${chalk.cyan(codeVersion)} is deployed to ${env}.`
+          `Code version ${chalk.cyan(codeVersion)} is ready for deployment to ${env}.`
         );
         return true;
       } else {

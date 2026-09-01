@@ -1,5 +1,32 @@
 # Changelog
 
+## [1.0.12] - 2026-09-01
+
+### Added
+
+- Add environment-specific runtime variable management for staging and production with `esa env list`, `esa env set`, and `esa env delete`.
+- Add encrypted secret management with hidden input, stdin support, and dotenv bulk import through `esa secret put` and `esa secret bulk`.
+- Bind each newly committed code version to the selected environment's current variable and secret snapshot.
+- Validate the bound environment before deploying existing or weighted code versions while remaining compatible with legacy versions that have no environment metadata.
+- Show the selected credential source, authentication type, masked AccessKey ID, validated endpoint, and local persistence status after login.
+
+### Changed
+
+- Make `esa commit`, `esa deploy`, weighted-version deployments, and `init --deploy` target production only when `--environment` is omitted. Previous releases deployed to both staging and production by default; run the command once per environment when both targets are required.
+- Apply environment variable and secret changes only to code versions created by a subsequent `commit` or `deploy`. Legacy versions without environment metadata remain deployable but do not gain a runtime configuration snapshot retroactively.
+- Resolve credentials in this order: explicit `login` arguments, complete `ESA_*` environment credentials, complete `ALIBABA_CLOUD_*` environment credentials, credentials saved under `~/.esa/config`, then interactive login.
+- Prefer `ESA_*` over `ALIBABA_CLOUD_*` when both complete groups are present, reversing their order from 1.0.11.
+- Select credentials as complete, atomic groups. An incomplete higher-priority source now reports an error instead of being combined with values from another prefix or source.
+- Keep environment-provided credentials in memory instead of requiring writable local configuration. Explicit login credentials are saved locally and warn when environment variables will override them in subsequent commands.
+- Exclude the experimental deploy JSON output and process-contract changes published in the 1.0.12 beta prereleases; this release is scoped to runtime configuration and credential/login improvements.
+
+### Fixed
+
+- Hide interactive AccessKey Secret and STS input, mask AccessKey IDs in login summaries, and avoid printing secret values.
+- Restrict the local credential directory and file to owner-only permissions on POSIX systems, including migration of existing configuration.
+- Return a non-zero status for invalid or incomplete credentials across commands, use the endpoint that successfully validated the selected credentials, and honor the compatibility command name in login guidance.
+- Warn when `logout` clears local credentials but environment or Alibaba Cloud CLI profile credentials remain active.
+
 ## [1.0.11] - 2026-07-22
 
 ### Added

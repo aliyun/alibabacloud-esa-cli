@@ -4,15 +4,17 @@ ESA CLI offers a number of commands to manage your Alibaba Cloud ESA Functions &
 
 **init** - Create a new project from a variety of web frameworks and templates.
 **dev** - Start a local server for developing your Functions & Pages.
-**commit** - Commit your code and save as a new version.
+**commit** - Save an environment-bound code version without deploying it.
 **deploy** - Deploy your Functions & Pages to Alibaba Cloud.
+**env** - Manage plain-text variables for a specific environment.
+**secret** - Manage encrypted secrets for a specific environment.
 **deployments** - Manage your deployments and versions.
 **project** - Manage your Functions & Pages projects.
 **site** - List your activated sites.
 **domain** - Manage domain bindings for your Functions & Pages.
 **route** - Manage route bindings for your Functions & Pages.
 **login** - Authorize ESA CLI with your Alibaba Cloud account.
-**logout** - Remove ESA CLI's authorization for accessing your account.
+**logout** - Clear credentials saved in ESA CLI's local config.
 **config** - Modify your local or global configuration.
 **lang** - Set the language of the CLI.
 
@@ -122,7 +124,7 @@ Output debug logs (default: false)
 
 ## commit
 
-Commit your code and save as a new version.
+Commit your code as a new version with an environment-variable snapshot, without deploying it. Production is the default environment.
 
 ```
 esa-cli commit [<ENTRY>] [OPTIONS]
@@ -140,14 +142,24 @@ Assets directory
 **--description, -d** _optional_  
 Description for Functions & Pages/version (skip interactive input)
 
+**--environment, -e** _optional_
+Environment whose variables and secrets are bound to the version. Choices: staging | production. Default: production
+
 **--name, -n** _optional_  
 Functions & Pages name
+
+Omitting `--environment` binds a snapshot of the current production variables and secrets. Select staging explicitly to bind its snapshot instead. Neither command deploys the new version.
+
+```
+esa-cli commit
+esa-cli commit --environment staging
+```
 
 ---
 
 ## deploy
 
-Generate a code version and deploy the project to both staging and production environments.
+Generate a code version and deploy it to production by default, or to staging when selected explicitly.
 
 ```
 esa-cli deploy [<ENTRY>] [OPTIONS]
@@ -160,7 +172,7 @@ Entry file of Functions & Pages, defaults to entry configuration in `esa.jsonc`
 Version to deploy (skip interactive selection)
 
 **--environment, -e** _optional_  
-Environment to deploy to. Choices: staging | production
+Environment to deploy to. Choices: staging | production. Default: production
 
 **--name, -n** _optional_  
 Name of Functions & Pages
@@ -173,6 +185,131 @@ Description of the version
 
 **--minify, -m** _optional_  
 Whether to minify the code
+
+When the command generates a new version, that version is bound to a snapshot of the target environment's current variables and secrets. Omitting `--environment` targets production and binds the production snapshot. Use `--environment staging` to target staging and bind the staging snapshot.
+
+```
+esa-cli deploy
+esa-cli deploy --environment staging
+```
+
+Later variable or secret changes do not modify an existing version; run deploy for the same environment again to create a new version before those changes take effect.
+
+Deploying an existing version with `--version` does not recreate or rebind its variable snapshot. The CLI rejects deployment when the version's bound environment differs from the target environment; older versions without an environment binding remain compatible.
+
+---
+
+## env
+
+Manage plain-text variables for a deployment environment. Every env subcommand requires `--environment, -e`. Changes do not modify existing versions; create a new snapshot with `commit` or `deploy`, then deploy that version to the matching environment.
+
+### env list
+
+List variables and secrets for an environment. Secret values are always masked.
+
+```
+esa-cli env list --environment production [OPTIONS]
+```
+
+**--environment, -e** _required_: Target environment. Choices: staging | production
+
+**--name, -n** _optional_: Name of Functions & Pages
+
+### env set
+
+Set or update a plain-text variable for an environment.
+
+```
+esa-cli env set <KEY=VALUE> --environment production [OPTIONS]
+```
+
+Example:
+
+```
+esa-cli env set LOG_LEVEL=info -e production
+```
+
+**KEY=VALUE** _required_: Variable name and value to set
+
+**--environment, -e** _required_: Target environment. Choices: staging | production
+
+**--name, -n** _optional_: Name of Functions & Pages
+
+### env delete
+
+Delete a variable or secret from an environment.
+
+```
+esa-cli env delete <KEY> --environment production [OPTIONS]
+```
+
+Example:
+
+```
+esa-cli env delete LOG_LEVEL -e production
+```
+
+**KEY** _required_: Name of the variable or secret to delete
+
+**--environment, -e** _required_: Target environment. Choices: staging | production
+
+**--name, -n** _optional_: Name of Functions & Pages
+
+---
+
+## secret
+
+Manage encrypted secrets for a deployment environment. Secret changes do not modify existing versions; create a new snapshot with `commit` or `deploy`, then deploy that version to the matching environment. Secret values are always masked by `env list`.
+
+### secret put
+
+Set or update one secret. By default, its value is read from a hidden interactive prompt and is not displayed in the terminal.
+
+```
+esa-cli secret put <KEY> --environment production [OPTIONS]
+```
+
+Enter a secret through the hidden interactive prompt:
+
+```
+esa-cli secret put API_TOKEN -e production
+```
+
+Alternatively, read the value from standard input:
+
+```
+printf '%s' "$API_TOKEN" | esa-cli secret put API_TOKEN -e production --stdin
+```
+
+**KEY** _required_: Name of the secret to set
+
+**--stdin** _optional_: Read the secret value from standard input without an interactive prompt
+
+**--environment, -e** _required_: Target environment. Choices: staging | production
+
+**--name, -n** _optional_: Name of Functions & Pages
+
+### secret bulk
+
+Import multiple secrets from a dotenv file.
+
+Keep the dotenv file out of version control. If you use a name such as `.env.production`, add it to the project's `.gitignore` explicitly.
+
+```
+esa-cli secret bulk <FILE> --environment production [OPTIONS]
+```
+
+Example:
+
+```
+esa-cli secret bulk .env.production -e production
+```
+
+**FILE** _required_: Path to the dotenv file to import
+
+**--environment, -e** _required_: Target environment. Choices: staging | production
+
+**--name, -n** _optional_: Name of Functions & Pages
 
 ---
 
@@ -349,29 +486,43 @@ AccessKey Secret (SK)
 
 Temporary STS credentials in `AccessKeyId,AccessKeySecret,SecurityToken` or JSON format
 
-**Environment Variables**
+When `--sts-token` and AK/SK arguments are supplied together, ESA CLI keeps backward-compatible behavior: STS takes priority, the AK/SK arguments are ignored for that login, and the CLI prints a warning.
 
-The standard Alibaba Cloud variables are preferred:
+> **Security:** Values passed with `--sk` or `--sts-token` can be recorded in shell history and exposed through process arguments. Prefer credentials injected through environment variables, such as by a CI secret manager, or use interactive login, which hides secret input.
 
-- **ALIBABA_CLOUD_ACCESS_KEY_ID**
-- **ALIBABA_CLOUD_ACCESS_KEY_SECRET**
-- **ALIBABA_CLOUD_SECURITY_TOKEN** _(optional)_
+**Credential priority**
 
-The legacy variables remain supported as lower-priority fallbacks:
+ESA CLI evaluates credentials in the following order, from highest to lowest priority:
 
-- **ESA_ACCESS_KEY_ID**
-- **ESA_ACCESS_KEY_SECRET**
-- **ESA_SECURITY_TOKEN** _(optional)_
+1. Explicit arguments: `--sts-token`, or a complete `--access-key-id` (`--ak`) and `--access-key-secret` (`--sk`) pair
+2. A complete ESA-specific environment credential group:
+   - **ESA_ACCESS_KEY_ID**
+   - **ESA_ACCESS_KEY_SECRET**
+   - **ESA_SECURITY_TOKEN** _(optional)_
+3. A complete standard Alibaba Cloud environment credential group:
+   - **ALIBABA_CLOUD_ACCESS_KEY_ID**
+   - **ALIBABA_CLOUD_ACCESS_KEY_SECRET**
+   - **ALIBABA_CLOUD_SECURITY_TOKEN** _(optional)_
+4. Credentials saved by `esa-cli login` under `~/.esa/config`
+5. Interactive input
+
+Explicit arguments have highest priority only during the current `login` invocation. After a successful login, the credentials are saved under `~/.esa/config`; subsequent commands treat them as saved configuration, so a configured `ESA_*` or `ALIBABA_CLOUD_*` credential group overrides them. Login prints a warning when it detects that environment variables will override or block the newly saved credentials.
+
+Credentials are selected atomically. ESA CLI does not combine an AccessKey ID, AccessKey Secret, or Security Token from different prefixes or sources. If a higher-priority credential source is present but incomplete, login reports an error instead of mixing it with a lower-priority source.
+
+When ESA CLI is invoked as an Alibaba Cloud CLI plugin, Alibaba Cloud CLI exposes the selected profile through the `ALIBABA_CLOUD_*` variables. A configured `ESA_*` credential group intentionally overrides that profile. Unset the `ESA_*` variables when you want the plugin to use the profile selected by Alibaba Cloud CLI.
 
 ---
 
 ## logout
 
-Remove ESA CLI's authorization for accessing your account.
+Clear credentials saved in `~/.esa/config`.
 
 ```
 esa-cli logout
 ```
+
+`logout` does not remove `ESA_*` or `ALIBABA_CLOUD_*` environment credentials. Unset them in the parent shell, or change the selected Alibaba Cloud CLI profile, to stop those credentials from authenticating subsequent commands. ESA CLI prints a warning when environment credentials are still configured.
 
 ---
 

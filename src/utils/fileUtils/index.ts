@@ -6,6 +6,11 @@ import toml from '@iarna/toml';
 
 import t from '../../i18n/index.js';
 import logger from '../../libs/logger.js';
+import {
+  CredentialResolution,
+  CredentialSource,
+  resolveCredentials
+} from '../credentials.js';
 
 import { getDirName, getRoot } from './base.js';
 import { CliConfig, DevToolProps, ProjectConfig } from './interface.js';
@@ -58,21 +63,49 @@ export const getCliConfigPath = (): string => {
 };
 export const hiddenConfigDir = path.join(os.homedir(), '.esa/config');
 
-export const generateHiddenConfigDir = () => {
-  if (!fs.existsSync(hiddenConfigDir)) {
-    fs.mkdirSync(hiddenConfigDir, { recursive: true });
+const secureCliConfigPermissions = (targetPath: string, mode: number): void => {
+  if (process.platform !== 'win32') {
+    fs.chmodSync(targetPath, mode);
   }
 };
 
-export const generateToml = (path: string) => {
-  if (!fs.existsSync(path)) {
-    fs.writeFileSync(path, '', 'utf-8');
-    // Add default endpoint
-    const defaultConfig = {
-      endpoint: 'esa.cn-hangzhou.aliyuncs.com'
-    };
-    updateCliConfigFile(defaultConfig);
+let cliConfigPermissionWarningShown = false;
+
+const hardenExistingCliConfig = (configPath: string): void => {
+  if (process.platform === 'win32') return;
+
+  try {
+    if (fs.existsSync(hiddenConfigDir)) {
+      secureCliConfigPermissions(hiddenConfigDir, 0o700);
+    }
+    secureCliConfigPermissions(configPath, 0o600);
+  } catch {
+    if (cliConfigPermissionWarningShown) return;
+    cliConfigPermissionWarningShown = true;
+    logger.warn(
+      t('cli_config_permissions_warning', { configPath }).d(
+        `Could not restrict permissions on ${configPath}. Set the config directory to 0700 and the credential file to 0600.`
+      )
+    );
   }
+};
+
+export const generateHiddenConfigDir = () => {
+  if (!fs.existsSync(hiddenConfigDir)) {
+    fs.mkdirSync(hiddenConfigDir, { recursive: true, mode: 0o700 });
+  }
+  secureCliConfigPermissions(hiddenConfigDir, 0o700);
+};
+
+export const generateToml = (filePath: string) => {
+  if (!fs.existsSync(filePath)) {
+    fs.writeFileSync(
+      filePath,
+      toml.stringify({ endpoint: 'esa.cn-hangzhou.aliyuncs.com' }),
+      { encoding: 'utf-8', mode: 0o600 }
+    );
+  }
+  secureCliConfigPermissions(filePath, 0o600);
 };
 
 export const generateDefaultConfig = () => {
@@ -133,7 +166,13 @@ export async function updateCliConfigFile(configUpdate: Partial<CliConfig>) {
       updatedConfigString = toml.stringify(config);
     }
 
-    await fsPromises.writeFile(configPath, updatedConfigString);
+    await fsPromises.writeFile(configPath, updatedConfigString, {
+      encoding: 'utf8',
+      mode: 0o600
+    });
+    if (process.platform !== 'win32') {
+      await fsPromises.chmod(configPath, 0o600);
+    }
   } catch (error) {
     logger.error(`Error updating config file: ${error}`);
     logger.pathEacces(__dirname);
@@ -166,6 +205,9 @@ export function readConfigFile(
 }
 export function getCliConfig() {
   const configPath = getCliConfigPath();
+  if (fs.existsSync(configPath)) {
+    hardenExistingCliConfig(configPath);
+  }
   const res = readConfigFile(configPath);
   if (!res) {
     return null;
@@ -300,58 +342,44 @@ export function getDevOpenBrowserUrl(): string {
   return `http://localhost:${port}`;
 }
 
-export const getApiConfig = () => {
-  const envAccessKeyId =
-    process.env.ALIBABA_CLOUD_ACCESS_KEY_ID ||
-    process.env.ESA_ACCESS_KEY_ID;
-  const envAccessKeySecret =
-    process.env.ALIBABA_CLOUD_ACCESS_KEY_SECRET ||
-    process.env.ESA_ACCESS_KEY_SECRET;
-  const envSecurityToken =
-    process.env.ALIBABA_CLOUD_SECURITY_TOKEN ||
-    process.env.ESA_SECURITY_TOKEN;
+export const getCredentialResolution = (): CredentialResolution => {
+  return resolveCredentials(getCliConfig()?.auth);
+};
 
-  if (envAccessKeyId && envAccessKeySecret) {
-    const [cliConfig, projectConfig] = getConfigurations();
-    const endpoint =
+export const getIncompleteCredentialsMessage = (
+  credentialSource: CredentialSource
+): string => {
+  const source =
+    credentialSource === 'environment-esa'
+      ? 'ESA_*'
+      : credentialSource === 'environment-alibaba-cloud'
+        ? 'ALIBABA_CLOUD_*'
+        : '~/.esa/config';
+
+  return t('credentials_incomplete', { source }).d(
+    `Incomplete credentials in ${source}. AccessKey ID and AccessKey Secret must be provided together.`
+  );
+};
+
+export const getApiConfig = () => {
+  const [cliConfig, projectConfig] = getConfigurations();
+  const credentialResolution = resolveCredentials(cliConfig?.auth);
+  const auth =
+    credentialResolution.status === 'resolved'
+      ? credentialResolution.auth
+      : {
+          accessKeyId: '',
+          accessKeySecret: '',
+          securityToken: undefined
+        };
+
+  return {
+    auth,
+    endpoint:
       projectConfig?.endpoint ||
       cliConfig?.endpoint ||
-      'esa.cn-hangzhou.aliyuncs.com';
-    return {
-      auth: {
-        accessKeyId: envAccessKeyId,
-        accessKeySecret: envAccessKeySecret,
-        securityToken: envSecurityToken
-      },
-      endpoint
-    };
-  }
-
-  const [cliConfig, projectConfig] = getConfigurations();
-  let defaultConfig = {
-    auth: {
-      accessKeyId: '',
-      accessKeySecret: '',
-      securityToken: undefined as string | undefined
-    },
-    endpoint: `esa.cn-hangzhou.aliyuncs.com`
+      'esa.cn-hangzhou.aliyuncs.com'
   };
-
-  const combinedConfig = {
-    ...defaultConfig,
-    ...cliConfig,
-    ...projectConfig
-  };
-
-  const config = {
-    auth: {
-      accessKeyId: combinedConfig.auth?.accessKeyId,
-      accessKeySecret: combinedConfig.auth?.accessKeySecret,
-      securityToken: combinedConfig.auth?.securityToken
-    },
-    endpoint: combinedConfig.endpoint
-  };
-  return config;
 };
 
 export const templateHubPath = path.join(

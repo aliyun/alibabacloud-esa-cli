@@ -10,7 +10,8 @@ const tempDirs: string[] = [];
 
 const mockLogger = {
   error: vi.fn(),
-  pathEacces: vi.fn()
+  pathEacces: vi.fn(),
+  warn: vi.fn()
 };
 
 function makeTempDir(prefix = 'esa-cli-file-utils-') {
@@ -44,10 +45,14 @@ afterEach(() => {
   delete process.env.ALIBABA_CLOUD_ACCESS_KEY_ID;
   delete process.env.ALIBABA_CLOUD_ACCESS_KEY_SECRET;
   delete process.env.ALIBABA_CLOUD_SECURITY_TOKEN;
+  delete process.env.ESA_ACCESS_KEY_ID;
+  delete process.env.ESA_ACCESS_KEY_SECRET;
+  delete process.env.ESA_SECURITY_TOKEN;
   vi.restoreAllMocks();
   vi.resetModules();
   mockLogger.error.mockClear();
   mockLogger.pathEacces.mockClear();
+  mockLogger.warn.mockClear();
 
   for (const dir of tempDirs.splice(0)) {
     fs.rmSync(dir, { recursive: true, force: true });
@@ -90,6 +95,101 @@ describe('fileUtils config paths', () => {
       path.join(configDir, 'default.jsonc')
     );
   });
+});
+
+describe('fileUtils credential file permissions', () => {
+  it.skipIf(process.platform === 'win32')(
+    'creates the credential directory as 0700 and config file as 0600',
+    async () => {
+      const projectRoot = makeTempDir();
+      const home = makeTempDir('esa-cli-home-');
+      const configDir = path.join(home, '.esa', 'config');
+      const configPath = path.join(configDir, 'default.toml');
+      const fileUtils = await loadFileUtils({ cwd: projectRoot, home });
+
+      fileUtils.generateDefaultConfig();
+
+      expect(fs.statSync(configDir).mode & 0o777).toBe(0o700);
+      expect(fs.statSync(configPath).mode & 0o777).toBe(0o600);
+    }
+  );
+
+  it.skipIf(process.platform === 'win32')(
+    'hardens existing credential directory and config file permissions',
+    async () => {
+      const projectRoot = makeTempDir();
+      const home = makeTempDir('esa-cli-home-');
+      const configDir = path.join(home, '.esa', 'config');
+      const configPath = path.join(configDir, 'default.toml');
+      fs.mkdirSync(configDir, { recursive: true, mode: 0o755 });
+      fs.writeFileSync(configPath, 'endpoint = "example.com"\n', {
+        mode: 0o644
+      });
+      fs.chmodSync(configDir, 0o755);
+      fs.chmodSync(configPath, 0o644);
+      const fileUtils = await loadFileUtils({ cwd: projectRoot, home });
+
+      fileUtils.generateDefaultConfig();
+
+      expect(fs.statSync(configDir).mode & 0o777).toBe(0o700);
+      expect(fs.statSync(configPath).mode & 0o777).toBe(0o600);
+    }
+  );
+
+  it.skipIf(process.platform === 'win32')(
+    'hardens legacy credential permissions when reading the config',
+    async () => {
+      const projectRoot = makeTempDir();
+      const home = makeTempDir('esa-cli-home-');
+      const configDir = path.join(home, '.esa', 'config');
+      const configPath = path.join(configDir, 'default.toml');
+      fs.mkdirSync(configDir, { recursive: true, mode: 0o755 });
+      fs.writeFileSync(
+        configPath,
+        [
+          '[auth]',
+          'accessKeyId = "legacy-id"',
+          'accessKeySecret = "legacy-secret"'
+        ].join('\n'),
+        { mode: 0o644 }
+      );
+      fs.chmodSync(configDir, 0o755);
+      fs.chmodSync(configPath, 0o644);
+      const fileUtils = await loadFileUtils({ cwd: projectRoot, home });
+
+      expect(fileUtils.getCliConfig()?.auth?.accessKeyId).toBe('legacy-id');
+      expect(fs.statSync(configDir).mode & 0o777).toBe(0o700);
+      expect(fs.statSync(configPath).mode & 0o777).toBe(0o600);
+    }
+  );
+
+  it.skipIf(process.platform === 'win32')(
+    'warns without blocking reads when a mounted config cannot be chmodded',
+    async () => {
+      const projectRoot = makeTempDir();
+      const home = makeTempDir('esa-cli-home-');
+      const configDir = path.join(home, '.esa', 'config');
+      const configPath = path.join(configDir, 'default.toml');
+      fs.mkdirSync(configDir, { recursive: true });
+      fs.writeFileSync(
+        configPath,
+        [
+          '[auth]',
+          'accessKeyId = "mounted-id"',
+          'accessKeySecret = "mounted-secret"'
+        ].join('\n')
+      );
+      const fileUtils = await loadFileUtils({ cwd: projectRoot, home });
+      vi.spyOn(fs, 'chmodSync').mockImplementation(() => {
+        throw new Error('read-only mount');
+      });
+
+      expect(fileUtils.getCliConfig()?.auth?.accessKeyId).toBe('mounted-id');
+      expect(mockLogger.warn).toHaveBeenCalledWith(
+        expect.stringContaining('Could not restrict permissions')
+      );
+    }
+  );
 });
 
 describe('fileUtils config readers and writers', () => {
@@ -206,9 +306,9 @@ describe('fileUtils config readers and writers', () => {
     const projectRoot = makeTempDir();
     const fileUtils = await loadFileUtils({ cwd: projectRoot });
 
-    expect(fileUtils.readConfigFile(path.join(projectRoot, 'missing.toml'))).toBe(
-      null
-    );
+    expect(
+      fileUtils.readConfigFile(path.join(projectRoot, 'missing.toml'))
+    ).toBe(null);
   });
 });
 
@@ -337,8 +437,20 @@ describe('fileUtils value helpers', () => {
     delete (globalThis as any).port;
   });
 
-  it('builds api config from environment credentials and project endpoint', async () => {
+  it('prefers complete ALIBABA_CLOUD_* credentials over saved config', async () => {
     const projectRoot = makeTempDir();
+    const home = makeTempDir('esa-cli-home-');
+    const configDir = path.join(home, '.esa', 'config');
+    fs.mkdirSync(configDir, { recursive: true });
+    fs.writeFileSync(
+      path.join(configDir, 'default.toml'),
+      [
+        '[auth]',
+        'accessKeyId = "saved-id"',
+        'accessKeySecret = "saved-secret"',
+        'securityToken = "saved-token"'
+      ].join('\n')
+    );
     fs.writeFileSync(
       path.join(projectRoot, 'esa.jsonc'),
       '{"name":"project","endpoint":"project.example.com"}'
@@ -347,7 +459,7 @@ describe('fileUtils value helpers', () => {
     process.env.ALIBABA_CLOUD_ACCESS_KEY_SECRET = 'env-secret';
     process.env.ALIBABA_CLOUD_SECURITY_TOKEN = 'env-token';
 
-    const fileUtils = await loadFileUtils({ cwd: projectRoot });
+    const fileUtils = await loadFileUtils({ cwd: projectRoot, home });
 
     expect(fileUtils.getApiConfig()).toEqual({
       auth: {
@@ -361,6 +473,84 @@ describe('fileUtils value helpers', () => {
     delete process.env.ALIBABA_CLOUD_ACCESS_KEY_ID;
     delete process.env.ALIBABA_CLOUD_ACCESS_KEY_SECRET;
     delete process.env.ALIBABA_CLOUD_SECURITY_TOKEN;
+  });
+
+  it('prefers a complete ESA_* credential group over ALIBABA_CLOUD_* and saved config', async () => {
+    const projectRoot = makeTempDir();
+    const home = makeTempDir('esa-cli-home-');
+    const configDir = path.join(home, '.esa', 'config');
+    fs.mkdirSync(configDir, { recursive: true });
+    fs.writeFileSync(
+      path.join(configDir, 'default.toml'),
+      [
+        '[auth]',
+        'accessKeyId = "saved-id"',
+        'accessKeySecret = "saved-secret"',
+        'securityToken = "saved-token"'
+      ].join('\n')
+    );
+    process.env.ESA_ACCESS_KEY_ID = 'esa-id';
+    process.env.ESA_ACCESS_KEY_SECRET = 'esa-secret';
+    process.env.ALIBABA_CLOUD_ACCESS_KEY_ID = 'alibaba-id';
+    process.env.ALIBABA_CLOUD_ACCESS_KEY_SECRET = 'alibaba-secret';
+    process.env.ALIBABA_CLOUD_SECURITY_TOKEN = 'alibaba-token';
+
+    const fileUtils = await loadFileUtils({ cwd: projectRoot, home });
+
+    expect(fileUtils.getApiConfig().auth).toEqual({
+      accessKeyId: 'esa-id',
+      accessKeySecret: 'esa-secret',
+      securityToken: undefined
+    });
+  });
+
+  it('blocks fallback when the higher-priority ESA_* group is incomplete', async () => {
+    process.env.ESA_ACCESS_KEY_ID = 'incomplete-esa-id';
+    process.env.ALIBABA_CLOUD_ACCESS_KEY_ID = 'alibaba-id';
+    process.env.ALIBABA_CLOUD_ACCESS_KEY_SECRET = 'alibaba-secret';
+    process.env.ALIBABA_CLOUD_SECURITY_TOKEN = 'alibaba-token';
+
+    const fileUtils = await loadFileUtils();
+
+    expect(fileUtils.getApiConfig().auth).toEqual({
+      accessKeyId: '',
+      accessKeySecret: '',
+      securityToken: undefined
+    });
+    expect(fileUtils.getCredentialResolution()).toEqual({
+      status: 'incomplete',
+      source: 'environment-esa'
+    });
+  });
+
+  it('does not mix incomplete environment groups or fall back to saved config', async () => {
+    const projectRoot = makeTempDir();
+    const home = makeTempDir('esa-cli-home-');
+    const configDir = path.join(home, '.esa', 'config');
+    fs.mkdirSync(configDir, { recursive: true });
+    fs.writeFileSync(
+      path.join(configDir, 'default.toml'),
+      [
+        '[auth]',
+        'accessKeyId = "saved-id"',
+        'accessKeySecret = "saved-secret"',
+        'securityToken = "saved-token"'
+      ].join('\n')
+    );
+    process.env.ESA_ACCESS_KEY_ID = 'incomplete-esa-id';
+    process.env.ALIBABA_CLOUD_ACCESS_KEY_SECRET = 'incomplete-alibaba-secret';
+
+    const fileUtils = await loadFileUtils({ cwd: projectRoot, home });
+
+    expect(fileUtils.getApiConfig().auth).toEqual({
+      accessKeyId: '',
+      accessKeySecret: '',
+      securityToken: undefined
+    });
+    expect(fileUtils.getCredentialResolution()).toEqual({
+      status: 'incomplete',
+      source: 'environment-esa'
+    });
   });
 
   it('builds api config by merging cli and project config', async () => {

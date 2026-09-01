@@ -26,7 +26,7 @@
 
 **login** - 使用您的阿里云账户授权 ESA CLI。
 
-**logout** - 移除 ESA CLI 访问您账户的授权。
+**logout** - 清除 ESA CLI 本地配置中保存的凭据。
 
 **config** - 修改您的本地或全局配置。
 
@@ -514,27 +514,43 @@ esa-cli login [OPTIONS]
 **--sts-token** _可选_
 **临时 STS 凭证，支持 `AccessKeyId,AccessKeySecret,SecurityToken` 或 JSON 格式**
 
-**环境变量** _优先读取阿里云标准环境变量：_
+同时提供 `--sts-token` 和 AK/SK 参数时，ESA CLI 会保留兼容行为：优先使用 STS 凭据，本次登录忽略 AK/SK 参数，并输出警告。
 
-- **ALIBABA_CLOUD_ACCESS_KEY_ID**
-- **ALIBABA_CLOUD_ACCESS_KEY_SECRET**
-- **ALIBABA_CLOUD_SECURITY_TOKEN** _可选_
+> **安全提示：** 通过 `--sk` 或 `--sts-token` 传入的值可能被记录在 shell 历史中，也可能通过进程参数暴露。推荐通过环境变量注入凭据（例如使用 CI 密钥管理服务），或使用会隐藏 Secret 输入的交互登录。
 
-**以下旧变量继续作为低优先级兼容项：**
+**凭据优先级**
 
-- **ESA_ACCESS_KEY_ID**
-- **ESA_ACCESS_KEY_SECRET**
-- **ESA_SECURITY_TOKEN** _可选_
+ESA CLI 按以下顺序解析凭据（从高到低）：
+
+1. 显式参数：`--sts-token`，或完整的 `--access-key-id`（`--ak`）和 `--access-key-secret`（`--sk`）参数组
+2. 完整的 ESA 专用环境变量凭据组：
+   - **ESA_ACCESS_KEY_ID**
+   - **ESA_ACCESS_KEY_SECRET**
+   - **ESA_SECURITY_TOKEN** _可选_
+3. 完整的阿里云标准环境变量凭据组：
+   - **ALIBABA_CLOUD_ACCESS_KEY_ID**
+   - **ALIBABA_CLOUD_ACCESS_KEY_SECRET**
+   - **ALIBABA_CLOUD_SECURITY_TOKEN** _可选_
+4. `esa-cli login` 保存在 `~/.esa/config` 下的凭据
+5. 交互输入
+
+显式参数的最高优先级只对本次 `login` 调用生效。登录成功后，凭据会保存到 `~/.esa/config` 下；后续命令会将其视为本地已保存配置，因此完整的 `ESA_*` 或 `ALIBABA_CLOUD_*` 凭据组仍会覆盖它。检测到环境变量将覆盖或阻止本次新保存的凭据时，登录命令会输出警告。
+
+凭据按完整组选择。ESA CLI 不会在不同前缀或来源之间混用 AccessKey ID、AccessKey Secret 或 Security Token。如果高优先级凭据来源已设置但不完整，登录会直接报错，不会与低优先级来源拼接。
+
+通过阿里云 CLI 插件方式调用 ESA CLI 时，阿里云 CLI 会通过 `ALIBABA_CLOUD_*` 环境变量传入所选 Profile 的凭据。`ESA_*` 凭据组会有意覆盖该 Profile；如需使用阿里云 CLI 的 `--profile`，请先取消设置 `ESA_ACCESS_KEY_ID`、`ESA_ACCESS_KEY_SECRET` 和 `ESA_SECURITY_TOKEN`。
 
 ---
 
 ## logout
 
-**移除 ESA CLI 访问您账户的授权。**
+**清除 `~/.esa/config` 中保存的凭据。**
 
 ```
 esa-cli logout
 ```
+
+`logout` 不会移除 `ESA_*` 或 `ALIBABA_CLOUD_*` 环境变量凭据。若要阻止后续命令继续使用这些凭据，请在父 Shell 中取消设置对应变量，或切换阿里云 CLI 选中的 Profile。检测到环境变量凭据仍存在时，ESA CLI 会输出警告。
 
 ---
 

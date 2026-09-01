@@ -14,7 +14,7 @@ ESA CLI offers a number of commands to manage your Alibaba Cloud ESA Functions &
 **domain** - Manage domain bindings for your Functions & Pages.
 **route** - Manage route bindings for your Functions & Pages.
 **login** - Authorize ESA CLI with your Alibaba Cloud account.
-**logout** - Remove ESA CLI's authorization for accessing your account.
+**logout** - Clear credentials saved in ESA CLI's local config.
 **config** - Modify your local or global configuration.
 **lang** - Set the language of the CLI.
 
@@ -486,29 +486,43 @@ AccessKey Secret (SK)
 
 Temporary STS credentials in `AccessKeyId,AccessKeySecret,SecurityToken` or JSON format
 
-**Environment Variables**
+When `--sts-token` and AK/SK arguments are supplied together, ESA CLI keeps backward-compatible behavior: STS takes priority, the AK/SK arguments are ignored for that login, and the CLI prints a warning.
 
-The standard Alibaba Cloud variables are preferred:
+> **Security:** Values passed with `--sk` or `--sts-token` can be recorded in shell history and exposed through process arguments. Prefer credentials injected through environment variables, such as by a CI secret manager, or use interactive login, which hides secret input.
 
-- **ALIBABA_CLOUD_ACCESS_KEY_ID**
-- **ALIBABA_CLOUD_ACCESS_KEY_SECRET**
-- **ALIBABA_CLOUD_SECURITY_TOKEN** _(optional)_
+**Credential priority**
 
-The legacy variables remain supported as lower-priority fallbacks:
+ESA CLI evaluates credentials in the following order, from highest to lowest priority:
 
-- **ESA_ACCESS_KEY_ID**
-- **ESA_ACCESS_KEY_SECRET**
-- **ESA_SECURITY_TOKEN** _(optional)_
+1. Explicit arguments: `--sts-token`, or a complete `--access-key-id` (`--ak`) and `--access-key-secret` (`--sk`) pair
+2. A complete ESA-specific environment credential group:
+   - **ESA_ACCESS_KEY_ID**
+   - **ESA_ACCESS_KEY_SECRET**
+   - **ESA_SECURITY_TOKEN** _(optional)_
+3. A complete standard Alibaba Cloud environment credential group:
+   - **ALIBABA_CLOUD_ACCESS_KEY_ID**
+   - **ALIBABA_CLOUD_ACCESS_KEY_SECRET**
+   - **ALIBABA_CLOUD_SECURITY_TOKEN** _(optional)_
+4. Credentials saved by `esa-cli login` under `~/.esa/config`
+5. Interactive input
+
+Explicit arguments have highest priority only during the current `login` invocation. After a successful login, the credentials are saved under `~/.esa/config`; subsequent commands treat them as saved configuration, so a configured `ESA_*` or `ALIBABA_CLOUD_*` credential group overrides them. Login prints a warning when it detects that environment variables will override or block the newly saved credentials.
+
+Credentials are selected atomically. ESA CLI does not combine an AccessKey ID, AccessKey Secret, or Security Token from different prefixes or sources. If a higher-priority credential source is present but incomplete, login reports an error instead of mixing it with a lower-priority source.
+
+When ESA CLI is invoked as an Alibaba Cloud CLI plugin, Alibaba Cloud CLI exposes the selected profile through the `ALIBABA_CLOUD_*` variables. A configured `ESA_*` credential group intentionally overrides that profile. Unset the `ESA_*` variables when you want the plugin to use the profile selected by Alibaba Cloud CLI.
 
 ---
 
 ## logout
 
-Remove ESA CLI's authorization for accessing your account.
+Clear credentials saved in `~/.esa/config`.
 
 ```
 esa-cli logout
 ```
+
+`logout` does not remove `ESA_*` or `ALIBABA_CLOUD_*` environment credentials. Unset them in the parent shell, or change the selected Alibaba Cloud CLI profile, to stop those credentials from authenticating subsequent commands. ESA CLI prints a warning when environment credentials are still configured.
 
 ---
 

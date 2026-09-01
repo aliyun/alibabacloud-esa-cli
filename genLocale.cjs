@@ -11,7 +11,10 @@ if (fs.existsSync(outputPath)) {
 }
 const parseFile = (filePath) => {
   const content = fs.readFileSync(filePath, 'utf-8');
-  const translationRegex = new RegExp(TRANSLATION_PATTERN.source, TRANSLATION_PATTERN.flags);
+  const translationRegex = new RegExp(
+    TRANSLATION_PATTERN.source,
+    TRANSLATION_PATTERN.flags
+  );
   let match;
   while ((match = translationRegex.exec(content)) !== null) {
     const [_, key, __, msg] = match;
@@ -42,7 +45,7 @@ const traverseDirectory = (dirPath) => {
 };
 
 const writeTranslationsToFile = () => {
-  const jsonContent = JSON.stringify(translations, null, 2);
+  const jsonContent = `${JSON.stringify(translations, null, 2)}\n`;
   fs.writeFileSync(outputPath, jsonContent, 'utf-8');
 };
 

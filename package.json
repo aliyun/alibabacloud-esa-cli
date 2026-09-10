@@ -67,9 +67,9 @@
     "prettier": "^3.0.3",
     "tsc-files": "^1.1.4",
     "typescript": "^5.2.2",
-    "@vitest/coverage-istanbul": "^3.2.6",
+    "@vitest/coverage-istanbul": "^5.0.0",
     "vite": "6.4.3",
-    "vitest": "^3.2.6"
+    "vitest": "^5.0.0"
   },
   "dependencies": {
     "@alicloud/esa20240910": "2.29.0",

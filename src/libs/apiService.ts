@@ -58,12 +58,14 @@ import {
   ListRoutineCodeVersionsMetadataReq,
   ListRoutineCodeVersionsMetadataRes
 } from './interface.js';
+import { enableSdkProxy, getProxyAgent } from './proxy.js';
 
 export class ApiService {
   private static instance: ApiService | null = null;
   private client: $OpenApi.default;
 
   constructor(cliConfig: CliConfig) {
+    enableSdkProxy();
     let apiConfig = new $OpenApi.Config({
       accessKeyId: cliConfig.auth?.accessKeyId,
       accessKeySecret: cliConfig.auth?.accessKeySecret,
@@ -741,6 +743,7 @@ export class ApiService {
       formData.append('file', edgeRoutine.code);
 
       const ossRes = await fetch(Url, {
+        agent: getProxyAgent,
         method: 'POST',
         body: formData,
         headers: formData.getHeaders()
@@ -1248,6 +1251,7 @@ export class ApiService {
       formData.append('file', zipBuffer);
 
       const ossRes = await fetch(Url, {
+        agent: getProxyAgent,
         method: 'POST',
         body: formData,
         headers: formData.getHeaders()

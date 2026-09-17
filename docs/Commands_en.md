@@ -186,6 +186,14 @@ Description of the version
 **--minify, -m** _optional_  
 Whether to minify the code
 
+**--no-preview** _optional_
+
+Hide the preview URL, access token, and token validity notice in deployment output. This also skips fetching the preview token. Deployment status, application name, and version rollout percentages remain visible. Supported with new versions, `--version`, and `--versions`; previews are shown by default.
+
+```
+esa-cli deploy --no-preview
+```
+
 When the command generates a new version, that version is bound to a snapshot of the target environment's current variables and secrets. Omitting `--environment` targets production and binds the production snapshot. Use `--environment staging` to target staging and bind the staging snapshot.
 
 ```

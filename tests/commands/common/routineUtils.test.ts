@@ -5,6 +5,7 @@ import {
   deployCodeVersion,
   deployCodeVersions,
   deployWithVersionPercentages,
+  displayDeploySuccess,
   generateCodeVersion,
   validateAndInitializeProject,
   waitForCodeVersionReady
@@ -47,6 +48,12 @@ vi.mock('../../../src/libs/logger.js', () => ({
 }));
 
 describe('routineUtils', () => {
+  const loggedOutput = () =>
+    [logger.log, logger.warn, logger.error]
+      .flatMap((log) => vi.mocked(log).mock.calls)
+      .flat()
+      .join('\n');
+
   const mockApiService = () => ({
     CreateRoutineWithAssetsCodeVersion: vi.fn().mockResolvedValue({
       code: '200',
@@ -145,7 +152,9 @@ describe('routineUtils', () => {
     });
 
     it('should return failed result when required oss fields are incomplete', async () => {
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const consoleSpy = vi
+        .spyOn(console, 'error')
+        .mockImplementation(() => {});
       const server = mockApiService();
       server.CreateRoutineWithAssetsCodeVersion.mockResolvedValue({
         data: {
@@ -174,7 +183,9 @@ describe('routineUtils', () => {
     });
 
     it('should catch api errors and return failed result', async () => {
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const consoleSpy = vi
+        .spyOn(console, 'error')
+        .mockImplementation(() => {});
       (ApiService.getInstance as any).mockRejectedValue(new Error('boom'));
 
       const result = await commitRoutineWithAssets(
@@ -502,7 +513,89 @@ describe('routineUtils', () => {
     });
   });
 
+  describe('displayDeploySuccess', () => {
+    it('should retain the preview URL and token notice by default', async () => {
+      const server = mockApiService();
+      server.getRoutineAccessToken.mockResolvedValue({
+        data: { Token: 'preview-secret-token' }
+      });
+      (ApiService.getInstance as any).mockResolvedValue(server);
+
+      await displayDeploySuccess('test-project');
+
+      expect(server.getRoutineAccessToken).toHaveBeenCalledWith({
+        Name: 'test-project'
+      });
+      expect(loggedOutput()).toContain(
+        'https://routine.example.com?esa_er_token=preview-secret-token'
+      );
+      expect(loggedOutput()).toContain('Token is valid for 1 hour');
+      expect(loggedOutput()).toContain('Deploy Success');
+    });
+
+    it('should skip preview API calls and omit all preview output when hidden', async () => {
+      const server = mockApiService();
+      server.getRoutineAccessToken.mockResolvedValue({
+        data: { Token: 'preview-secret-token' }
+      });
+      (ApiService.getInstance as any).mockResolvedValue(server);
+
+      await displayDeploySuccess('test-project', true, true, false);
+
+      expect(server.getRoutine).not.toHaveBeenCalled();
+      expect(server.getRoutineAccessToken).not.toHaveBeenCalled();
+      const output = loggedOutput();
+      expect(output).not.toContain('routine.example.com');
+      expect(output).not.toContain('preview-secret-token');
+      expect(output).not.toContain('esa_er_token');
+      expect(output).not.toContain('URL');
+      expect(output).not.toContain('Token is valid');
+      expect(output).not.toContain('The domain may take some time');
+      expect(output).toContain('Deploy Success');
+      expect(output).toContain('APP');
+      expect(output).toContain('test-project');
+      expect(output).toContain('esa-cli domain add');
+      expect(output).toContain('esa-cli route add');
+    });
+  });
+
   describe('deployWithVersionPercentages', () => {
+    it.each(['staging', 'production'] as const)(
+      'should keep the %s rollout visible without fetching or printing a preview',
+      async (environment) => {
+        const server = mockApiService();
+        (ApiService.getInstance as any).mockResolvedValue(server);
+
+        await expect(
+          deployWithVersionPercentages(
+            'test-project',
+            ['v1:70,v2:30'],
+            environment,
+            undefined,
+            false
+          )
+        ).resolves.toBe(true);
+
+        expect(server.createRoutineCodeDeployment).toHaveBeenCalledWith(
+          expect.objectContaining({
+            Env: environment,
+            CodeVersions: [
+              { Percentage: 70, CodeVersion: 'v1' },
+              { Percentage: 30, CodeVersion: 'v2' }
+            ]
+          })
+        );
+        expect(server.getRoutineAccessToken).not.toHaveBeenCalled();
+        const output = loggedOutput();
+        expect(output).not.toContain('routine.example.com');
+        expect(output).not.toContain('esa_er_token');
+        expect(output).not.toContain('Token is valid');
+        expect(output).toContain('Deploy Success');
+        expect(output).toContain('- v1: 70%');
+        expect(output).toContain('- v2: 30%');
+      }
+    );
+
     it('should reject more than two versions', async () => {
       await expect(
         deployWithVersionPercentages(

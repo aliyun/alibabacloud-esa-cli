@@ -615,23 +615,26 @@ export async function waitForCodeVersionReady(
 export async function displayDeploySuccess(
   projectName: string,
   showDomainGuide = true,
-  showRouteGuide = true
+  showRouteGuide = true,
+  showPreview = true
 ): Promise<void> {
-  const service = await ApiService.getInstance();
-  const res = await service.getRoutine({ Name: projectName });
-  const defaultUrl = res?.data?.DefaultRelatedRecord;
-  let visitUrl = defaultUrl ? 'https://' + defaultUrl : '';
-
-  // Get access token for the visit URL
+  let visitUrl = '';
   let hasToken = false;
-  if (visitUrl) {
-    const tokenRes = await service.getRoutineAccessToken({
-      Name: projectName
-    });
-    const token = tokenRes?.data?.Token;
-    if (token) {
-      visitUrl += `?esa_er_token=${token}`;
-      hasToken = true;
+  if (showPreview) {
+    const service = await ApiService.getInstance();
+    const res = await service.getRoutine({ Name: projectName });
+    const defaultUrl = res?.data?.DefaultRelatedRecord;
+    visitUrl = defaultUrl ? 'https://' + defaultUrl : '';
+
+    if (visitUrl) {
+      const tokenRes = await service.getRoutineAccessToken({
+        Name: projectName
+      });
+      const token = tokenRes?.data?.Token;
+      if (token) {
+        visitUrl += `?esa_er_token=${token}`;
+        hasToken = true;
+      }
     }
   }
 
@@ -646,9 +649,15 @@ export async function displayDeploySuccess(
   logger.block();
   logger.log(`${label('APP')}  ${chalk.cyan(projectName || '-')}`);
   if (hasToken) {
-    logger.log(orange(`⏰  ${t('token_validity_tip').d('Token is valid for 1 hour')}`));
+    logger.log(
+      orange(`⏰  ${t('token_validity_tip').d('Token is valid for 1 hour')}`)
+    );
   }
-  logger.log(`${label('URL')}  ${visitUrl ? chalk.yellowBright(visitUrl) : subtle('-')}`);
+  if (showPreview) {
+    logger.log(
+      `${label('URL')}  ${visitUrl ? chalk.yellowBright(visitUrl) : subtle('-')}`
+    );
+  }
 
   if (projectName) {
     logger.block();
@@ -666,14 +675,16 @@ export async function displayDeploySuccess(
       `${label('TIP')}  ${t('deploy_success_guide_2').d('Add routes for a site')}: ${chalk.green('esa-cli route add -r <ROUTE> -s <SITE>')}`
     );
   }
-  logger.block();
-  logger.log(
-    subtle(
-      t('deploy_url_warn').d(
-        'The domain may take some time to take effect, please try again later.'
+  if (showPreview) {
+    logger.block();
+    logger.log(
+      subtle(
+        t('deploy_url_warn').d(
+          'The domain may take some time to take effect, please try again later.'
+        )
       )
-    )
-  );
+    );
+  }
   logger.block();
 }
 
@@ -684,7 +695,8 @@ export async function deployWithVersionPercentages(
   nameArg: string | undefined,
   versionsArg: (string | number)[] | undefined,
   env: 'staging' | 'production' | 'all',
-  projectPath?: string
+  projectPath?: string,
+  showPreview = true
 ): Promise<boolean> {
   const raw = (versionsArg || [])
     .flatMap((v) => String(v).split(','))
@@ -731,7 +743,7 @@ export async function deployWithVersionPercentages(
   const ok = await deployCodeVersions(projectInfo.projectName, pairs, env);
   if (!ok) return false;
 
-  await displayDeploySuccess(projectInfo.projectName, true, true);
+  await displayDeploySuccess(projectInfo.projectName, true, true, showPreview);
   logger.block();
   logger.log('📦 Versions rollout:');
   pairs.forEach((p) => {

@@ -200,6 +200,13 @@ esa-cli deploy [<ENTRY>] [OPTIONS]
 **--minify, -m** _可选_
 **是否压缩代码**
 
+**--no-preview** _可选_
+隐藏部署输出中的预览链接、访问 Token 和 Token 有效期提示，并跳过预览 Token 的获取。仍显示部署结果、应用名和版本流量比例。支持部署新版本、`--version` 和 `--versions`；默认显示预览信息。
+
+```
+esa-cli deploy --no-preview
+```
+
 当命令生成新版本时，新版本会绑定目标环境当前的变量和 Secret 快照。省略 `--environment` 时以 production 为目标并绑定 production 快照；使用 `--environment staging` 时则以 staging 为目标并绑定 staging 快照。
 
 ```

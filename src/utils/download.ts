@@ -10,6 +10,7 @@ import fetch from 'node-fetch';
 
 import t from '../i18n/index.js';
 import logger from '../libs/logger.js';
+import { getProxyAgent } from '../libs/proxy.js';
 
 const execAsync = promisify(exec);
 
@@ -25,7 +26,7 @@ function getBinDir(): string {
  * @param dest 本地保存路径
  */
 export async function downloadFile(url: string, dest: string): Promise<void> {
-  const response = await fetch(url);
+  const response = await fetch(url, { agent: getProxyAgent });
 
   if (!response.ok) {
     throw new Error(

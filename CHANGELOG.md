@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.13] - 2026-09-18
+
+### Added
+
+- Support HTTP/HTTPS proxies for API requests, login, code and asset uploads, runtime downloads, and version checks through `HTTP_PROXY`, `HTTPS_PROXY`, and `NO_PROXY`, including lowercase variables and `ALL_PROXY` fallback. Preserve explicit local development proxy routing.
+- Add `esa deploy --no-preview` to skip fetching and displaying the preview URL and access token. Support new-version, existing-version, and weighted-version deployments while retaining deployment results and rollout percentages.
+
 ## [1.0.12] - 2026-09-01
 
 ### Added

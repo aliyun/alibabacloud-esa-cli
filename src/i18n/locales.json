@@ -919,6 +919,10 @@
     "en": "Environment to deploy to: staging or production (skip interactive selection)",
     "zh_CN": "部署环境：staging 或 production（跳过交互式选择）"
   },
+  "deploy_option_preview": {
+    "en": "Show the preview URL and access token (use --no-preview to hide)",
+    "zh_CN": "显示预览链接和访问 Token（使用 --no-preview 隐藏）"
+  },
   "deploy_version_not_found": {
     "en": "Version '${argv.version}' not found",
     "zh_CN": "版本 '${version}' 未找到"

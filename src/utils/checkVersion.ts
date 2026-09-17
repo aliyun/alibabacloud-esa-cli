@@ -7,6 +7,7 @@ import fetch from 'node-fetch';
 
 import t from '../i18n/index.js';
 import logger from '../libs/logger.js';
+import { getProxyAgent } from '../libs/proxy.js';
 import execCommand from '../utils/command.js';
 import { getDirName } from '../utils/fileUtils/base.js';
 
@@ -45,6 +46,7 @@ export async function checkCLIVersion(
       response = await fetch(
         'https://registry.npmmirror.com/esa-cli/latest',
         {
+          agent: getProxyAgent,
           signal: controller.signal as any
         }
       );

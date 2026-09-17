@@ -15,6 +15,7 @@ import {
   GetMatchSiteRes
 } from './interface.js';
 import logger from './logger.js';
+import { enableSdkProxy } from './proxy.js';
 
 class Client {
   client: ESA.default;
@@ -25,6 +26,7 @@ class Client {
   }
 
   static createClient(config: CliConfig): ESA.default {
+    enableSdkProxy();
     const apiConfig = new $OpenApi.Config({
       accessKeyId: config.auth?.accessKeyId,
       accessKeySecret: config.auth?.accessKeySecret,

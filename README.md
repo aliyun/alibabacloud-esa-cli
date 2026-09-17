@@ -164,6 +164,14 @@ npx esa-cli deploy --description "Initial release"
 
 Production is the default deployment environment. When this command creates a new version, it binds a snapshot of the current production variables and secrets to that version. Use `--environment staging` to create and deploy a version with the staging snapshot instead.
 
+Hide the preview URL and its access token in CI logs:
+
+```bash
+npx esa-cli deploy --no-preview
+```
+
+This also skips fetching the preview token. Deployment status, application name, and version rollout percentages remain visible. The option works with new versions, `--version`, and `--versions`.
+
 Deploy an existing version:
 
 ```bash
@@ -225,6 +233,28 @@ You can configure only `entry` for an edge function, only `assets.directory` for
 > If both a function entry and `assets.notFoundStrategy` are configured, navigation requests are handled by the static fallback strategy instead of the function entry.
 
 See the [ESA Configuration Guide](https://github.com/aliyun/alibabacloud-esa-cli/blob/master/docs/Config_en.md) for all fields and examples.
+
+### Corporate HTTP/HTTPS proxies
+
+ESA CLI supports proxy environment variables for API requests (including login),
+code and asset uploads, runtime downloads, and version checks:
+
+```bash
+export HTTPS_PROXY=http://proxy.example.com:9400
+export HTTP_PROXY=http://proxy.example.com:9400
+export NO_PROXY=localhost,127.0.0.1,[::1],.example.internal
+npx esa-cli login
+```
+
+HTTPS requests use `https_proxy` / `HTTPS_PROXY`; HTTP requests use `http_proxy` /
+`HTTP_PROXY`. Lowercase variables take precedence over uppercase variables.
+`all_proxy` / `ALL_PROXY` can provide a fallback for either protocol. Set both
+`HTTP_PROXY` and `HTTPS_PROXY` if your proxy handles both kinds of requests.
+
+Use `no_proxy` / `NO_PROXY` to bypass the proxy for comma-separated hosts, optional
+ports, or domain suffixes such as `.example.internal`. `*` bypasses the proxy for
+all destinations. Both HTTP and HTTPS proxy server URLs are supported. Existing
+explicit local development proxy connections keep their own routing.
 
 ## Commands
 

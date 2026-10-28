@@ -347,6 +347,7 @@ export interface CreateRoutineWithAssetsCodeVersionReq {
   CodeDescription?: string;
   BuildId?: string;
   ExtraInfo?: string;
+  DeployEnv?: RoutineEnvironment;
   ConfOptions?: {
     NotFoundStrategy: string;
   };
@@ -401,10 +402,97 @@ export interface GetRoutineCodeVersionInfoRes {
   };
 }
 
+export interface ListRoutineCodeVersionsMetadataReq {
+  Name: string;
+  PageNumber?: number;
+  PageSize?: number;
+  SearchKeyWord?: string;
+}
+
+export interface RoutineCodeVersionMetadata {
+  CodeDescription?: string;
+  CreateTime?: string;
+  CodeVersion?: string;
+  Status?: string;
+  DeployEnv?: RoutineEnvironment;
+  HasEnvVars?: boolean;
+}
+
+export interface ListRoutineCodeVersionsMetadataRes {
+  code: string;
+  data: {
+    RequestId?: string;
+    PageNumber: number;
+    PageSize: number;
+    TotalCount: number;
+    CodeVersions: RoutineCodeVersionMetadata[];
+  };
+}
+
 export interface GetRoutineAccessTokenReq {
   Name: string;
 }
 export interface GetRoutineAccessTokenRes {
   code: string;
   data: { RequestId?: string; Token?: string; DefaultRelatedRecord?: string };
+}
+
+export type RoutineEnvironment = 'staging' | 'production';
+
+export type RoutineEnvironmentVariableType = 'plain_text' | 'secret_text';
+
+export interface RoutineEnvironmentVariable {
+  Type: RoutineEnvironmentVariableType;
+  Value?: string;
+  CreatedAt?: string;
+  UpdatedAt?: string;
+}
+
+export interface ListRoutineEnvironmentVariablesReq {
+  Name: string;
+  Env: RoutineEnvironment;
+  KeyWord?: string;
+  PageNumber?: number;
+  PageSize?: number;
+}
+
+export interface ListRoutineEnvironmentVariablesRes {
+  code: string;
+  data: {
+    RequestId?: string;
+    Count: number;
+    TotalCount: number;
+    PageNumber: number;
+    PageSize: number;
+    EnvironmentVariables: Record<string, RoutineEnvironmentVariable>;
+  };
+}
+
+export interface SetRoutineEnvironmentVariablesReq {
+  Name: string;
+  Env: RoutineEnvironment;
+  EnvironmentVariables: Record<string, RoutineEnvironmentVariable>;
+}
+
+export interface SetRoutineEnvironmentVariablesRes {
+  code: string;
+  data: {
+    RequestId?: string;
+    SetKeys: string[];
+  };
+}
+
+export interface DeleteRoutineEnvironmentVariablesReq {
+  Name: string;
+  Env: RoutineEnvironment;
+  EnvironmentVariableKeys: string[];
+}
+
+export interface DeleteRoutineEnvironmentVariablesRes {
+  code: string;
+  data: {
+    RequestId?: string;
+    DeletedKeys: string[];
+    FailedKeys: string[];
+  };
 }

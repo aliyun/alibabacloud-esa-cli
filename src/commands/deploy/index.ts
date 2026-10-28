@@ -34,7 +34,8 @@ const deploy: CommandModule = {
           'Environment to deploy to: staging or production (skip interactive selection)'
         ),
         type: 'string',
-        choices: ['staging', 'production']
+        choices: ['staging', 'production'],
+        default: 'production'
       })
       .option('name', {
         alias: 'n',
@@ -63,6 +64,13 @@ const deploy: CommandModule = {
         type: 'boolean',
         default: true
       })
+      .option('preview', {
+        describe: t('deploy_option_preview').d(
+          'Show the preview URL and access token (use --no-preview to hide)'
+        ),
+        type: 'boolean',
+        default: true
+      })
       .option('versions', {
         describe:
           'Deploy two versions with percentages, format: v1:80,v2:20 or repeat --versions v1:80 --versions v2:20',
@@ -78,18 +86,20 @@ const deploy: CommandModule = {
 
 export async function handleDeploy(argv: ArgumentsCamelCase) {
   const entry = argv.entry as string;
+  const showPreview = argv.preview !== false;
   const assets = (argv.assets as string) ?? undefined;
   const versionsArg = (argv.versions as unknown as string[] | undefined) || [];
 
   intro(`Deploy an application with ESA`);
 
   if (versionsArg.length > 0) {
-    const env = (argv.environment as 'staging' | 'production' | 'all') || 'all';
+    const env = (argv.environment as 'staging' | 'production') || 'production';
     const ok = await deployWithVersionPercentages(
       (argv.name as string) || undefined,
       versionsArg,
       env,
-      getRoot()
+      getRoot(),
+      showPreview
     );
     outro(ok ? 'Deploy finished' : 'Deploy failed');
     exit(ok ? 0 : 1);
@@ -101,7 +111,7 @@ export async function handleDeploy(argv: ArgumentsCamelCase) {
     assets,
     (argv.description as string) || '',
     getRoot(),
-    (argv.environment as 'staging' | 'production') || 'all',
+    (argv.environment as 'staging' | 'production') || 'production',
     argv.minify as boolean,
     argv.version as string,
     (argv.bundle === false) as boolean
@@ -116,7 +126,8 @@ export async function handleDeploy(argv: ArgumentsCamelCase) {
         (getRoot().split(/[\\/]/).pop() as string) ||
         '',
       true,
-      true
+      true,
+      showPreview
     );
   }
   exit(success ? 0 : 1);

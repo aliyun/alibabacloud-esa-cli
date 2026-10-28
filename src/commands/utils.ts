@@ -18,7 +18,9 @@ import logger from '../libs/logger.js';
 import { getRoot } from '../utils/fileUtils/base.js';
 import {
   getApiConfig,
-  getCliConfig,
+  getCredentialResolution,
+  getIncompleteCredentialsMessage,
+  getProjectConfig,
   projectConfigPath
 } from '../utils/fileUtils/index.js';
 import { validateCredentials } from '../utils/validateCredentials.js';
@@ -107,47 +109,46 @@ export function validDomain(domain: string): boolean {
 }
 
 export async function checkIsLoginSuccess(): Promise<boolean> {
-  const cliConfig = getCliConfig();
-  let accessKeyId =
-    process.env.ALIBABA_CLOUD_ACCESS_KEY_ID ||
-    process.env.ESA_ACCESS_KEY_ID ||
-    cliConfig?.auth?.accessKeyId;
-  let accessKeySecret =
-    process.env.ALIBABA_CLOUD_ACCESS_KEY_SECRET ||
-    process.env.ESA_ACCESS_KEY_SECRET ||
-    cliConfig?.auth?.accessKeySecret;
-  const securityToken =
-    process.env.ALIBABA_CLOUD_SECURITY_TOKEN ||
-    process.env.ESA_SECURITY_TOKEN ||
-    cliConfig?.auth?.securityToken;
+  const credentialResolution = getCredentialResolution();
+  if (credentialResolution.status === 'incomplete') {
+    logger.error(getIncompleteCredentialsMessage(credentialResolution.source));
+    process.exitCode = 1;
+    return false;
+  }
 
-  if (accessKeyId && accessKeySecret) {
+  if (credentialResolution.status === 'resolved') {
+    const { auth } = credentialResolution;
     const result = await validateCredentials(
-      accessKeyId,
-      accessKeySecret,
-      securityToken
+      auth.accessKeyId,
+      auth.accessKeySecret,
+      auth.securityToken
     );
-    const server = await ApiService.getInstance();
     if (result.valid) {
-      const auth: { accessKeyId: string; accessKeySecret: string; securityToken?: string } = {
-        accessKeyId,
-        accessKeySecret
-      };
-      if (securityToken) auth.securityToken = securityToken;
+      const server = await ApiService.getInstance();
       const fileConfig = getApiConfig();
-      server.updateConfig({
+      const endpoint =
+        process.env.CUSTOM_ENDPOINT ||
+        getProjectConfig()?.endpoint ||
+        result.endpoint ||
+        fileConfig.endpoint;
+      const effectiveConfig = {
         ...fileConfig,
+        endpoint,
         auth
+      };
+      server.updateConfig({
+        ...effectiveConfig
       });
       api.updateConfig({
-        ...fileConfig,
-        auth
+        ...effectiveConfig
       });
       return true;
     }
   }
 
-  const namedCommand = chalk.green('esa-cli login');
+  process.exitCode = 1;
+  const cliName = process.env.ALIBABA_CLOUD_ESA_CLI_COMPAT_MODE || 'esa-cli';
+  const namedCommand = chalk.green(`${cliName} login`);
   logger.log(
     `❌ ${t('utils_login_error').d('Maybe you are not logged in yet.')}`
   );

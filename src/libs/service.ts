@@ -14,6 +14,7 @@ import {
   Environment
 } from './interface.js';
 import logger from './logger.js';
+import { getProxyAgent } from './proxy.js';
 
 export const checkLogin = async (): Promise<ServiceOutput> => {
   const result = new ServiceOutput();
@@ -83,6 +84,7 @@ export const getRoutineStagingCodeUploadInfo = async (
     formData.append('file', edgeRoutine.code);
 
     const ossRes = await fetch(Url, {
+      agent: getProxyAgent,
       method: 'POST',
       body: formData,
       headers: formData.getHeaders()

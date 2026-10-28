@@ -1,7 +1,8 @@
 import { it, describe, expect, vi, afterEach, beforeEach } from 'vitest';
+import yargs from 'yargs/yargs';
 
 import * as commonUtils from '../../src/commands/common/utils.js';
-import { handleDeploy } from '../../src/commands/deploy/index.js';
+import deploy, { handleDeploy } from '../../src/commands/deploy/index.js';
 import * as fileUtils from '../../src/utils/fileUtils/index.js';
 
 vi.mock('../../src/commands/common/utils.js');
@@ -74,7 +75,7 @@ describe('handleDeploy', () => {
       undefined,
       '',
       '/test/root',
-      'all',
+      'production',
       undefined,
       undefined,
       false
@@ -97,7 +98,7 @@ describe('handleDeploy', () => {
       undefined,
       '',
       '/test/root',
-      'all',
+      'production',
       undefined,
       undefined,
       false
@@ -119,13 +120,14 @@ describe('handleDeploy', () => {
       undefined,
       '',
       '/test/root',
-      'all',
+      'production',
       undefined,
       undefined,
       false
     );
     expect(commonUtils.displayDeploySuccess).toHaveBeenCalledWith(
       'custom-name',
+      true,
       true,
       true
     );
@@ -146,7 +148,7 @@ describe('handleDeploy', () => {
       'custom-assets',
       '',
       '/test/root',
-      'all',
+      'production',
       undefined,
       undefined,
       false
@@ -168,7 +170,7 @@ describe('handleDeploy', () => {
       undefined,
       'Test deployment',
       '/test/root',
-      'all',
+      'production',
       undefined,
       undefined,
       false
@@ -212,7 +214,7 @@ describe('handleDeploy', () => {
       undefined,
       '',
       '/test/root',
-      'all',
+      'production',
       true,
       undefined,
       false
@@ -234,7 +236,7 @@ describe('handleDeploy', () => {
       undefined,
       '',
       '/test/root',
-      'all',
+      'production',
       undefined,
       'v1.0.0',
       false
@@ -272,6 +274,92 @@ describe('handleDeploy', () => {
       false
     );
   });
+
+  it('should deploy weighted versions to production by default', async () => {
+    vi.mocked(commonUtils.deployWithVersionPercentages).mockResolvedValue(true);
+
+    await callHandleDeploy({
+      versions: ['v1:80,v2:20'],
+      _: [],
+      $0: ''
+    });
+
+    expect(commonUtils.deployWithVersionPercentages).toHaveBeenCalledWith(
+      undefined,
+      ['v1:80,v2:20'],
+      'production',
+      '/test/root',
+      true
+    );
+    expect(commonUtils.commitAndDeployVersion).not.toHaveBeenCalled();
+  });
+
+  it('should keep an explicit staging target for weighted versions', async () => {
+    vi.mocked(commonUtils.deployWithVersionPercentages).mockResolvedValue(true);
+
+    await callHandleDeploy({
+      versions: ['v1:100'],
+      environment: 'staging',
+      _: [],
+      $0: ''
+    });
+
+    expect(commonUtils.deployWithVersionPercentages).toHaveBeenCalledWith(
+      undefined,
+      ['v1:100'],
+      'staging',
+      '/test/root',
+      true
+    );
+  });
+
+  it.each([
+    { name: 'a new version', args: [], weighted: false },
+    { name: 'an existing version', args: ['--version', 'v1'], weighted: false },
+    {
+      name: 'weighted versions',
+      args: ['--versions', 'v1:80,v2:20'],
+      weighted: true
+    }
+  ])(
+    'should honor --no-preview when deploying $name',
+    async ({ args, weighted }) => {
+      vi.mocked(commonUtils.commitAndDeployVersion).mockResolvedValue(true);
+      vi.mocked(commonUtils.deployWithVersionPercentages).mockResolvedValue(
+        true
+      );
+      vi.mocked(fileUtils.getProjectConfig).mockReturnValue({
+        name: 'test-project'
+      } as any);
+
+      const argv = await yargs()
+        .version(false)
+        .strict()
+        .exitProcess(false)
+        .command({ ...deploy, handler: () => {} })
+        .parseAsync(['deploy', ...args, '--no-preview']);
+      await callHandleDeploy(argv);
+
+      if (weighted) {
+        expect(commonUtils.deployWithVersionPercentages).toHaveBeenCalledWith(
+          undefined,
+          ['v1:80,v2:20'],
+          'production',
+          '/test/root',
+          false
+        );
+        expect(commonUtils.commitAndDeployVersion).not.toHaveBeenCalled();
+      } else {
+        expect(commonUtils.displayDeploySuccess).toHaveBeenCalledWith(
+          'test-project',
+          true,
+          true,
+          false
+        );
+        expect(commonUtils.commitAndDeployVersion).toHaveBeenCalled();
+      }
+    }
+  );
 
   it('should not display success message if deployment fails', async () => {
     vi.mocked(commonUtils.commitAndDeployVersion).mockResolvedValue(false);

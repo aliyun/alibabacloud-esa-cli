@@ -1,5 +1,7 @@
 import * as $OpenApi from '@alicloud/openapi-client';
 
+import { enableSdkProxy } from '../libs/proxy.js';
+
 export type SiteType = 'domestic' | 'international';
 
 export interface ValidateCredentialsResult {
@@ -25,6 +27,7 @@ async function validateEndpoint(
   securityToken?: string
 ): Promise<{ valid: boolean; message?: string }> {
   try {
+    enableSdkProxy();
     const apiConfig = new $OpenApi.Config({
       accessKeyId,
       accessKeySecret,

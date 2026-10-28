@@ -856,7 +856,7 @@ export const deployProject = async (initParams: initParams) => {
     undefined,
     'Init project',
     targetPath,
-    'all'
+    'production'
   );
   if (!res) {
     outro(`Deploy project failed`);

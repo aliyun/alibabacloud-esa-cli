@@ -2,6 +2,7 @@ import {
   confirm as clackConfirm,
   isCancel,
   multiselect as clackMultiselect,
+  password as clackPassword,
   select as clackSelect,
   text as clackText,
   cancel as clackCancel
@@ -15,6 +16,7 @@ export type PromptType =
   | 'multiselect'
   | 'select'
   | 'text'
+  | 'password'
   | 'confirm'
   | 'multiLevelSelect';
 
@@ -64,6 +66,22 @@ export async function promptParameter<T = unknown>(
         typeof defaultValue === 'string' ? (defaultValue as string) : undefined,
       initialValue:
         typeof defaultValue === 'string' ? (defaultValue as string) : undefined,
+      validate: validate
+        ? (val: string | undefined) => {
+            if (val === undefined) return 'Value is required';
+            const res = validate(val);
+            return res === true ? undefined : (res as string);
+          }
+        : undefined
+    });
+    if (isCancel(v)) {
+      clackCancel('Operation cancelled.');
+      process.exit(130);
+    }
+    value = v as T;
+  } else if (type === 'password') {
+    const v = await clackPassword({
+      message: msg,
       validate: validate
         ? (val: string | undefined) => {
             if (val === undefined) return 'Value is required';

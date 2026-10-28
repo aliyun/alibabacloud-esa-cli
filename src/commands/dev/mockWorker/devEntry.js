@@ -32,6 +32,7 @@ const dev = async () => {
     const config = configs[id] ?? {};
     const cacheInstance = await Cache.init('mock');
     globalThis.cache = cacheInstance;
+    globalThis.mockCache = cacheInstance;
     globalThis.EdgeKV = EdgeKV;
     if (!worker || !worker.fetch) {
       throw new Error('Invalid ER code.');

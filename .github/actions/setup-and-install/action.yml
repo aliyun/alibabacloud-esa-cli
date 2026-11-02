@@ -10,7 +10,7 @@ inputs:
   node-version:
     description: Node.js version to install
     required: false
-    default: '20'
+    default: '24'
 
 runs:
   using: composite
@@ -45,11 +45,9 @@ runs:
       shell: bash
       run: |
         for attempt in 1 2 3; do
-          npm ci || echo "::warning::npm ci exited non-zero (attempt ${attempt})"
-
-          # Exits non-zero when any package in the lockfile is missing from the
-          # tree, which is exactly what the npm exit-handler crash leaves behind.
-          if npm ls --depth=0 >/dev/null 2>&1; then
+          # Both npm ci and the tree check must succeed. Never turn a failing
+          # lifecycle script into a successful install merely because files exist.
+          if npm ci && npm ls --depth=0 >/dev/null 2>&1; then
             echo "Dependency tree verified on attempt ${attempt}."
             exit 0
           fi

@@ -26,8 +26,14 @@
     "coverage": "vitest --coverage",
     "lint": "eslint src/",
     "lint:fix": "eslint src/ --fix",
-    "test:compat:v1": "ESA_CLI_BIN=bin/enter.cjs vitest run --config vitest.compat.config.ts",
-    "test:integration:v1": "ESA_CLI_BIN=bin/enter.cjs vitest run --config vitest.integration.config.ts"
+    "test:compat:v1": "vitest run --config vitest.compat.config.ts",
+    "test:integration:v1": "vitest run --config vitest.integration.config.ts",
+    "test:ci": "vitest run --coverage",
+    "test:e2e": "vitest run --config vitest.e2e.v1.config.ts",
+    "test:release-tools": "node scripts/release/test-tools.mjs",
+    "release:check-integration": "node scripts/release/check-integration.mjs",
+    "release:pack": "node scripts/release/pack.mjs",
+    "release:prepare": "node scripts/release/prepare.mjs"
   },
   "keywords": [
     "cli",
@@ -52,8 +58,8 @@
     "@types/cli-table": "^0.3.4",
     "@types/cross-spawn": "^6.0.6",
     "@types/fs-extra": "^11.0.4",
-    "@types/jest": "^29.5.12",
     "@types/inquirer": "^9.0.7",
+    "@types/jest": "^29.5.12",
     "@types/lodash": "^4.14.202",
     "@types/node": "^20.8.10",
     "@types/node-fetch": "^2.6.9",
@@ -63,16 +69,16 @@
     "@types/yargs": "^17.0.32",
     "@typescript-eslint/eslint-plugin": "8.46.1",
     "@typescript-eslint/parser": "8.46.1",
+    "@vitest/coverage-istanbul": "^3.2.6",
     "eslint": "^8.57.0",
     "eslint-plugin-import": "^2.32.0",
-    "rimraf": "5.0.10",
     "husky": "^8.0.3",
     "jsdom": "^25.0.1",
     "lint-staged": "^15.0.2",
     "prettier": "^3.0.3",
+    "rimraf": "5.0.10",
     "tsc-files": "^1.1.4",
     "typescript": "^5.2.2",
-    "@vitest/coverage-istanbul": "^3.2.6",
     "vite": "6.4.3",
     "vitest": "^3.2.6"
   },
@@ -123,6 +129,6 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+ssh://git@github.com/aliyun/alibabacloud-esa-cli.git"
+    "url": "git+https://github.com/aliyun/alibabacloud-esa-cli.git"
   }
 }

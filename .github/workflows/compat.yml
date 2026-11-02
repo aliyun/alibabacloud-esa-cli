@@ -1,106 +1,63 @@
 name: CLI Behaviour Tests
 
-# Contract / E2E / integration tests run the built CLI as a child process,
-# so every job must build first. Unit tests live in main.yml (npm test).
 on:
-  push:
-    branches:
-      - '**'
-  pull_request:
-    branches:
-      - '**'
-  # Lets a run be repeated from the Actions tab without pushing a new commit,
-  # which matters while the suite is still being stabilised.
-  workflow_dispatch:
-    inputs:
-      run-integration:
-        description: 'Also run the API integration job (needs repository secrets)'
-        type: boolean
-        default: false
+  workflow_call:
 
 permissions:
   contents: read
 
-# Superseded runs on the same ref are pointless once a newer commit exists.
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
-  # ─────────────────────────────────────────────────────────────
-  # Contract tests — no network, no credentials
-  # ─────────────────────────────────────────────────────────────
   contract:
     name: Contract tests
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
-
       - uses: ./.github/actions/setup-and-install
-
-      - name: Build
-        run: npm run build
-
-      - name: Run contract tests
-        env:
-          ESA_CLI_BIN: bin/enter.cjs
-        run: npx vitest run --config vitest.compat.config.ts --reporter=default --reporter=junit --outputFile=reports/contract-junit.xml
-
-      - name: Upload contract test report
+      - run: npm run build
+      - name: Run offline contract tests
+        run: npx vitest run --config vitest.compat.config.ts --reporter=default --reporter=json --outputFile=reports/contract.json
+      - name: Reject skipped or missing contract tests
+        run: node scripts/release/check-test-report.mjs reports/contract.json 155
+      - name: Upload report
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: contract-test-report
-          path: reports/contract-junit.xml
-          if-no-files-found: warn
+          path: reports/contract.json
+          if-no-files-found: error
 
-  # ─────────────────────────────────────────────────────────────
-  # Interactive E2E — self-skips when credentials are absent
-  # ─────────────────────────────────────────────────────────────
   e2e:
-    name: Interactive E2E
+    name: Offline E2E
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
-
       - uses: ./.github/actions/setup-and-install
+      - run: npm run build
+      - name: Run offline E2E with local API fixtures
+        run: npx vitest run --config vitest.e2e.v1.config.ts --reporter=default --reporter=json --outputFile=reports/e2e.json
+      - name: Reject skipped or missing E2E tests
+        run: node scripts/release/check-test-report.mjs reports/e2e.json 7
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-test-report
+          path: reports/e2e.json
+          if-no-files-found: error
 
-      - name: Build
-        run: npm run build
-
-      - name: Run E2E tests
-        env:
-          ESA_TEST_SKIP_LOGIN: '1'
-        run: npx vitest run --config vitest.e2e.v1.config.ts
-
-  # ─────────────────────────────────────────────────────────────
-  # API integration — real API calls, gated behind secrets
-  # ─────────────────────────────────────────────────────────────
-  integration:
-    name: API integration
+  behaviour-gate:
+    name: Behaviour Gate
+    if: always()
+    needs: [contract, e2e]
     runs-on: ubuntu-latest
-    timeout-minutes: 30
-    # head_commit is null outside push events, which contains() treats as no match.
-    if: >
-      github.ref == 'refs/heads/master' ||
-      contains(github.event.head_commit.message, '[run-integration]') ||
-      github.event.inputs.run-integration == 'true'
-    env:
-      ESA_TEST_ACCESS_KEY_ID: ${{ secrets.ESA_TEST_ACCESS_KEY_ID }}
-      ESA_TEST_ACCESS_KEY_SECRET: ${{ secrets.ESA_TEST_ACCESS_KEY_SECRET }}
-      ESA_TEST_SITE_ID: ${{ secrets.ESA_TEST_SITE_ID }}
-      ESA_TEST_PROJECT_NAME: ${{ secrets.ESA_TEST_PROJECT_NAME }}
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
-
-      - uses: ./.github/actions/setup-and-install
-
-      - name: Build
-        run: npm run build
-
-      - name: Run integration tests
-        env:
-          ESA_CLI_BIN: bin/enter.cjs
-        run: npx vitest run --config vitest.integration.config.ts
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.x
+      - env:
+          JOB_RESULTS: ${{ toJSON(needs) }}
+        run: node scripts/release/check-jobs.mjs contract e2e

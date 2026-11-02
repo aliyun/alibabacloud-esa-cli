@@ -1,0 +1,214 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Exact version, matching release/<version>: x.y.z or x.y.z-beta.N'
+        required: true
+        type: string
+      commit:
+        description: 'Full 40-character SHA of the reviewed release commit'
+        required: true
+        type: string
+      release_type:
+        description: 'Beta, regular stable promotion, or emergency stable hotfix'
+        required: true
+        type: choice
+        options: [beta, stable, hotfix]
+        default: beta
+      source_version:
+        description: 'Stable: published beta version. Hotfix: current stable version. Beta: leave empty.'
+        required: false
+        type: string
+      reason:
+        description: 'Required emergency reason for a hotfix; otherwise leave empty'
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+# Serialize all versions. A later release must not interrupt an npm publish.
+concurrency:
+  group: npm-release
+  cancel-in-progress: false
+
+jobs:
+  candidate:
+    name: Validate release candidate
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      version: ${{ steps.candidate.outputs.version }}
+      sha: ${{ steps.candidate.outputs.sha }}
+      channel: ${{ steps.candidate.outputs.channel }}
+      release_type: ${{ steps.candidate.outputs.release_type }}
+      source_version: ${{ steps.candidate.outputs.source_version }}
+      source_sha: ${{ steps.candidate.outputs.source_sha }}
+      source_integrity: ${{ steps.candidate.outputs.source_integrity }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.x
+      - name: Require completed repository setup
+        env:
+          RELEASE_ENABLED: ${{ vars.RELEASE_ENABLED }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          test "$RELEASE_ENABLED" = true
+          test "$REPOSITORY" = aliyun/alibabacloud-esa-cli
+      - name: Install release validation dependencies without lifecycle scripts
+        run: npm ci --omit=dev --ignore-scripts --no-audit --no-fund
+      - id: candidate
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+          RELEASE_SHA: ${{ inputs.commit }}
+          RELEASE_TYPE: ${{ inputs.release_type }}
+          RELEASE_SOURCE_VERSION: ${{ inputs.source_version }}
+          RELEASE_REASON: ${{ inputs.reason }}
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/release/check-candidate.mjs
+
+  verify:
+    needs: candidate
+    uses: ./.github/workflows/main.yml
+
+  package:
+    name: Verify final npm package
+    needs: [candidate, verify]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      RELEASE_VERSION: ${{ needs.candidate.outputs.version }}
+      RELEASE_SHA: ${{ needs.candidate.outputs.sha }}
+      RELEASE_CHANNEL: ${{ needs.candidate.outputs.channel }}
+      RELEASE_TYPE: ${{ needs.candidate.outputs.release_type }}
+      RELEASE_SOURCE_VERSION: ${{ needs.candidate.outputs.source_version }}
+      RELEASE_SOURCE_SHA: ${{ needs.candidate.outputs.source_sha }}
+      RELEASE_SOURCE_INTEGRITY: ${{ needs.candidate.outputs.source_integrity }}
+      RELEASE_REASON: ${{ inputs.reason }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          ref: ${{ needs.candidate.outputs.sha }}
+      - uses: ./.github/actions/setup-and-install
+      - run: npm run build
+      - run: npm run release:pack
+      - name: Install and verify the exact tarball
+        env:
+          RELEASE_VERSION: ${{ needs.candidate.outputs.version }}
+        run: node scripts/release/smoke.mjs "release-artifacts/esa-cli-$RELEASE_VERSION.tgz" "$RELEASE_VERSION"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-package
+          path: release-artifacts/
+          if-no-files-found: error
+          retention-days: 14
+
+  integration:
+    name: Verify real ESA API
+    needs: [candidate, package]
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    environment: esa-integration
+    env:
+      RELEASE_VERSION: ${{ needs.candidate.outputs.version }}
+      RELEASE_SHA: ${{ needs.candidate.outputs.sha }}
+      RELEASE_CHANNEL: ${{ needs.candidate.outputs.channel }}
+      RELEASE_TYPE: ${{ needs.candidate.outputs.release_type }}
+      RELEASE_SOURCE_VERSION: ${{ needs.candidate.outputs.source_version }}
+      RELEASE_SOURCE_SHA: ${{ needs.candidate.outputs.source_sha }}
+      RELEASE_SOURCE_INTEGRITY: ${{ needs.candidate.outputs.source_integrity }}
+      RELEASE_REASON: ${{ inputs.reason }}
+      ESA_TEST_REQUIRE_INTEGRATION: '1'
+      ESA_TEST_ACCESS_KEY_ID: ${{ secrets.ESA_TEST_ACCESS_KEY_ID }}
+      ESA_TEST_ACCESS_KEY_SECRET: ${{ secrets.ESA_TEST_ACCESS_KEY_SECRET }}
+      ESA_TEST_SECURITY_TOKEN: ${{ secrets.ESA_TEST_SECURITY_TOKEN }}
+      ESA_TEST_SITE_ID: ${{ vars.ESA_TEST_SITE_ID }}
+      ESA_TEST_SITE_NAME: ${{ vars.ESA_TEST_SITE_NAME }}
+      ESA_TEST_DOMAIN_SUFFIX: ${{ vars.ESA_TEST_DOMAIN_SUFFIX }}
+      ESA_TEST_ENDPOINT: ${{ vars.ESA_TEST_ENDPOINT }}
+      ESA_TEST_ALLOW_WRITE: ${{ vars.ESA_TEST_ALLOW_WRITE }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          ref: ${{ needs.candidate.outputs.sha }}
+      - uses: ./.github/actions/setup-and-install
+      - run: npm run release:check-integration
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-package
+          path: release-artifacts
+      - name: Verify artifact identity and install CLI
+        env:
+          RELEASE_VERSION: ${{ needs.candidate.outputs.version }}
+          RELEASE_SHA: ${{ needs.candidate.outputs.sha }}
+        run: |
+          node scripts/release/verify-artifact.mjs
+          npm install --prefix "$RUNNER_TEMP/release-cli" --no-audit --no-fund "$(pwd)/release-artifacts/esa-cli-$RELEASE_VERSION.tgz"
+          echo "ESA_CLI_BIN=$RUNNER_TEMP/release-cli/node_modules/esa-cli/bin/enter.cjs" >> "$GITHUB_ENV"
+      - name: Test the installed release package against ESA
+        run: npx vitest run --config vitest.integration.config.ts --reporter=default --reporter=json --outputFile=reports/integration.json
+      - name: Require all real API tests to execute
+        run: node scripts/release/check-test-report.mjs reports/integration.json 6
+      - name: Clean remaining resources after failures
+        if: always()
+        run: node scripts/release/cleanup-cloud.mjs
+      - name: Preserve test results and cleanup journal
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-report
+          path: |
+            reports/integration.json
+            reports/cloud-resources.json
+          if-no-files-found: warn
+          retention-days: 7
+
+  publish:
+    name: Publish verified package
+    needs: [candidate, verify, package, integration]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: npm-release
+    env:
+      RELEASE_VERSION: ${{ needs.candidate.outputs.version }}
+      RELEASE_SHA: ${{ needs.candidate.outputs.sha }}
+      RELEASE_CHANNEL: ${{ needs.candidate.outputs.channel }}
+      RELEASE_TYPE: ${{ needs.candidate.outputs.release_type }}
+      RELEASE_SOURCE_VERSION: ${{ needs.candidate.outputs.source_version }}
+      RELEASE_SOURCE_SHA: ${{ needs.candidate.outputs.source_sha }}
+      RELEASE_SOURCE_INTEGRITY: ${{ needs.candidate.outputs.source_integrity }}
+      RELEASE_REASON: ${{ inputs.reason }}
+    permissions:
+      contents: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          ref: ${{ needs.candidate.outputs.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.x
+      - name: Install npm with trusted publishing support
+        run: npm install --global npm@11.6.2
+      - name: Install release validation dependencies without lifecycle scripts
+        run: npm ci --omit=dev --ignore-scripts --no-audit --no-fund
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-package
+          path: release-artifacts
+      - name: Publish exact artifact and create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_VERSION: ${{ needs.candidate.outputs.version }}
+          RELEASE_SHA: ${{ needs.candidate.outputs.sha }}
+        run: node scripts/release/publish.mjs

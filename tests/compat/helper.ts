@@ -5,7 +5,7 @@
  * The CLI binary path defaults to bin/enter.cjs, or can be overridden
  * via the ESA_CLI_BIN env var.
  */
-import { spawn } from 'child_process';
+import { runCliProcess } from '../support/cli-process';
 import { mkdtempSync, mkdirSync, rmSync, existsSync } from 'fs';
 import { tmpdir } from 'os';
 import { resolve, join } from 'path';
@@ -17,10 +17,11 @@ export const CLI_BIN = process.env.ESA_CLI_BIN
 
 /**
  * The CLI shell (bin/enter.cjs) throws when dist/index.js is absent, which
- * would surface as ~150 unrelated assertion failures. Callers use this to skip
- * the suite with a clear reason instead.
+ * would surface as ~150 unrelated assertion failures. Fail during collection
+ * with a clear build prerequisite instead.
  */
 export const isCliBuilt = existsSync(resolve(process.cwd(), 'dist/index.js'));
+if (!isCliBuilt) throw new Error('Build the CLI before running contract tests');
 
 export const NOT_BUILT_REASON =
   'CLI is not built — run `npm run build` before the contract tests.';
@@ -73,31 +74,17 @@ export async function runCli(
 ): Promise<CliResult> {
   const { env: safeEnv, cleanup } = ensureSafeHome(options.env);
 
-  return new Promise((resolvePromise, reject) => {
-    const child = spawn('node', [CLI_BIN, ...args], {
+  try {
+    const result = await runCliProcess({
+      bin: CLI_BIN,
+      args,
       cwd: options.cwd,
-      env: { ...process.env, ...safeEnv },
-      stdio: ['pipe', 'pipe', 'pipe']
+      env: safeEnv,
+      nodeArgs: ['--require', resolve('tests/fixtures/offline-http.cjs')]
     });
-
-    let stdout = '';
-    let stderr = '';
-
-    child.stdout?.on('data', (data) => {
-      stdout += data.toString();
-    });
-    child.stderr?.on('data', (data) => {
-      stderr += data.toString();
-    });
-
-    child.on('error', (err) => {
-      cleanup?.();
-      reject(err);
-    });
-
-    child.on('close', (code) => {
-      cleanup?.();
-      resolvePromise({ stdout, stderr, exitCode: code });
-    });
-  });
+    if (result.timedOut) throw new Error(`CLI timed out: ${args.join(' ')}`);
+    return result;
+  } finally {
+    cleanup?.();
+  }
 }

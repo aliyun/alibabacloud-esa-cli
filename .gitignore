@@ -5,6 +5,7 @@ src/commands/dev/er/
 build/
 coverage/
 reports/
+release-artifacts/
 v2/
 test.txt
 .qoder/

@@ -1,170 +1,102 @@
-/**
- * Helper for API integration tests.
- *
- * Manages test environment: login before tests, logout after.
- * Provides utilities to run CLI commands and parse JSON output.
- */
-import { spawn } from 'child_process';
-import { mkdtempSync, rmSync, existsSync } from 'fs';
-import { tmpdir } from 'os';
-import { resolve , join } from 'path';
-
+import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { resolve, join } from 'node:path';
+import { randomBytes } from 'node:crypto';
 import toml from '@iarna/toml';
-
+import { expect } from 'vitest';
+import {
+  cloudApi,
+  recordResource,
+  deleteTestProject
+} from '../../scripts/release/cloud-client.mjs';
+import { runCliProcess } from '../support/cli-process';
 import { CREDENTIALS } from './credentials';
 
-export const CLI_BIN = process.env.ESA_CLI_BIN
-  ? resolve(process.cwd(), process.env.ESA_CLI_BIN)
-  : resolve(process.cwd(), 'bin/enter.cjs');
+export { cloudApi };
+export const CLI_BIN = resolve(process.env.ESA_CLI_BIN || 'bin/enter.cjs');
+export const stripAnsi = (value: string) =>
+  value.replace(/\u001b\[[0-9;?]*[A-Za-z]/g, '');
 
-export interface CliResult {
-  stdout: string;
-  stderr: string;
-  exitCode: number | null;
-}
-
-export async function runCli(
-  args: string[] = [],
-  options: { cwd?: string; env?: Record<string, string> } = {}
-): Promise<CliResult> {
-  return new Promise((resolvePromise, reject) => {
-    const child = spawn('node', [CLI_BIN, ...args], {
-      cwd: options.cwd,
-      env: { ...process.env, ...options.env },
-      stdio: ['pipe', 'pipe', 'pipe']
-    });
-
-    let stdout = '';
-    let stderr = '';
-
-    child.stdout.on('data', (data) => {
-      stdout += data.toString();
-    });
-    child.stderr.on('data', (data) => {
-      stderr += data.toString();
-    });
-
-    child.on('error', reject);
-    child.on('close', (code) => {
-      resolvePromise({ stdout, stderr, exitCode: code });
-    });
-  });
-}
-
-/** Temporary HOME directory with pre-configured credentials */
-let _tmpHome: string | null = null;
-
-/**
- * Get a temp HOME dir with ESA credentials pre-configured.
- * Created once per test run, cleaned up on process exit.
- */
-export function getTestHome(): string {
-  if (_tmpHome) return _tmpHome;
-
-  _tmpHome = mkdtempSync(join(tmpdir(), 'esa-integration-'));
-
-  // Write credentials to ~/.esa/config/default.toml
-  const configDir = join(_tmpHome, '.esa', 'config');
-  const { mkdirSync, writeFileSync } = require('fs');
-  mkdirSync(configDir, { recursive: true });
-  // The logger writes here at module load time; pre-create so it cannot EPERM.
-  mkdirSync(join(_tmpHome, '.esa-logs'), { recursive: true });
-
-  const credConfig = {
-    auth: {
-      accessKeyId: CREDENTIALS.accessKeyId,
-      accessKeySecret: CREDENTIALS.accessKeySecret
-    },
-    endpoint: CREDENTIALS.endpoint,
-    lang: 'en'
-  };
-
+export async function withProject(
+  run: (project: {
+    name: string;
+    cwd: string;
+    env: Record<string, string>;
+  }) => Promise<void>
+) {
+  if (!CREDENTIALS) throw new Error('Integration credentials are required');
+  const name = `esa-ci-${Date.now().toString(36)}-${randomBytes(4).toString('hex')}`;
+  const cwd = mkdtempSync(join(tmpdir(), 'esa-real-api-'));
+  const home = join(cwd, 'home');
+  mkdirSync(join(home, '.esa', 'config'), { recursive: true });
+  mkdirSync(join(home, '.esa-logs'), { recursive: true });
   writeFileSync(
-    join(configDir, 'default.toml'),
-    toml.stringify(credConfig as any)
+    join(home, '.esa', 'config', 'default.toml'),
+    toml.stringify({
+      auth: {
+        accessKeyId: CREDENTIALS.accessKeyId,
+        accessKeySecret: CREDENTIALS.accessKeySecret,
+        ...(CREDENTIALS.securityToken
+          ? { securityToken: CREDENTIALS.securityToken }
+          : {})
+      },
+      endpoint: CREDENTIALS.endpoint,
+      lang: 'en'
+    })
   );
-
-  // Cleanup on exit
-  process.on('exit', () => {
-    if (_tmpHome && existsSync(_tmpHome)) {
-      rmSync(_tmpHome, { recursive: true, force: true });
-    }
-  });
-
-  return _tmpHome;
-}
-
-/**
- * Environment with HOME pointed to test home (with credentials).
- * USERPROFILE mirrors HOME because Node's os.homedir() reads USERPROFILE on
- * Windows, so setting HOME alone would leak into the real user directory.
- */
-export function testEnv(): Record<string, string> {
-  const home = getTestHome();
-  return { HOME: home, USERPROFILE: home };
-}
-
-/**
- * Run a CLI command that is expected to output JSON.
- * Returns the parsed JSON object.
- */
-export async function runCliJson(
-  args: string[],
-  options: { cwd?: string; env?: Record<string, string> } = {}
-): Promise<any> {
-  const result = await runCli(args, {
-    ...options,
-    env: { ...testEnv(), ...options.env }
-  });
-
-  if (result.exitCode !== 0) {
-    throw new Error(
-      `CLI exited with code ${result.exitCode}:\n` +
-        `  args: ${args.join(' ')}\n` +
-        `  stdout: ${result.stdout}\n` +
-        `  stderr: ${result.stderr}`
-    );
-  }
-
-  // Try to extract JSON from output (may have log lines mixed in)
-  const jsonMatch = result.stdout.match(/(\[[\s\S]*\]|\{[\s\S]*\})/);
-  if (jsonMatch) {
-    try {
-      return JSON.parse(jsonMatch[0]);
-    } catch {
-      // If JSON parsing fails, return raw output
-    }
-  }
-
-  // Return raw stdout if no JSON found
-  return result.stdout;
-}
-
-/** Non-deterministic fields to strip before comparing API responses */
-export const NON_DETERMINISTIC_FIELDS = [
-  'createTime',
-  'updateTime',
-  'requestId',
-  'createTimeStr',
-  'updateTimeStr',
-  'timestamp',
-  'operationId',
-  'deployId',
-  'versionId'
-];
-
-/** Strip non-deterministic fields from an API response object */
-export function stripNonDeterministic(obj: any): any {
-  if (obj === null || obj === undefined) return obj;
-  if (Array.isArray(obj)) return obj.map(stripNonDeterministic);
-  if (typeof obj === 'object') {
-    const result: Record<string, any> = {};
-    for (const [key, value] of Object.entries(obj)) {
-      if (!NON_DETERMINISTIC_FIELDS.includes(key)) {
-        result[key] = stripNonDeterministic(value);
+  writeFileSync(
+    join(cwd, 'esa.jsonc'),
+    JSON.stringify({ name, entry: 'index.js', siteId: CREDENTIALS.siteId })
+  );
+  const errors: unknown[] = [];
+  let created = false;
+  try {
+    // Write the journal before creation so an interrupted request is recoverable.
+    recordResource(name);
+    const result = await cloudApi('CreateRoutine', {
+      Name: name,
+      Description: 'Temporary CLI release test',
+      HasAssets: true
+    });
+    expect(result.Status).toBe('OK');
+    created = true;
+    await run({
+      name,
+      cwd,
+      env: { HOME: home, CUSTOM_ENDPOINT: CREDENTIALS.endpoint }
+    });
+  } catch (error) {
+    errors.push(error);
+  } finally {
+    if (created) {
+      try {
+        await deleteTestProject(name);
+      } catch (error) {
+        errors.push(error);
       }
     }
-    return result;
+    rmSync(cwd, { recursive: true, force: true });
   }
-  return obj;
+  if (errors.length)
+    throw new AggregateError(
+      errors,
+      `Integration failed for ${name}; see errors and resource journal`
+    );
+}
+
+export async function cli(
+  args: string[],
+  project: { cwd: string; env: Record<string, string> },
+  timeout = 45000
+) {
+  const result = await runCliProcess({
+    bin: CLI_BIN,
+    args,
+    ...project,
+    timeout
+  });
+  expect(result.timedOut, `Timed out running ${args[0]}`).toBe(false);
+  // Do not print the full output: a deploy command can include a temporary access token.
+  expect(result.exitCode, `CLI ${args[0]} exited unsuccessfully`).toBe(0);
+  return stripAnsi(result.stdout + result.stderr);
 }

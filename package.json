@@ -59,6 +59,7 @@
     "@types/node-fetch": "^2.6.9",
     "@types/portscanner": "^2.1.4",
     "@types/proxy-from-env": "^1.0.4",
+    "@types/semver": "7.7.1",
     "@types/yargs": "^17.0.32",
     "@typescript-eslint/eslint-plugin": "8.46.1",
     "@typescript-eslint/parser": "8.46.1",
@@ -110,6 +111,7 @@
     "os-locale": "^6.0.2",
     "portscanner": "^2.2.0",
     "proxy-from-env": "^1.1.0",
+    "semver": "7.7.3",
     "winston": "^3.11.0",
     "winston-daily-rotate-file": "^5.0.0",
     "yargs": "^17.7.2"

@@ -4,6 +4,7 @@ import path from 'path';
 import chalk from 'chalk';
 import inquirer from 'inquirer';
 import fetch from 'node-fetch';
+import { gt, prerelease, valid } from 'semver';
 
 import t from '../i18n/index.js';
 import logger from '../libs/logger.js';
@@ -38,13 +39,26 @@ export async function checkCLIVersion(
     const packageJsonPath = path.join(__dirname, '..', '..', 'package.json');
     const jsonString = await fs.readFile(packageJsonPath, 'utf-8');
     const packageJson = JSON.parse(jsonString);
-    const currentVersion = packageJson.version;
+    const currentVersion: unknown = packageJson.version;
+    if (typeof currentVersion !== 'string' || !valid(currentVersion)) {
+      return true;
+    }
+    const currentPrerelease = prerelease(currentVersion);
+    const channel = !currentPrerelease
+      ? 'latest'
+      : currentPrerelease[0] === 'beta'
+        ? 'beta'
+        : undefined;
+    if (!channel) {
+      return true;
+    }
+    const updatePackage = `esa-cli@${channel}`;
     const controller = new AbortController();
     const fetchTimeout = setTimeout(() => controller.abort(), 5000);
     let response;
     try {
       response = await fetch(
-        'https://registry.npmmirror.com/esa-cli/latest',
+        `https://registry.npmmirror.com/esa-cli/${channel}`,
         {
           agent: getProxyAgent,
           signal: controller.signal as any
@@ -58,7 +72,17 @@ export async function checkCLIVersion(
     }
     const data = (await response.json()) as { version: string };
     const latestVersion = data.version;
-    if (currentVersion !== latestVersion) {
+    if (!valid(latestVersion)) {
+      return true;
+    }
+    const latestPrerelease = prerelease(latestVersion);
+    if (
+      (channel === 'latest' && latestPrerelease !== null) ||
+      (channel === 'beta' && latestPrerelease?.[0] !== 'beta')
+    ) {
+      return true;
+    }
+    if (gt(latestVersion, currentVersion)) {
       const accent = chalk.hex('#7C3AED').bold;
       const labelColor = chalk.hex('#22c55e');
       const currentLabelRaw = t('version_current').d('Current');
@@ -87,9 +111,9 @@ export async function checkCLIVersion(
           )
         )}`,
         '',
-        `${padLabel(updateLabelRaw, labelColor(updateLabelRaw))}${gap}${chalk.cyanBright('npm i -g esa-cli@latest')}`,
-        `${' '.repeat(labelWidth)}${gap}${chalk.cyanBright('yarn global add esa-cli@latest')}`,
-        `${' '.repeat(labelWidth)}${gap}${chalk.cyanBright('pnpm add -g esa-cli@latest')}`,
+        `${padLabel(updateLabelRaw, labelColor(updateLabelRaw))}${gap}${chalk.cyanBright(`npm i -g ${updatePackage}`)}`,
+        `${' '.repeat(labelWidth)}${gap}${chalk.cyanBright(`yarn global add ${updatePackage}`)}`,
+        `${' '.repeat(labelWidth)}${gap}${chalk.cyanBright(`pnpm add -g ${updatePackage}`)}`,
         '',
         `${chalk.gray(
           t('version_continue').d(
@@ -134,28 +158,24 @@ export async function checkCLIVersion(
           }
         ]);
         if (updateNow) {
-          const startText =
-            'Updating ESA CLI to latest (npm i -g esa-cli@latest)';
+          const startText = `Updating ESA CLI to ${channel} (npm i -g ${updatePackage})`;
           const doneText = 'ESA CLI update finished';
           try {
-            const res = await execCommand(
-              ['npm', 'i', '-g', 'esa-cli@latest'],
-              {
-                startText,
-                doneText,
-                useSpinner: true,
-                interactive: false
-              }
-            );
+            const res = await execCommand(['npm', 'i', '-g', updatePackage], {
+              startText,
+              doneText,
+              useSpinner: true,
+              interactive: false
+            });
             if (!res.success) {
               logger.warn(
                 t('version_update_failed').d(
                   'Global update failed. You may need elevated permissions (sudo) or use yarn/pnpm:'
                 )
               );
-              logger.subLog('sudo npm i -g esa-cli@latest');
-              logger.subLog('yarn global add esa-cli@latest');
-              logger.subLog('pnpm add -g esa-cli@latest');
+              logger.subLog(`sudo npm i -g ${updatePackage}`);
+              logger.subLog(`yarn global add ${updatePackage}`);
+              logger.subLog(`pnpm add -g ${updatePackage}`);
             }
           } catch (e) {
             logger.warn(
@@ -163,9 +183,9 @@ export async function checkCLIVersion(
                 'Global update failed. You may need elevated permissions (sudo) or use yarn/pnpm:'
               )
             );
-            logger.subLog('sudo npm i -g esa-cli@latest');
-            logger.subLog('yarn global add esa-cli@latest');
-            logger.subLog('pnpm add -g esa-cli@latest');
+            logger.subLog(`sudo npm i -g ${updatePackage}`);
+            logger.subLog(`yarn global add ${updatePackage}`);
+            logger.subLog(`pnpm add -g ${updatePackage}`);
           }
           logger.divider();
         }

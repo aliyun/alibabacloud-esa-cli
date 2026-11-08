@@ -30,6 +30,97 @@ it('delivers every delayed input and closes stdin in a path containing spaces', 
   }
 });
 
+it('waits for complete prompts across chunks and streams before sending each answer', async () => {
+  const directory = mkdtempSync(join(tmpdir(), 'esa prompt test '));
+  try {
+    const bin = join(directory, 'prompts.cjs');
+    writeFileSync(
+      bin,
+      `let stage = 0;
+setTimeout(() => {
+  process.stdout.write('\u001b[36mFirst ');
+  setTimeout(() => { stage = 1; process.stdout.write('prompt:\u001b[0m'); }, 30);
+}, 100);
+process.stdin.on('data', chunk => {
+  if (stage === 1 && String(chunk) === 'one\\r') {
+    stage = 2;
+    process.stderr.write('Second ');
+    setTimeout(() => { stage = 3; process.stderr.write('prompt:'); }, 50);
+  } else if (stage === 3 && String(chunk) === 'two\\r') {
+    stage = 4;
+  } else {
+    process.exit(2);
+  }
+});
+process.stdin.on('end', () => {
+  if (stage !== 4) process.exit(3);
+  process.stdout.write('all answers received');
+});`
+    );
+    const result = await runCliProcess({
+      bin,
+      args: [],
+      inputs: [
+        { value: 'one\r', waitFor: 'First prompt:' },
+        { value: 'two\r', waitFor: /Second prompt:/g }
+      ],
+      timeout: 5000
+    });
+    expect(result.timedOut).toBe(false);
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toContain('all answers received');
+    expect(result.stderr).toBe('Second prompt:');
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+}, 10000);
+
+it('does not reuse an old prompt and rejects exit before every answer was sent', async () => {
+  const directory = mkdtempSync(join(tmpdir(), 'esa repeated prompt '));
+  try {
+    const bin = join(directory, 'prompt.cjs');
+    writeFileSync(
+      bin,
+      "process.stdout.write('Answer:'); process.stdin.once('data', () => process.exit(0));"
+    );
+    await expect(
+      runCliProcess({
+        bin,
+        args: [],
+        inputs: [
+          { value: 'one\r', waitFor: 'Answer:' },
+          { value: 'two\r', waitFor: 'Answer:' }
+        ],
+        timeout: 5000
+      })
+    ).rejects.toThrow('CLI exited before input 2/2; expected prompt: Answer:');
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+}, 10000);
+
+it('bounds a missing prompt by the total timeout without sending an early answer', async () => {
+  const directory = mkdtempSync(join(tmpdir(), 'esa missing prompt '));
+  try {
+    const bin = join(directory, 'prompt.cjs');
+    writeFileSync(
+      bin,
+      "process.stdout.write('Other prompt:'); process.stdin.on('data', () => { console.log('unexpected input'); process.exit(0); }); setInterval(() => {}, 1000);"
+    );
+    const result = await runCliProcess({
+      bin,
+      args: [],
+      inputs: [{ value: 'answer\r', waitFor: 'Expected prompt:' }],
+      timeout: 500
+    });
+    expect(result.timedOut).toBe(true);
+    expect(result.exitCode).not.toBe(0);
+    expect(result.stdout).not.toContain('unexpected input');
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 it('terminates a CLI that waits forever instead of treating timeout as success', async () => {
   const directory = mkdtempSync(join(tmpdir(), 'esa-timeout-'));
   try {

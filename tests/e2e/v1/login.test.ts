@@ -30,7 +30,7 @@ afterAll(async () => {
 });
 
 function testHome() {
-  const home = mkdtempSync(join(tmpdir(), 'esa-offline-e2e-'));
+  const home = realpathSync(mkdtempSync(join(tmpdir(), 'esa offline e2e ')));
   mkdirSync(join(home, '.esa-logs'), { recursive: true });
   return home;
 }
@@ -58,10 +58,11 @@ describe('offline CLI login and configuration', () => {
         env: env(home)
       });
       expect(result.timedOut).toBe(false);
+      expect(result.exitCode).toBe(1);
       expect(stripAnsi(result.stdout + result.stderr).toLowerCase()).toContain(
         'sts token'
       );
-      expect(auth(home).securityToken ?? '').toBe('');
+      expect(auth(home)).toEqual({});
       expect(cloud.calls.length).toBe(before);
     } finally {
       rmSync(home, { recursive: true, force: true });
@@ -78,10 +79,11 @@ describe('offline CLI login and configuration', () => {
         env: env(home)
       });
       expect(result.timedOut).toBe(false);
+      expect(result.exitCode).toBe(1);
       expect(stripAnsi(result.stdout + result.stderr)).toContain(
         'Fixture rejected credentials'
       );
-      expect(auth(home).accessKeyId ?? '').toBe('');
+      expect(auth(home)).toEqual({});
       expect(cloud.calls.slice(before)).toContain('GetErService');
     } finally {
       rmSync(home, { recursive: true, force: true });
@@ -122,17 +124,20 @@ describe('offline CLI login and configuration', () => {
     const home = testHome();
     try {
       const result = await runInteractiveDelayed(
-        { bin, args: ['login'], env: env(home), timeout: 9000 },
+        { bin, args: ['login'], env: env(home), timeout: 20000 },
         [
-          { value: '\r', delay: 1500 },
-          { value: `${fixtureKey}\r`, delay: 1500 },
-          { value: `${fixtureSecret}\r`, delay: 1500 }
+          { value: '\r', waitFor: 'Choose login method' },
+          { value: `${fixtureKey}\r`, waitFor: 'AccessKey ID:' },
+          { value: `${fixtureSecret}\r`, waitFor: 'AccessKey Secret:' }
         ]
       );
       expect(result.timedOut).toBe(false);
       expect(result.exitCode).toBe(0);
       expect(stripAnsi(result.stdout + result.stderr)).toContain(
         'Login success'
+      );
+      expect(stripAnsi(result.stdout + result.stderr)).not.toContain(
+        fixtureSecret
       );
       expect(auth(home)).toMatchObject({
         accessKeyId: fixtureKey,
@@ -148,22 +153,22 @@ describe('offline CLI login and configuration', () => {
     const before = cloud.calls.length;
     try {
       const result = await runInteractiveDelayed(
-        { bin, args: ['login'], env: env(home), timeout: 9000 },
+        { bin, args: ['login'], env: env(home), timeout: 20000 },
         [
-          { value: '\r', delay: 1500 },
-          { value: '\r', delay: 1500 },
-          { value: '\r', delay: 1500 }
+          { value: '\r', waitFor: 'Choose login method' },
+          { value: '\r', waitFor: 'AccessKey ID:' },
+          { value: '\r', waitFor: 'AccessKey Secret:' }
         ]
       );
       expect(result.timedOut).toBe(false);
       expect(result.exitCode).toBe(1);
       expect(stripAnsi(result.stdout + result.stderr)).toMatch(
-        /◇\s+AccessKey Secret/
+        /[◇o]\s+AccessKey Secret/
       );
       expect(stripAnsi(result.stdout + result.stderr)).not.toContain(
         'Login success'
       );
-      expect(auth(home).accessKeyId ?? '').toBe('');
+      expect(auth(home)).toEqual({});
       expect(cloud.calls.length).toBe(before);
     } finally {
       rmSync(home, { recursive: true, force: true });
@@ -176,17 +181,17 @@ describe('offline CLI login and configuration', () => {
     try {
       const result = await runInteractiveDelayed(
         { bin, args: ['login'], env: env(home) },
-        [{ value: '\u0003', delay: 1500 }]
+        [{ value: '\u0003', waitFor: 'Choose login method' }]
       );
       expect(result.timedOut).toBe(false);
       expect(result.exitCode).toBe(0);
       expect(stripAnsi(result.stdout + result.stderr)).toMatch(
-        /■\s+Choose login method/
+        /[■x]\s+Choose login method/
       );
       expect(stripAnsi(result.stdout + result.stderr)).not.toContain(
         'Login success'
       );
-      expect(auth(home).accessKeyId ?? '').toBe('');
+      expect(auth(home)).toEqual({});
       expect(cloud.calls.length).toBe(before);
     } finally {
       rmSync(home, { recursive: true, force: true });
@@ -202,23 +207,27 @@ describe('offline CLI login and configuration', () => {
         config,
         JSON.stringify({ name: 'fixture-project', entry: 'index.js' })
       );
-      const editor = join(home, 'editor.cjs');
+      const editor = join(home, 'editor fixture.cjs');
       writeFileSync(
         editor,
-        `#!/usr/bin/env node\nrequire('fs').writeFileSync(${JSON.stringify(marker)}, process.argv[2]);\n`,
+        `#!/usr/bin/env node\nrequire('fs').writeFileSync(${JSON.stringify(marker)}, JSON.stringify(process.argv.slice(2)));\n`,
         { mode: 0o755 }
       );
+      const launcher =
+        process.platform === 'win32' ? join(home, 'editor.cmd') : editor;
+      if (process.platform === 'win32')
+        writeFileSync(launcher, `@"${process.execPath}" "${editor}" %*\r\n`);
       const result = await runInteractiveDelayed({
         bin,
         args: ['config', '--local'],
         cwd: home,
-        env: { ...env(home), EDITOR: editor }
+        env: { ...env(home), EDITOR: launcher }
       });
       expect(result.timedOut).toBe(false);
       expect(result.exitCode).toBe(0);
-      expect(realpathSync(readFileSync(marker, 'utf8'))).toBe(
-        realpathSync(config)
-      );
+      const argumentsReceived = JSON.parse(readFileSync(marker, 'utf8'));
+      expect(argumentsReceived).toEqual([config]);
+      expect(realpathSync(argumentsReceived[0])).toBe(realpathSync(config));
     } finally {
       rmSync(home, { recursive: true, force: true });
     }

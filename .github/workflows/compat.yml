@@ -28,12 +28,19 @@ jobs:
           if-no-files-found: error
 
   e2e:
-    name: Offline E2E
-    runs-on: ubuntu-latest
+    name: Offline E2E (${{ matrix.os }}, Node ${{ matrix.node-version }})
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        node-version: [24.x]
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup-and-install
+        with:
+          node-version: ${{ matrix.node-version }}
       - run: npm run build
       - name: Run offline E2E with local API fixtures
         run: npx vitest run --config vitest.e2e.v1.config.ts --reporter=default --reporter=json --outputFile=reports/e2e.json
@@ -43,7 +50,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: e2e-test-report
+          name: e2e-test-report-${{ matrix.os }}
           path: reports/e2e.json
           if-no-files-found: error
 

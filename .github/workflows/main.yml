@@ -43,7 +43,7 @@ jobs:
         run: npm run test:ci -- --reporter=default --reporter=json --outputFile=reports/unit.json
 
       - name: Reject skipped or missing unit tests
-        run: node scripts/release/check-test-report.mjs reports/unit.json 350
+        run: node scripts/release/check-test-report.mjs reports/unit.json 353
 
       - name: Validate release tooling
         run: npm run test:release-tools

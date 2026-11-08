@@ -107,6 +107,10 @@ Actions 页能找到 `CI` 和 `Release`；PR 页面能看到 `CI Gate`。本地 
 
 只添加实际成功运行后显示的 `CI Gate` 检查，不要把 workflow 显示名称 `CI` 当作检查名称。无需继续逐项维护矩阵、Contract 或 E2E 的检查列表。
 `CI Gate` 在本地实现中汇总所有矩阵、安装测试及行为测试。行为测试另有内部 `Behaviour Gate` 汇总，解决 `needs` 不能跨独立 workflow 汇总的问题。两个汇总门禁只使用 Node.js 内建模块，无须安装发布工具依赖。
+当前覆盖分为三层：单元测试是 Linux/macOS/Windows × Node 18/20/22/24，每组至少 353 项、0 跳过；contract 保持 Ubuntu + Node 24，至少 155 项、0 跳过；离线 E2E 为 Ubuntu/macOS/Windows × Node 24，每个系统执行相同 7 项、0 跳过。E2E 使用 `fail-fast: false` 和带系统名的报告 artifact；`Behaviour Gate` 依赖整个 `e2e` 矩阵与 contract，任一系统失败、取消或跳过都阻断最终 `CI Gate`。
+
+Windows 覆盖用于配置和登录等功能验证，当前暂无主动 Windows ACL 加固，也未据此证明凭据文件访问控制策略。上线验收应核对三个 E2E job 和各自报告，不能将新增矩阵或本机通过写成三个远端系统均已通过。
+
 如果先前已设置旧检查，确认新门禁在 PR 上成功后再将旧列表替换为 `CI Gate`。
 
 ### 同时保护已发布的版本标签
@@ -321,7 +325,7 @@ stable 相对来源 beta 仅允许 package/lock 版本号、`CHANGELOG.md` 和�
 
 本地实现包括：
 
-- 单一必需检查 CI Gate，覆盖 3 个系统 × Node 18/20/22/24、安装与行为测试。
+- 单一必需检查 CI Gate，覆盖 3 个系统 × Node 18/20/22/24 的单元测试、安装测试、Ubuntu Node 24 contract，以及 3 个系统 × Node 24 的离线 E2E。
 - contract/E2E 缺少构建直接报错；HTTP(S) 请求通过测试专用 preload 阻止外联或转到本地 fixture。
 - 无真实账号也完整执行成功/失败登录、交互输入、登出和实际编辑器配置测试。
 - API 集成成功断言、准确命令参数、唯一测试资源与失败清理、最终 tarball 的 staging 部署验证。

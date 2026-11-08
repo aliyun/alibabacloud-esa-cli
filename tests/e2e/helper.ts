@@ -1,9 +1,9 @@
 import { resolve } from 'node:path';
-import { runCliProcess } from '../support/cli-process';
+import { stripVTControlCharacters } from 'node:util';
+import { runCliProcess, type CliInput } from '../support/cli-process';
 
 export function stripAnsi(text: string): string {
-  // eslint-disable-next-line no-control-regex
-  return text.replace(/\u001b\[[0-9;?]*[A-Za-z]/g, '');
+  return stripVTControlCharacters(text);
 }
 
 export async function runInteractiveDelayed(
@@ -14,7 +14,7 @@ export async function runInteractiveDelayed(
     env?: Record<string, string>;
     timeout?: number;
   },
-  inputs: { value: string; delay?: number }[] = []
+  inputs: CliInput[] = []
 ) {
   const result = await runCliProcess({
     ...options,

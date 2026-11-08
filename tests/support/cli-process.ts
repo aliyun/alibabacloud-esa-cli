@@ -1,5 +1,12 @@
 import { spawn } from 'node:child_process';
 import { resolve } from 'node:path';
+import { stripVTControlCharacters } from 'node:util';
+
+export interface CliInput {
+  value: string;
+  waitFor?: string | RegExp;
+  delay?: number;
+}
 
 export function cliEnvironment(
   overrides: Record<string, string> = {}
@@ -26,7 +33,7 @@ export function runCliProcess(options: {
   cwd?: string;
   env?: Record<string, string>;
   timeout?: number;
-  inputs?: { value: string; delay?: number }[];
+  inputs?: CliInput[];
   nodeArgs?: string[];
 }) {
   return new Promise<{
@@ -47,7 +54,12 @@ export function runCliProcess(options: {
     );
     let stdout = '';
     let stderr = '';
+    let output = '';
     let timedOut = false;
+    let inputIndex = 0;
+    let promptStart = 0;
+    let inputPending = false;
+    const inputs = options.inputs ?? [];
     const timers: ReturnType<typeof setTimeout>[] = [];
     const stop = (signal: NodeJS.Signals) => {
       if (!child.pid) return;
@@ -63,29 +75,48 @@ export function runCliProcess(options: {
         }
       }
     };
-    child.stdout.on('data', (chunk) => {
+    const advanceInput = () => {
+      if (inputPending || timedOut || inputIndex === inputs.length) return;
+      const input = inputs[inputIndex];
+      const prompt = stripVTControlCharacters(output.slice(promptStart));
+      if (typeof input.waitFor === 'string' && !prompt.includes(input.waitFor))
+        return;
+      if (input.waitFor instanceof RegExp) {
+        input.waitFor.lastIndex = 0;
+        if (!input.waitFor.test(prompt)) return;
+      }
+      inputPending = true;
+      const send = () => {
+        inputPending = false;
+        if (timedOut || child.stdin.destroyed) return;
+        // Only output produced after this answer may satisfy the next prompt.
+        promptStart = output.length;
+        inputIndex++;
+        // Deliver EOF after the final answer so a pipe-backed prompt can exit.
+        if (inputIndex === inputs.length) child.stdin.end(input.value);
+        else child.stdin.write(input.value);
+        advanceInput();
+      };
+      const delay = input.delay ?? (input.waitFor === undefined ? 1000 : 0);
+      if (delay > 0) timers.push(setTimeout(send, delay));
+      else send();
+    };
+    child.stdout.setEncoding('utf8');
+    child.stderr.setEncoding('utf8');
+    child.stdout.on('data', (chunk: string) => {
       stdout += chunk;
+      output += chunk;
+      advanceInput();
     });
-    child.stderr.on('data', (chunk) => {
+    child.stderr.on('data', (chunk: string) => {
       stderr += chunk;
+      output += chunk;
+      advanceInput();
     });
     child.stdin.on('error', () => {
-      /* The CLI can exit before delayed input. */
+      /* A premature close is checked below; do not swallow a failed input. */
     });
-    let delay = 0;
-    const inputs = options.inputs ?? [];
-    for (const [index, input] of inputs.entries()) {
-      delay += input.delay ?? 1000;
-      timers.push(
-        setTimeout(() => {
-          if (!child.stdin.destroyed) {
-            // Deliver EOF after the final answer so a pipe-backed prompt can exit.
-            if (index === inputs.length - 1) child.stdin.end(input.value);
-            else child.stdin.write(input.value);
-          }
-        }, delay)
-      );
-    }
+    advanceInput();
     if (!inputs.length) child.stdin.end();
     timers.push(
       setTimeout(() => {
@@ -100,6 +131,14 @@ export function runCliProcess(options: {
     });
     child.once('close', (exitCode) => {
       timers.forEach(clearTimeout);
+      if (!timedOut && inputIndex !== inputs.length) {
+        reject(
+          new Error(
+            `CLI exited before input ${inputIndex + 1}/${inputs.length}; expected prompt: ${String(inputs[inputIndex].waitFor ?? '(delayed input)')}`
+          )
+        );
+        return;
+      }
       done({ stdout, stderr, exitCode, timedOut });
     });
   });

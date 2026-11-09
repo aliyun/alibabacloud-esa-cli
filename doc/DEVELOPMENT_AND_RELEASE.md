@@ -67,11 +67,11 @@ npm run test:e2e
 | `npm run test:release-tools` | 发布工具的候选、版本、产物与失败处理约束  |
 | `npm run build`              | 生成词条、编译 TypeScript、复制运行时资源 |
 | `npm run test:compat:v1`     | 已构建 CLI 的命令、参数、帮助及配置契约   |
-| `npm run test:e2e`           | 使用本地模拟 API 的登录、交互与编辑器流程 |
+| `npm run test:e2e`           | 本地 API 下的登录、env/secret、交互与编辑器流程 |
 
-CI 的单元测试保持 Linux/macOS/Windows × Node.js 18/20/22/24，每组至少执行 353 项且不允许跳过；契约测试固定 Ubuntu + Node.js 24，至少 155 项。离线 E2E 在 `ubuntu-latest`、`macos-latest`、`windows-latest` 的 Node.js 24 上分别执行相同 7 项测试且不允许跳过；矩阵设置 `fail-fast: false`，一个系统失败仍让其他系统完成，全部结果进入 `Behaviour Gate`。
+CI 的单元测试保持 Linux/macOS/Windows × Node.js 18/20/22/24，每组至少执行 353 项且不允许跳过；契约测试固定 Ubuntu + Node.js 24，至少 264 项。离线 E2E 在 `ubuntu-latest`、`macos-latest`、`windows-latest` 的 Node.js 24 上分别执行相同 16 项测试且不允许跳过；矩阵设置 `fail-fast: false`，一个系统失败仍让其他系统完成，全部结果进入 `Behaviour Gate`。
 
-Windows E2E 验证配置读写、登录/登出和交互等功能。当前没有主动加固 Windows ACL，功能测试通过不代表已验证凭据文件的 Windows 访问控制；新增矩阵配置仍须在 GitHub 实际运行验收。
+三种系统执行相同的离线 E2E，覆盖凭据保存、登录/登出、env/secret 请求和交互等功能。它验证真实 CLI 进程到本地 API 的调用及错误处理；真实 ESA 的权限、持久化和部署效果仍由发布阶段验收。当前没有主动加固 Windows ACL，功能测试通过不代表已验证凭据文件的 Windows 访问控制。远端矩阵是否通过，以对应提交的 Actions 结果为准。
 
 上述检查不需要真实 ESA 凭据。仅修改 Markdown 时，本地检查格式、链接和示例即可，PR 仍须通过完整 CI。`npm test` 是交互式入口，不能表示整套检查已完成。缺少凭据而跳过真实集成测试，不算验证通过。
 

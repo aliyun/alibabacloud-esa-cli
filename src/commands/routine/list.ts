@@ -21,7 +21,9 @@ const list: CommandModule = {
         ),
         type: 'string'
       })
-      .usage(`${t('common_usage').d('Usage')}: \$0 list [--keyword <keyword>]`);
+      .usage(
+        `${t('common_usage').d('Usage')}: $0 project list [--keyword <keyword>]`
+      );
   },
   handler: async (argv: ArgumentsCamelCase) => {
     await handleList(argv);

@@ -18,7 +18,7 @@ jobs:
       - name: Run offline contract tests
         run: npx vitest run --config vitest.compat.config.ts --reporter=default --reporter=json --outputFile=reports/contract.json
       - name: Reject skipped or missing contract tests
-        run: node scripts/release/check-test-report.mjs reports/contract.json 155
+        run: node scripts/release/check-test-report.mjs reports/contract.json 264
       - name: Upload report
         if: always()
         uses: actions/upload-artifact@v4
@@ -45,7 +45,7 @@ jobs:
       - name: Run offline E2E with local API fixtures
         run: npx vitest run --config vitest.e2e.v1.config.ts --reporter=default --reporter=json --outputFile=reports/e2e.json
       - name: Reject skipped or missing E2E tests
-        run: node scripts/release/check-test-report.mjs reports/e2e.json 7
+        run: node scripts/release/check-test-report.mjs reports/e2e.json 16
       - name: Upload report
         if: always()
         uses: actions/upload-artifact@v4

@@ -1,452 +1,520 @@
 /**
- * Contract Test: Command Existence, Options & Help
- *
- * Verifies that every command, subcommand, and option is correctly
- * registered and accessible via --help. This is the most basic
- * correctness guarantee — if a command or option is missing or broken,
- * users will be affected immediately.
- *
- * The test is data-driven: the COMMAND_TREE array below is the single source
- * of truth for the full CLI surface. Add a new command/option here and the
- * tests auto-generate.
- *
- * Usage:
- *   npx vitest run --config vitest.compat.config.ts
+ * Command contracts drive the built CLI without source mocks. Help covers the
+ * advertised surface; parser failures must exit 1 with the expected diagnostic
+ * before prompts, local runtime startup, or cloud requests can run.
  */
-import { describe, it, expect } from 'vitest';
+import { beforeAll, describe, it, expect } from 'vitest';
 
-import { runCli, isCliBuilt, NOT_BUILT_REASON } from './helper';
-
-// The contract tests drive the built CLI, so skip loudly rather than failing
-// ~150 assertions when dist/ is missing.
-const describeCli = isCliBuilt ? describe : describe.skip;
-if (!isCliBuilt) {
-  console.warn(`\n⚠ Skipping contract tests: ${NOT_BUILT_REASON}\n`);
-}
-
-// ─── Command Tree Definition ───────────────────────────────────────
-// This is the single source of truth for the CLI surface.
-// Every command, subcommand, and option must be listed here.
-// The tests below are auto-generated from this data.
+import { runCli, type CliResult } from './helper';
 
 interface OptionSpec {
-  /** Long form, e.g. '--environment' */
   long: string;
-  /** Short alias, e.g. '-e'. Omit if no alias. */
-  short?: string;
-  /** Whether the option takes a value (e.g. '-e staging') vs a flag (e.g. '-m'). */
-  takesValue?: boolean;
+  alias?: string;
 }
 
 interface CommandSpec {
-  /** Full command path as array, e.g. ['route', 'add'] */
   path: string[];
-  /** Options for this command (not including global options) */
   options: OptionSpec[];
-  /** Whether this command has required positional args (enforced by framework) */
-  hasRequiredPositional?: boolean;
+  requiredPositional?: string;
+  positionalExample?: string;
+  requiresEnvironment?: boolean;
 }
 
+const ENVIRONMENT_OPTIONS: OptionSpec[] = [
+  { long: '--environment', alias: '-e' },
+  { long: '--name', alias: '-n' }
+];
+
 const COMMAND_TREE: CommandSpec[] = [
-  // ── Simple commands (no subcommands) ────────────────────────────
   {
     path: ['login'],
     options: [
-      { long: '--access-key-id', short: '-ak', takesValue: true },
-      { long: '--access-key-secret', short: '-sk', takesValue: true },
-    ],
+      { long: '--access-key-id', alias: '--ak' },
+      { long: '--access-key-secret', alias: '--sk' },
+      { long: '--sts-token' }
+    ]
   },
-  {
-    path: ['logout'],
-    options: [],
-  },
+  { path: ['logout'], options: [] },
   {
     path: ['config'],
     options: [
-      { long: '--local', short: '-l' },
-      { long: '--global', short: '-g' },
-    ],
+      { long: '--local', alias: '-l' },
+      { long: '--global', alias: '-g' }
+    ]
   },
+  { path: ['lang'], options: [] },
   {
-    path: ['lang'],
-    options: [],
+    path: ['dev'],
+    options: [
+      { long: '--port', alias: '-p' },
+      { long: '--minify', alias: '-m' },
+      { long: '--refresh-command' },
+      { long: '--local-upstream' }
+    ]
   },
   {
     path: ['commit'],
     options: [
-      { long: '--minify', short: '-m' },
-      { long: '--assets', short: '-a', takesValue: true },
-      { long: '--description', short: '-d', takesValue: true },
-      { long: '--name', short: '-n', takesValue: true },
+      { long: '--minify', alias: '-m' },
+      { long: '--assets', alias: '-a' },
+      { long: '--description', alias: '-d' },
+      { long: '--name', alias: '-n' },
+      { long: '--environment', alias: '-e' },
       { long: '--bundle' },
-    ],
+      { long: '--no-bundle' }
+    ]
   },
   {
     path: ['deploy'],
     options: [
-      { long: '--version', short: '-v', takesValue: true },
-      { long: '--environment', short: '-e', takesValue: true },
-      { long: '--name', short: '-n', takesValue: true },
-      { long: '--assets', short: '-a', takesValue: true },
-      { long: '--description', short: '-d', takesValue: true },
-      { long: '--minify', short: '-m' },
+      { long: '--version', alias: '-v' },
+      { long: '--environment', alias: '-e' },
+      { long: '--name', alias: '-n' },
+      { long: '--assets', alias: '-a' },
+      { long: '--description', alias: '-d' },
+      { long: '--minify', alias: '-m' },
       { long: '--bundle' },
-      { long: '--versions', takesValue: true },
-    ],
+      { long: '--no-bundle' },
+      { long: '--preview' },
+      { long: '--no-preview' },
+      { long: '--versions' }
+    ]
   },
   {
     path: ['init'],
     options: [
-      { long: '--framework', short: '-f', takesValue: true },
-      { long: '--language', short: '-l', takesValue: true },
-      { long: '--template', short: '-t', takesValue: true },
-      { long: '--yes', short: '-y' },
-      { long: '--git', short: '-g' },
-      { long: '--deploy', short: '-d' },
-      { long: '--install-esa-cli' },
-    ],
+      { long: '--framework', alias: '-f' },
+      { long: '--language', alias: '-l' },
+      { long: '--template', alias: '-t' },
+      { long: '--yes', alias: '-y' },
+      { long: '--git', alias: '-g' },
+      { long: '--deploy', alias: '-d' },
+      { long: '--install-esa-cli' }
+    ]
   },
-
-  // ── site ────────────────────────────────────────────────────────
-  {
-    path: ['site', 'list'],
-    options: [],
-  },
-
-  // ── project (command name: "project", alias: "Functions & Pages") ──
+  { path: ['site', 'list'], options: [] },
   {
     path: ['project', 'list'],
-    options: [{ long: '--keyword', short: '-k', takesValue: true }],
+    options: [{ long: '--keyword', alias: '-k' }]
   },
   {
     path: ['project', 'delete'],
     options: [],
-    hasRequiredPositional: true, // <projectName>
+    requiredPositional: 'projectName',
+    positionalExample: 'contract-project'
   },
-
-  // ── domain ───────────────────────────────────────────────────────
   {
     path: ['domain', 'add'],
     options: [],
-    hasRequiredPositional: true, // <domain>
+    requiredPositional: 'domain',
+    positionalExample: 'contract.example.invalid'
   },
-  {
-    path: ['domain', 'list'],
-    options: [],
-  },
+  { path: ['domain', 'list'], options: [] },
   {
     path: ['domain', 'delete'],
     options: [],
-    hasRequiredPositional: true, // <domain>
+    requiredPositional: 'domain',
+    positionalExample: 'contract.example.invalid'
   },
-
-  // ── deployments ──────────────────────────────────────────────────
-  {
-    path: ['deployments', 'list'],
-    options: [],
-  },
+  { path: ['deployments', 'list'], options: [] },
   {
     path: ['deployments', 'delete'],
-    options: [{ long: '-i' }],
-    hasRequiredPositional: true, // <deploymentId>
+    options: [{ long: '-i' }]
+    // [deploymentId..] is optional because -i selects IDs interactively.
   },
-
-  // ── route ───────────────────────────────────────────────────────
   {
     path: ['route', 'add'],
     options: [
-      { long: '--route', short: '-r', takesValue: true },
-      { long: '--site', short: '-s', takesValue: true },
-      { long: '--alias', short: '-a', takesValue: true },
-    ],
+      { long: '--route', alias: '-r' },
+      { long: '--site', alias: '-s' },
+      { long: '--alias', alias: '-a' }
+    ]
   },
-  {
-    path: ['route', 'list'],
-    options: [],
-  },
+  { path: ['route', 'list'], options: [] },
   {
     path: ['route', 'delete'],
     options: [],
-    hasRequiredPositional: true, // <routeName>
+    requiredPositional: 'routeName',
+    positionalExample: 'contract-route'
   },
+  {
+    path: ['env', 'list'],
+    options: ENVIRONMENT_OPTIONS,
+    requiresEnvironment: true
+  },
+  {
+    path: ['env', 'set'],
+    options: ENVIRONMENT_OPTIONS,
+    requiredPositional: 'assignment',
+    positionalExample: 'CONTRACT_KEY=value',
+    requiresEnvironment: true
+  },
+  {
+    path: ['env', 'delete'],
+    options: ENVIRONMENT_OPTIONS,
+    requiredPositional: 'key',
+    positionalExample: 'CONTRACT_KEY',
+    requiresEnvironment: true
+  },
+  {
+    path: ['secret', 'put'],
+    options: [...ENVIRONMENT_OPTIONS, { long: '--stdin' }],
+    requiredPositional: 'key',
+    positionalExample: 'CONTRACT_SECRET',
+    requiresEnvironment: true
+  },
+  {
+    path: ['secret', 'bulk'],
+    options: ENVIRONMENT_OPTIONS,
+    requiredPositional: 'file',
+    positionalExample: 'contract-secrets.env',
+    requiresEnvironment: true
+  }
 ];
 
-// ─── Global options (apply to all commands) ─────────────────────────
 const GLOBAL_OPTIONS: OptionSpec[] = [
   { long: '--debug' },
   { long: '--skip-update-check' },
-  { long: '--help', short: '-h' },
-  { long: '--version', short: '-v' },
+  { long: '--help', alias: '-h' },
+  { long: '--version', alias: '-v' }
 ];
 
-// ─── Helper: format command path as string ─────────────────────────
-function cmdStr(spec: CommandSpec): string {
-  return spec.path.join(' ');
+const PARENT_COMMANDS = [
+  'site',
+  'project',
+  'domain',
+  'deployments',
+  'route',
+  'env',
+  'secret'
+];
+
+function output(result: CliResult): string {
+  return result.stdout + result.stderr;
 }
 
-// ─── Helper: get parent commands for --help on parent groups ────────
-const PARENT_COMMANDS: string[][] = [
-  ['site'],
-  ['project'],
-  ['domain'],
-  ['deployments'],
-  ['route'],
-];
+function expectHelp(result: CliResult): void {
+  expect(result.exitCode).toBe(0);
+  expect(output(result)).toContain('Options:');
+  expect(output(result)).toContain('--help');
+}
 
-// ─── Tests ──────────────────────────────────────────────────────────
-
-describeCli('root command', () => {
-  it('esa --version outputs a semver version', async () => {
-    const result = await runCli(['--skip-update-check', '--version']);
-    expect(result.exitCode).toBe(0);
-    expect(result.stdout).toMatch(/\d+\.\d+\.\d+/);
-  });
-
-  it('esa -v (short alias) outputs a semver version', async () => {
-    const result = await runCli(['--skip-update-check', '-v']);
-    expect(result.exitCode).toBe(0);
-    expect(result.stdout).toMatch(/\d+\.\d+\.\d+/);
-  });
-
-  it('esa --help exits 0 and lists all commands', async () => {
-    const result = await runCli(['--skip-update-check', '--help']);
-    expect(result.exitCode).toBe(0);
-
-    // Every top-level command must appear in root help
-    const topCommands = new Set(COMMAND_TREE.map((c) => c.path[0]));
-    for (const cmd of topCommands) {
-      expect(result.stdout.toLowerCase()).toContain(cmd);
-    }
-  });
-
-  it('esa -h (short alias) exits 0', async () => {
-    const result = await runCli(['--skip-update-check', '-h']);
-    expect(result.exitCode).toBe(0);
-  });
-
-  it('esa with no args exits 0 (shows help)', async () => {
-    const result = await runCli(['--skip-update-check']);
-    expect(result.exitCode).toBe(0);
-  });
-
-  it('esa <unknown-command> exits non-zero', async () => {
-    const result = await runCli(['--skip-update-check', 'this-command-does-not-exist']);
-    expect(result.exitCode).not.toBe(0);
-  });
-
-  it('esa --debug does not crash', async () => {
-    const result = await runCli(['--skip-update-check', '--debug', '--help']);
-    expect(result.exitCode).toBe(0);
-  });
-
-  it('esa --skip-update-check does not crash', async () => {
-    const result = await runCli(['--skip-update-check', '--help']);
-    expect(result.exitCode).toBe(0);
-  });
-});
-
-// ── Parent command --help (site, project, domain, deployments, route) ──
-describeCli('parent command --help', () => {
-  for (const parent of PARENT_COMMANDS) {
-    const name = parent.join(' ');
-
-    it(`esa ${name} --help exits 0`, async () => {
-      const result = await runCli(['--skip-update-check', ...parent, '--help']);
-      expect(result.exitCode).toBe(0);
-    });
-
-    it(`esa ${name} -h exits 0`, async () => {
-      const result = await runCli(['--skip-update-check', ...parent, '-h']);
-      expect(result.exitCode).toBe(0);
-    });
-
-    it(`esa ${name} --help lists subcommands`, async () => {
-      const result = await runCli(['--skip-update-check', ...parent, '--help']);
-      expect(result.exitCode).toBe(0);
-
-      // All subcommands of this parent must appear in help
-      const subcommands = COMMAND_TREE.filter(
-        (c) => c.path.length > 1 && c.path[0] === parent[0],
-      );
-      for (const sub of subcommands) {
-        const subName = sub.path[1];
-        expect(result.stdout.toLowerCase()).toContain(subName);
-      }
-    });
-  }
-});
-
-// ── Every command: --help and -h exit 0 ────────────────────────────
-describeCli('command --help does not crash', () => {
-  for (const spec of COMMAND_TREE) {
-    const name = cmdStr(spec);
-
-    it(`esa ${name} --help exits 0`, async () => {
-      const result = await runCli(['--skip-update-check', ...spec.path, '--help']);
-      expect(result.exitCode).toBe(0);
-    });
-
-    // Commands with required positional args exit 1 on -h because yargs
-    // validates positionals before processing the -h flag.
-    if (spec.hasRequiredPositional) {
-      it(`esa ${name} -h exits (yargs validates positional first)`, async () => {
-        const result = await runCli(['--skip-update-check', ...spec.path, '-h']);
-        expect(result.exitCode).not.toBe(null);
-      });
-    } else {
-      it(`esa ${name} -h exits 0`, async () => {
-        const result = await runCli(['--skip-update-check', ...spec.path, '-h']);
-        expect(result.exitCode).toBe(0);
-      });
-    }
-  }
-});
-
-// ── Every option: appears in --help output ──────────────────────────
-describeCli('command options appear in --help', () => {
-  for (const spec of COMMAND_TREE) {
-    const name = cmdStr(spec);
-
-    for (const opt of spec.options) {
-      // Extract the option name without the leading -- or value placeholder
-      // e.g. '--environment' → 'environment', '--access-key-id' → 'access-key-id'
-      const optLongName = opt.long.replace(/^--/, '');
-
-      it(`esa ${name} --help mentions ${opt.long}`, async () => {
-        const result = await runCli(['--skip-update-check', ...spec.path, '--help']);
-        expect(result.exitCode).toBe(0);
-
-        const output = (result.stdout + result.stderr).toLowerCase();
-        // The long form should appear (e.g. 'environment' in '--environment')
-        expect(output).toContain(optLongName.toLowerCase());
-      });
-
-      if (opt.short) {
-        it(`esa ${name} --help mentions ${opt.short}`, async () => {
-          const result = await runCli(['--skip-update-check', ...spec.path, '--help']);
-          expect(result.exitCode).toBe(0);
-
-          const output = result.stdout + result.stderr;
-          // The short form should appear somewhere in help
-          expect(output).toContain(opt.short);
-        });
-      }
-    }
-  }
-});
-
-// ── Required positional args: missing them should error ─────────────
-describeCli('required positional args enforced', () => {
-  // These commands have required positionals defined in the command spec.
-  // Running without the required arg should exit non-zero.
-  // We use --skip-update-check to avoid network calls during the test.
-  const commandsWithRequiredPositional = COMMAND_TREE.filter(
-    (c) => c.hasRequiredPositional,
+function expectFailure(result: CliResult, diagnostic: string | RegExp): void {
+  expect(result.exitCode).toBe(1);
+  if (typeof diagnostic === 'string')
+    expect(output(result)).toContain(diagnostic);
+  else expect(output(result)).toMatch(diagnostic);
+  expect(output(result)).not.toMatch(
+    /Offline CLI attempted network access|TypeError:|ReferenceError:/
   );
+}
 
-  for (const spec of commandsWithRequiredPositional) {
-    const name = cmdStr(spec);
+function positionalArgs(spec: CommandSpec): string[] {
+  return spec.positionalExample ? [spec.positionalExample] : [];
+}
 
-    it(`esa ${name} without required arg exits non-zero`, async () => {
-      const result = await runCli([
-        ...spec.path,
-        '--skip-update-check',
-      ]);
-      // Should not exit 0 — the required positional is missing
-      // Note: the handler may still run in some cases, but it should
-      // produce an error message and/or non-zero exit.
-      // We check exitCode OR error message (some handlers return 0
-      // but print an error).
-      const output = result.stdout + result.stderr;
-      const outputLower = output.toLowerCase();
-      // Check both English and Chinese error keywords (CLI supports i18n)
-      const hasError =
-        result.exitCode !== 0 ||
-        outputLower.includes('error') ||
-        outputLower.includes('required') ||
-        outputLower.includes('missing') ||
-        outputLower.includes('not') ||
-        outputLower.includes('please') ||
-        outputLower.includes('specify') ||
-        output.includes('缺少') ||     // "missing" in Chinese
-        output.includes('错误') ||     // "error" in Chinese
-        output.includes('失败') ||     // "failure" in Chinese
-        output.includes('必须');       // "required/must" in Chinese
-      expect(hasError).toBe(true);
+function requiredOptions(spec: CommandSpec): string[] {
+  return spec.requiresEnvironment ? ['--environment', 'staging'] : [];
+}
+
+describe('root command', () => {
+  for (const option of ['--version', '-v']) {
+    it(`esa ${option} outputs only the package semver`, async () => {
+      const result = await runCli([option, '--skip-update-check']);
+      expect(result.exitCode).toBe(0);
+      expect(result.stdout.trim()).toMatch(
+        /^v?\d+\.\d+\.\d+(?:-[\da-zA-Z.-]+)?(?:\+[\da-zA-Z.-]+)?$/
+      );
     });
   }
+
+  it('root help exactly matches the command inventory', async () => {
+    const result = await runCli(['--help', '--skip-update-check']);
+    expectHelp(result);
+    const advertised = [...result.stdout.matchAll(/^\s+esa-cli ([a-z-]+)\b/gm)]
+      .map((match) => match[1])
+      .sort();
+    expect(advertised).toEqual(
+      [...new Set(COMMAND_TREE.map((spec) => spec.path[0]))].sort()
+    );
+  });
+
+  for (const args of [[], ['-h'], ['--debug', '--help']]) {
+    it(`esa ${args.join(' ') || '(no args)'} displays help`, async () => {
+      expectHelp(await runCli([...args, '--skip-update-check']));
+    });
+  }
+
+  it('an unknown command exits 1 with the parser diagnostic', async () => {
+    expectFailure(
+      await runCli(['this-command-does-not-exist', '--skip-update-check']),
+      'Unknown argument: this-command-does-not-exist'
+    );
+  });
 });
 
-// ── Global options are documented in root --help ────────────────────
-describeCli('global options appear in root --help', () => {
-  for (const opt of GLOBAL_OPTIONS) {
-    it(`esa --help mentions ${opt.long}`, async () => {
-      const result = await runCli(['--skip-update-check', '--help']);
-      expect(result.exitCode).toBe(0);
-
-      const output = (result.stdout + result.stderr).toLowerCase();
-      expect(output).toContain(opt.long.replace(/^--/, '').toLowerCase());
-    });
-
-    if (opt.short) {
-      it(`esa --help mentions ${opt.short}`, async () => {
-        const result = await runCli(['--skip-update-check', '--help']);
-        expect(result.exitCode).toBe(0);
-        expect(result.stdout + result.stderr).toContain(opt.short);
+describe('parent command help', () => {
+  for (const parent of PARENT_COMMANDS) {
+    for (const flag of ['--help', '-h']) {
+      it(`esa ${parent} ${flag} lists every registered subcommand`, async () => {
+        const result = await runCli([parent, flag, '--skip-update-check']);
+        expectHelp(result);
+        const advertised = [
+          ...output(result).matchAll(
+            new RegExp(`^\\s+esa-cli ${parent} ([a-z-]+)\\b`, 'gm')
+          )
+        ]
+          .map((match) => match[1])
+          .sort();
+        expect(advertised).toEqual(
+          COMMAND_TREE.filter((spec) => spec.path[0] === parent)
+            .map((spec) => spec.path[1])
+            .sort()
+        );
       });
     }
   }
 });
 
-// ── Global options work on all commands ────────────────────────────
-describeCli('global options on commands', () => {
-  // Pick a few representative commands to test global options
-  const sampleCommands = [
-    ['login'],
-    ['logout'],
-    ['config'],
-    ['commit'],
-    ['deploy'],
-    ['init'],
-    ['site', 'list'],
-    ['project', 'list'],
-    ['route', 'add'],
-  ];
+describe('command help and option inventory', () => {
+  for (const spec of COMMAND_TREE) {
+    const name = spec.path.join(' ');
+    describe(`esa ${name}`, () => {
+      let help: CliResult;
+      beforeAll(async () => {
+        help = await runCli([...spec.path, '--help', '--skip-update-check']);
+      });
 
-  for (const cmd of sampleCommands) {
-    const name = cmd.join(' ');
+      it('--help exits 0 and displays help', () => {
+        expectHelp(help);
+        expect(output(help)).toContain(`esa-cli ${name}`);
+      });
 
-    it(`esa ${name} --debug --help exits 0`, async () => {
-      const result = await runCli(['--skip-update-check', ...cmd, '--debug', '--help']);
-      expect(result.exitCode).toBe(0);
+      it('-h independently exits 0 and displays help', async () => {
+        const result = await runCli([
+          ...spec.path,
+          '-h',
+          '--skip-update-check'
+        ]);
+        expectHelp(result);
+        expect(output(result)).toContain(`esa-cli ${name}`);
+      });
+
+      for (const option of spec.options) {
+        for (const flag of [
+          option.long,
+          ...(option.alias ? [option.alias] : [])
+        ]) {
+          it(`--help documents ${flag}`, () => {
+            expectHelp(help);
+            expect(output(help)).toMatch(
+              new RegExp(`(?:^|[\\s,])${flag}(?=[\\s,]|$)`, 'm')
+            );
+          });
+        }
+      }
     });
+  }
 
-    it(`esa ${name} --skip-update-check --help exits 0`, async () => {
-      const result = await runCli([...cmd, '--skip-update-check', '--help']);
-      expect(result.exitCode).toBe(0);
+  it('dev documents inspect-port exactly on platforms using the mock runtime', async () => {
+    const result = await runCli(['dev', '--help', '--skip-update-check']);
+    expectHelp(result);
+    const usesEw2 =
+      process.platform === 'darwin' ||
+      (process.platform === 'linux' && process.arch === 'x64');
+    expect(output(result).includes('--inspect-port')).toBe(!usesEw2);
+  });
+});
+
+describe('required arguments are rejected before executing commands', () => {
+  for (const spec of COMMAND_TREE.filter(
+    (command) => command.requiredPositional
+  )) {
+    it(`esa ${spec.path.join(' ')} requires <${spec.requiredPositional}>`, async () => {
+      expectFailure(
+        await runCli([
+          ...spec.path,
+          ...requiredOptions(spec),
+          '--skip-update-check'
+        ]),
+        'Not enough non-option arguments: got 0, need at least 1'
+      );
+    });
+  }
+
+  for (const parent of ['env', 'secret']) {
+    it(`esa ${parent} requires a subcommand`, async () => {
+      expectFailure(
+        await runCli([parent, '--skip-update-check']),
+        'Not enough non-option arguments: got 0, need at least 1'
+      );
+    });
+  }
+
+  for (const spec of COMMAND_TREE.filter(
+    (command) => command.requiresEnvironment
+  )) {
+    it(`esa ${spec.path.join(' ')} requires --environment`, async () => {
+      expectFailure(
+        await runCli([
+          ...spec.path,
+          ...positionalArgs(spec),
+          '--skip-update-check'
+        ]),
+        'Missing required argument: environment'
+      );
     });
   }
 });
 
-// ── Unknown options: CLI should not crash ──────────────────────
-// yargs strict mode rejects unknown options for commands with .fail()
-// handlers. The contract test verifies the CLI does not CRASH on
-// unknown options, regardless of whether it rejects or ignores them.
-describeCli('unknown options do not crash', () => {
-  // Only test commands that don't have interactive handlers (which would hang)
-  const testCases = [
-    { cmd: ['route', 'add'], option: '--invalid-opt', extraArgs: [] },
-    { cmd: ['config'], option: '--bogus-flag', extraArgs: ['-l'] },
-    { cmd: ['site', 'list'], option: '--fake-flag', extraArgs: [] },
+describe('invalid values are rejected without --help bypassing validation', () => {
+  const environmentCommands = COMMAND_TREE.filter((spec) =>
+    spec.options.some((option) => option.long === '--environment')
+  );
+  for (const spec of environmentCommands) {
+    for (const flag of ['--environment', '-e']) {
+      it(`esa ${spec.path.join(' ')} rejects ${flag} development`, async () => {
+        const result = await runCli([
+          ...spec.path,
+          ...positionalArgs(spec),
+          flag,
+          'development',
+          '--skip-update-check'
+        ]);
+        expectFailure(result, 'Invalid values:');
+        expect(output(result)).toContain('Argument: environment');
+        expect(output(result)).toContain('Given: "development"');
+        expect(output(result)).toContain('Choices: "staging", "production"');
+      });
+    }
+  }
+
+  for (const flag of ['--language', '-l']) {
+    it(`esa init rejects ${flag} coffeescript before installation`, async () => {
+      const result = await runCli([
+        'init',
+        flag,
+        'coffeescript',
+        '--skip-update-check'
+      ]);
+      expectFailure(result, 'Invalid values:');
+      expect(output(result)).toContain('Argument: language');
+      expect(output(result)).toContain('Given: "coffeescript"');
+      expect(output(result)).toContain('Choices: "typescript", "javascript"');
+    });
+  }
+
+  it('env set rejects an assignment without = before resolving credentials', async () => {
+    expectFailure(
+      await runCli([
+        'env',
+        'set',
+        'CONTRACT_KEY',
+        '--environment',
+        'staging',
+        '--skip-update-check'
+      ]),
+      'Expected an environment variable in KEY=VALUE format.'
+    );
+  });
+
+  it('secret put rejects an invalid key before requesting a secret value', async () => {
+    expectFailure(
+      await runCli([
+        'secret',
+        'put',
+        'INVALID-KEY',
+        '--environment',
+        'staging',
+        '--stdin',
+        '--skip-update-check'
+      ]),
+      'Environment variable key INVALID-KEY may contain only letters, numbers, and underscores.'
+    );
+  });
+});
+
+describe('deploy parser validates weighted versions before accessing a project', () => {
+  const cases = [
+    {
+      args: ['--versions', 'v1:not-a-number'],
+      diagnostic: 'invalid --versions format. Use v1:80,v2:20'
+    },
+    {
+      args: ['--versions', 'v1:90'],
+      diagnostic: 'single version must be 100%'
+    },
+    {
+      args: ['--versions', 'v1:80', '--versions', 'v2:10'],
+      diagnostic: 'percentages must sum to 100'
+    },
+    {
+      args: ['--versions', 'v1:50,v2:25,v3:25'],
+      diagnostic: 'at most two versions are supported'
+    }
   ];
+  for (const { args, diagnostic } of cases) {
+    it(`rejects ${args.join(' ')}`, async () => {
+      expectFailure(
+        await runCli(['deploy', ...args, '--skip-update-check']),
+        `Deploy failed: ${diagnostic}`
+      );
+    });
+  }
 
-  for (const { cmd, option, extraArgs } of testCases) {
-    const name = cmd.join(' ');
+  // These cases prove flag registration through the real parser. Preview URL
+  // display and bundle output require successful deployments and are not tested here.
+  for (const flag of ['--preview', '--no-preview', '--bundle', '--no-bundle']) {
+    it(`accepts ${flag} and still rejects invalid version percentages`, async () => {
+      expectFailure(
+        await runCli([
+          'deploy',
+          flag,
+          '--versions',
+          'v1:not-a-number',
+          '--skip-update-check'
+        ]),
+        'Deploy failed: invalid --versions format. Use v1:80,v2:20'
+      );
+    });
+  }
+});
 
-    it(`esa ${name} ${option} does not crash (exits within timeout)`, async () => {
-      const result = await runCli([...cmd, ...extraArgs, option, '--skip-update-check']);
-      // Should exit (not hang) and produce some output
-      expect(result.exitCode).not.toBe(null);
-    }, 15000);
+describe('global options', () => {
+  for (const option of GLOBAL_OPTIONS) {
+    for (const flag of [option.long, ...(option.alias ? [option.alias] : [])]) {
+      it(`root help documents ${flag}`, async () => {
+        const result = await runCli(['--help', '--skip-update-check']);
+        expectHelp(result);
+        expect(output(result)).toMatch(
+          new RegExp(`(?:^|[\\s,])${flag}(?=[\\s,]|$)`, 'm')
+        );
+      });
+    }
+  }
+
+  for (const spec of COMMAND_TREE) {
+    it(`esa ${spec.path.join(' ')} accepts --debug and --skip-update-check`, async () => {
+      expectHelp(
+        await runCli([...spec.path, '--debug', '--skip-update-check', '--help'])
+      );
+    });
+  }
+});
+
+describe('strict unknown-option handling', () => {
+  for (const spec of [{ path: [], options: [] }, ...COMMAND_TREE]) {
+    it(`esa ${spec.path.join(' ') || '(root)'} rejects unknown options`, async () => {
+      expectFailure(
+        await runCli([
+          ...spec.path,
+          ...positionalArgs(spec),
+          ...requiredOptions(spec),
+          '--unexpected-contract-option',
+          '--skip-update-check'
+        ]),
+        /Unknown arguments?:.*unexpected-contract-option/
+      );
+    });
   }
 });

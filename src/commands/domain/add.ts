@@ -32,6 +32,7 @@ const addDomain: CommandModule = {
         default: false
       })
       .help()
+      .alias('help', 'h')
       .fail((msg, err, yargsIns) => {
         console.log(msg, err);
         if (err) throw err;

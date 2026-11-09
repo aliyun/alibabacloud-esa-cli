@@ -323,7 +323,7 @@ npm run build
 | -------------------- | ----------------------------------------------------------- | ------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
 | 默认单测与本地库集成 | `vitest.config.js`；`tests/commands`、`utils`、`components` | `npx vitest run` 或 `npm test -- --run`           | 使用 `tests/setupTest.ts` 广泛 mock API/配置；不覆盖真实云端行为                                 |
 | CLI contract         | `vitest.compat.config.ts`；`tests/compat`                   | `npm run test:compat:v1`                          | 先 build；spawn CLI 检查命令、选项、help、退出和配置解析；无真实账号要求                         |
-| 交互 E2E             | `vitest.e2e.v1.config.ts`；`tests/e2e/v1`                   | `npx vitest run --config vitest.e2e.v1.config.ts` | 先 build；使用本地 API fixture，成功/拒绝登录与登出无需云凭据                                    |
+| 离线 E2E             | `vitest.e2e.v1.config.ts`；`tests/e2e/v1`                   | `npx vitest run --config vitest.e2e.v1.config.ts` | 先 build；真实 CLI 进程连接本地 API fixture，覆盖登录、env/secret 和交互；无需云凭据             |
 | 真实 API 集成        | `vitest.integration.config.ts`；`tests/integration`         | `npm run test:integration:v1`                     | 先 build 或通过 ESA_CLI_BIN 指定安装后的包；完整配置专用账号、站点、测试子域和写入开关；顺序运行 |
 
 默认配置按目录排除 compat/e2e/integration，**不是按文件名排除**。`tests/commands/commit/prodBuild.integration.test.ts` 和 `tests/utils/download.integration.test.ts` 仍由默认套件运行，分别验证真实 esbuild + Less 和本地 ZIP 解压，不需要 ESA 凭据。
@@ -346,8 +346,8 @@ npm run build
 
 - `.github/workflows/main.yml`：十二组 OS/Node 18/20/22/24 组合运行安装、lint、测试、build、pack；每组单元测试下限至少 353 项、0 跳过，增加用例时同步提高门槛。另有 npm 本地/全局/exec、Yarn Classic、pnpm 本地/全局、Bun 安装 smoke。
 - `.github/workflows/main.yml` 调用 reusable `compat.yml`，最终 `CI Gate` 必须依赖所有必需 job 成功；监听 push、PR、merge_group，也可供 Release 调用。
-- `.github/workflows/compat.yml`：仅通过 workflow_call 调用。contract 保持 Ubuntu + Node 24，至少 155 项、0 跳过；离线 E2E 在 Ubuntu/macOS/Windows × Node 24 构建后分别执行同一套 7 项测试、0 跳过，矩阵 `fail-fast: false`，报告 artifact 按 OS 区分。`Behaviour Gate` 通过 `needs: [contract, e2e]` 汇总整个矩阵，任一系统失败、取消或跳过都阻断门禁。
-- Windows E2E 是配置读写、登录/登出、交互等功能验证；当前没有主动 Windows ACL 加固，不代表凭据访问控制已经验证。新增矩阵仍待 GitHub 三个系统的实际结果验收，历史本机记录不替代该验收。
+- `.github/workflows/compat.yml`：仅通过 workflow_call 调用。contract 保持 Ubuntu + Node 24，至少 264 项、0 跳过；离线 E2E 在 Ubuntu/macOS/Windows × Node 24 构建后分别执行同一套 16 项测试、0 跳过，矩阵 `fail-fast: false`，报告 artifact 按 OS 区分。`Behaviour Gate` 通过 `needs: [contract, e2e]` 汇总整个矩阵，任一系统失败、取消或跳过都阻断门禁。
+- 三种系统执行相同的离线 E2E，验证配置、登录/登出、env/secret 和交互；真实云权限、持久化与部署效果由发布阶段验收。当前没有主动 Windows ACL 加固，不代表凭据访问控制已经验证。各系统的远端结果以对应提交的 Actions 记录为准。
 - `.github/workflows/release.yml`：唯一的手动发布入口，选择 `release/<完整版本>`、准确 SHA 与 `beta`/`stable`/`hotfix` 类型。beta/stable 候选必须已在 master 历史中；hotfix 从 npm 当前 latest 正式版的可证明 tag 派生，允许独立于 master，发布后通过 PR 合回 master。三类都重跑完整 CI → 安装最终 tarball → `esa-integration` 审批与真实 staging/API 测试 → `npm-release` 审批 → OIDC 发布同一包、tag 和 GitHub Release。需按[开发与发布指南](DEVELOPMENT_AND_RELEASE.md)操作，并按[配置手册](GITHUB_SETUP_AND_RELEASE.md)完成远端验收。
 - `scripts/release/`：支持 beta 和 beta → stable 的版本准备；校验候选、报告、产物及已发布来源。stable 相对当前 beta 仅允许版本、`CHANGELOG.md` 和本次新版本说明变更；hotfix 仅允许当前 latest 的下一 patch 且必填原因。manifest 绑定通道、发布类型与来源身份；发布重试会拒绝遗留草稿、不同包或 tag 冲突。此目录不随 npm 包发布。
 - `.github/actions/setup-and-install/action.yml`：行为测试工作流使用它校验 lockfile 的 resolved 地址均来自 `registry.npmjs.org`，并要求 npm ci 与 npm ls 都成功、失败重试；不能把 lifecycle 失败当成成功。

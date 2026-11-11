@@ -7,6 +7,12 @@ on:
     branches: ['**']
   merge_group:
   workflow_call:
+    inputs:
+      disable-cache:
+        description: Disable dependency caching when called by the release workflow
+        required: false
+        type: boolean
+        default: false
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}-${{ github.event_name }}
@@ -62,10 +68,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Use Node.js 22.x
-        uses: actions/setup-node@v4
+      - name: Install dependencies without caching on Node.js 22.x
+        uses: ./.github/actions/setup-and-install
         with:
           node-version: 22.x
+          cache-enabled: 'false'
 
       - name: Setup package managers
         run: |
@@ -80,7 +87,6 @@ jobs:
 
       - name: Build package tarball
         run: |
-          npm ci
           npm run build
           mkdir -p "$RUNNER_TEMP/esa-pack" "$RUNNER_TEMP/esa-cli-home"
           npm pack --pack-destination "$RUNNER_TEMP/esa-pack"
@@ -150,6 +156,8 @@ jobs:
 
   behaviour:
     uses: ./.github/workflows/compat.yml
+    with:
+      disable-cache: ${{ inputs.disable-cache == true }}
 
   ci-gate:
     name: CI Gate

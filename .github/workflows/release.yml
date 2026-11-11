@@ -29,6 +29,9 @@ on:
 permissions:
   contents: read
 
+# Deny cache access across the release and its reusable verification workflows.
+cache-mode: none
+
 # Serialize all versions. A later release must not interrupt an npm publish.
 concurrency:
   group: npm-release
@@ -77,6 +80,8 @@ jobs:
   verify:
     needs: candidate
     uses: ./.github/workflows/main.yml
+    with:
+      disable-cache: true
 
   package:
     name: Verify final npm package
@@ -96,8 +101,12 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
-          ref: ${{ needs.candidate.outputs.sha }}
+          ref: ${{ github.sha }}
+      - name: Verify checkout matches the reviewed release commit
+        run: test "$(git rev-parse HEAD)" = "$RELEASE_SHA"
       - uses: ./.github/actions/setup-and-install
+        with:
+          cache-enabled: 'false'
       - run: npm run build
       - run: npm run release:pack
       - name: Install and verify the exact tarball
@@ -139,8 +148,13 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
-          ref: ${{ needs.candidate.outputs.sha }}
+          ref: ${{ github.sha }}
+      - name: Verify checkout matches the reviewed release commit
+        id: checkout-identity
+        run: test "$(git rev-parse HEAD)" = "$RELEASE_SHA"
       - uses: ./.github/actions/setup-and-install
+        with:
+          cache-enabled: 'false'
       - run: npm run release:check-integration
       - uses: actions/download-artifact@v4
         with:
@@ -159,7 +173,7 @@ jobs:
       - name: Require all real API tests to execute
         run: node scripts/release/check-test-report.mjs reports/integration.json 6
       - name: Clean remaining resources after failures
-        if: always()
+        if: always() && steps.checkout-identity.outcome == 'success'
         run: node scripts/release/cleanup-cloud.mjs
       - name: Preserve test results and cleanup journal
         if: always()
@@ -194,7 +208,9 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
-          ref: ${{ needs.candidate.outputs.sha }}
+          ref: ${{ github.sha }}
+      - name: Verify checkout matches the reviewed release commit
+        run: test "$(git rev-parse HEAD)" = "$RELEASE_SHA"
       - uses: actions/setup-node@v4
         with:
           node-version: 24.x

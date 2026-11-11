@@ -2,6 +2,12 @@ name: CLI Behaviour Tests
 
 on:
   workflow_call:
+    inputs:
+      disable-cache:
+        description: Disable dependency caching when called by the release workflow
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -14,6 +20,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup-and-install
+        with:
+          cache-enabled: ${{ inputs.disable-cache == true && 'false' || 'true' }}
       - run: npm run build
       - name: Run offline contract tests
         run: npx vitest run --config vitest.compat.config.ts --reporter=default --reporter=json --outputFile=reports/contract.json
@@ -41,6 +49,7 @@ jobs:
       - uses: ./.github/actions/setup-and-install
         with:
           node-version: ${{ matrix.node-version }}
+          cache-enabled: ${{ inputs.disable-cache == true && 'false' || 'true' }}
       - run: npm run build
       - name: Run offline E2E with local API fixtures
         run: npx vitest run --config vitest.e2e.v1.config.ts --reporter=default --reporter=json --outputFile=reports/e2e.json

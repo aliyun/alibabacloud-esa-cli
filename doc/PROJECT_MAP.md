@@ -1,7 +1,7 @@
 # ESA CLI 项目地图（AI 开发导航）
 
-> 最近核对日期：2026-11-03；基线：将 master 合并到开发分支后的 `e8043a5` 加当前工作区 CI/发布改动；包版本：`esa-cli@1.0.13`。
-> 本次复核版本、测试/CI/发布入口、CLI 更新通道、deploy 默认环境与版本绑定及文档导航。业务调用链来自 2026-09-21 的静态梳理，本次未逐条重新审计；相关实现变化时应回查当前源码。
+> 最近核对日期：2026-11-11；本次 CI/发布核对基线：`eb3c8e1` 加当前工作区缓存隔离改动；包版本：`esa-cli@1.0.13`。
+> 本次补充 CI/发布缓存策略与提交 SHA 校验；版本、测试入口、CLI 更新通道、deploy 默认环境与版本绑定及文档导航沿用上次复核。业务调用链来自 2026-09-21 的静态梳理，本次未逐条重新审计；相关实现变化时应回查当前源码。
 > 用途：让 AI 按开发任务定位最小必要上下文，理解真实调用链，并选择验证方法。本文描述当前实现，不把重构提案视为已落地能力；源码变动后应重新核对相关章节。
 > 路径均相对仓库根目录；定位使用“文件 + 符号”，避免依赖易漂移的行号。本文是导航，不替代用户要求或仓库开发约定。
 
@@ -345,12 +345,13 @@ npm run build
 ### 8.4 CI 与代码约定
 
 - `.github/workflows/main.yml`：十二组 OS/Node 18/20/22/24 组合运行安装、lint、测试、build、pack；每组单元测试下限至少 353 项、0 跳过，增加用例时同步提高门槛。另有 npm 本地/全局/exec、Yarn Classic、pnpm 本地/全局、Bun 安装 smoke。
-- `.github/workflows/main.yml` 调用 reusable `compat.yml`，最终 `CI Gate` 必须依赖所有必需 job 成功；监听 push、PR、merge_group，也可供 Release 调用。
+- `.github/workflows/main.yml` 调用 reusable `compat.yml`，最终 `CI Gate` 必须依赖所有必需 job 成功；监听 push、PR、merge_group，也可供 Release 调用。两份 workflow 的 `workflow_call` 输入 `disable-cache` 均为 boolean，默认 `false`；main 将其传给 compat。普通 CI 的 contract/E2E 保留 npm 缓存，Release 传 `true` 关闭缓存；`install-smoke` 始终向共享安装 action 传 `cache-enabled: 'false'`，验证关闭缓存的安装路径。
 - `.github/workflows/compat.yml`：仅通过 workflow_call 调用。contract 保持 Ubuntu + Node 24，至少 264 项、0 跳过；离线 E2E 在 Ubuntu/macOS/Windows × Node 24 构建后分别执行同一套 16 项测试、0 跳过，矩阵 `fail-fast: false`，报告 artifact 按 OS 区分。`Behaviour Gate` 通过 `needs: [contract, e2e]` 汇总整个矩阵，任一系统失败、取消或跳过都阻断门禁。
 - 三种系统执行相同的离线 E2E，验证配置、登录/登出、env/secret 和交互；真实云权限、持久化与部署效果由发布阶段验收。当前没有主动 Windows ACL 加固，不代表凭据访问控制已经验证。各系统的远端结果以对应提交的 Actions 记录为准。
 - `.github/workflows/release.yml`：唯一的手动发布入口，选择 `release/<完整版本>`、准确 SHA 与 `beta`/`stable`/`hotfix` 类型。beta/stable 候选必须已在 master 历史中；hotfix 从 npm 当前 latest 正式版的可证明 tag 派生，允许独立于 master，发布后通过 PR 合回 master。三类都重跑完整 CI → 安装最终 tarball → `esa-integration` 审批与真实 staging/API 测试 → `npm-release` 审批 → OIDC 发布同一包、tag 和 GitHub Release。需按[开发与发布指南](DEVELOPMENT_AND_RELEASE.md)操作，并按[配置手册](GITHUB_SETUP_AND_RELEASE.md)完成远端验收。
+- Release 在 workflow 顶层设置 `cache-mode: none`，由 GitHub 禁止 job token 读取或写入缓存，并限制被调用的 reusable workflows；省略 `cache: npm` 本身不提供此 token 隔离。package/integration/publish 三处 checkout 使用 `${{ github.sha }}`，随后在执行仓库代码前检查实际 HEAD 等于 `RELEASE_SHA`；candidate 已要求完整输入 SHA 等于事件 `GITHUB_SHA`。这保留准确提交和同一 tarball 的验证链；远端审批与发布仍待验收，`RELEASE_ENABLED` 的上线开关不因这些改动自动开启。
 - `scripts/release/`：支持 beta 和 beta → stable 的版本准备；校验候选、报告、产物及已发布来源。stable 相对当前 beta 仅允许版本、`CHANGELOG.md` 和本次新版本说明变更；hotfix 仅允许当前 latest 的下一 patch 且必填原因。manifest 绑定通道、发布类型与来源身份；发布重试会拒绝遗留草稿、不同包或 tag 冲突。此目录不随 npm 包发布。
-- `.github/actions/setup-and-install/action.yml`：行为测试工作流使用它校验 lockfile 的 resolved 地址均来自 `registry.npmjs.org`，并要求 npm ci 与 npm ls 都成功、失败重试；不能把 lifecycle 失败当成成功。
+- `.github/actions/setup-and-install/action.yml`：CI 与发布工作流共用，校验 lockfile 的 resolved 地址均来自 `registry.npmjs.org`，并要求 npm ci 与 npm ls 都成功、失败重试；不能把 lifecycle 失败当成成功。`cache-enabled` 是字符串输入，默认 `'true'`；传 `'false'` 关闭 npm 缓存时，registry、完整性检查与重试仍执行。
 - `.eslintrc.cjs`：单引号、导入分组与排序、未使用变量检查、禁止 React/Ink；`any` 为 warning。`.prettierrc`：单引号、无尾逗号、箭头函数保留括号。
 - Husky pre-commit 调用 lint-staged；`.lintstagedrc.cjs` 与 package.json 都有相关定义。实际执行不能只从某一个配置块猜测，也不能用 staged 检查代替整仓库 CI。
 

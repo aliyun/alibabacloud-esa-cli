@@ -80,6 +80,18 @@ Actions 页能找到 `CI` 和 `Release`；PR 页面能看到 `CI Gate`。本地 
 
 依据：[fork 工作流审批](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/approve-runs-from-forks)。
 
+### 发布缓存隔离与提交身份
+
+`release.yml` 在 workflow 顶层设置 `cache-mode: none`，由 GitHub 限制 job token 的缓存读取和写入，并约束其调用的 reusable workflows。仅删除 `setup-node` 的 `cache: npm` 不会撤销缓存写入能力；此设置与 `contents`、`id-token` 权限分别控制不同能力，发布 job 仍只在原审批环境下获得所需权限。
+
+`main.yml` 和 `compat.yml` 的 `workflow_call` 都接受 boolean 输入 `disable-cache`，默认 `false`。普通 CI 的 contract/E2E 保留 npm 缓存；Release 调用 `main.yml` 时传 `true`，后者继续传给 `compat.yml`。共享安装 action 的 `cache-enabled` 是字符串输入，默认 `'true'`；发布及关闭缓存的调用传 `'false'`。`install-smoke` 始终传 `'false'`，让普通 CI 也执行关闭缓存的依赖安装路径。关闭缓存仍保留公共 registry 检查、`npm ci` 加 `npm ls` 的完整性检查及失败重试。
+
+打包、真实 ESA 集成和发布三个 job 均显式 checkout `${{ github.sha }}`，随后在执行仓库代码前检查 `git rev-parse HEAD` 等于 `RELEASE_SHA`。候选检查已经要求输入的完整 SHA 等于该次运行的 `GITHUB_SHA`，并要求从对应 `release/<version>` 分支运行；使用事件 SHA 不会改为构建分支后来新增的提交。产物 manifest 继续绑定该 SHA、版本、通道与校验和，真实测试和发布复用同一 tarball。
+
+这些是仓库中的保护措施，不表示远端 Rulesets、Environment 审批或 npm OIDC 已验收；完成后文上线验收前，继续保持 `RELEASE_ENABLED` 未设置或为 `false`。
+
+依据：[缓存 token 的访问模式及 reusable workflow 继承规则](https://docs.github.com/en/actions/reference/workflows-and-actions/dependency-caching#controlling-cache-access-with-cache-mode)。
+
 ## 3. 配置强制合并规则
 
 ### 具体步骤
@@ -331,6 +343,7 @@ stable 相对来源 beta 仅允许 package/lock 版本号、`CHANGELOG.md` 和�
 - API 集成成功断言、准确命令参数、唯一测试资源与失败清理、最终 tarball 的 staging 部署验证。
 - 发布前身份、版本、报告、产物校验，OIDC 发布，已有包/标签冲突检查；无遗留草稿时可用原 artifact 恢复，发现草稿则停止等待维护者核对处理。
 - release:prepare 支持 beta 与 beta → stable 版本准备；发布类型、来源证明、允许差异、hotfix 下一 patch 和通道约束由脚本及 workflow 校验。
+- Release 禁止读取或写入 Actions 缓存；三个后续 job 绑定事件 SHA 并核对实际 HEAD。普通 CI 的行为测试保留缓存，安装 smoke 固定验证关闭缓存的共享安装路径。
 - 本轮只实现仓库流程，不替代远端审批、账号权限或实际发布验收；未替你选择或增加待发布版本。
 
 以下为历史记录，验证环境：本机 macOS arm64、Node 24.13.0、npm 11.6.2；验证日期 **2026-09-21**。测试数量和结果仅对应当时版本，不表示本轮 beta/stable/hotfix 改动已完成相同验证。

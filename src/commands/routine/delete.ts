@@ -19,7 +19,7 @@ const deleteCommand: CommandModule = {
         type: 'string',
         demandOption: true
       })
-      .usage(`${t('common_usage').d('Usage')}: $0 delete <projectName>`);
+      .usage(`${t('common_usage').d('Usage')}: $0 project delete <projectName>`);
   },
   handler: async (argv: ArgumentsCamelCase) => {
     await handleDelete(argv);

@@ -2,7 +2,7 @@
 
 [![npm version](https://img.shields.io/npm/v/esa-cli?style=flat-square)](https://www.npmjs.com/package/esa-cli)
 [![CI](https://img.shields.io/github/actions/workflow/status/aliyun/alibabacloud-esa-cli/main.yml?style=flat-square&label=CI)](https://github.com/aliyun/alibabacloud-esa-cli/actions/workflows/main.yml)
-![Node.js](https://img.shields.io/badge/Node.js-18%20%7C%2020%20%7C%2022-3c873a?style=flat-square)
+![Node.js](https://img.shields.io/badge/Node.js-18%20%7C%2020%20%7C%2022%20%7C%2024-3c873a?style=flat-square)
 [![TypeScript](https://img.shields.io/badge/TypeScript-blue?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org)
 
 ESA CLI is a command-line tool for building, developing, and deploying [Alibaba Cloud ESA](https://www.alibabacloud.com/help/en/edge-security-acceleration/esa/user-guide/what-is-er/) Functions & Pages projects.
@@ -32,7 +32,7 @@ It helps you create projects from templates, run Functions & Pages locally, pack
 
 ## Prerequisites
 
-- Node.js 20 or newer is recommended. CI currently covers Node.js 18.x, 20.x, and 22.x.
+- Node.js 24 is recommended for development. CI currently covers Node.js 18.x, 20.x, 22.x, and 24.x.
 - npm, pnpm, yarn, or Bun for installing the package.
 - An Alibaba Cloud account with ESA Functions & Pages access.
 
@@ -281,12 +281,14 @@ For the full option reference, see [ESA CLI Commands](https://github.com/aliyun/
 
 ## Development
 
+See the [contribution guide](./CONTRIBUTING.md) for the fork and pull request workflow, or the [development and release guide](./doc/DEVELOPMENT_AND_RELEASE.md) for maintainers. Both guides are in Chinese.
+
 Clone the repository and install dependencies:
 
 ```bash
 git clone git@github.com:aliyun/alibabacloud-esa-cli.git
 cd alibabacloud-esa-cli
-npm install
+npm ci
 ```
 
 Build the CLI:

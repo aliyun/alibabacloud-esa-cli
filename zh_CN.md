@@ -15,7 +15,7 @@ ESA CLI 是用于构建阿里云 ESA Functions 与 Pages 的命令行工具。
 
 ### 前置条件
 
-- Node.js：18.x 或更高（支持 18.x、20.x、22.x）
+- Node.js：18.x 或更高；CI 覆盖 18.x、20.x、22.x、24.x
 - 操作系统：macOS (Apple Silicon)、Linux
 - 推荐使用 Volta 或 nvm 等 Node 版本管理工具，避免权限问题并便于切换版本
 
@@ -76,6 +76,8 @@ npx esa-cli deploy --no-preview
 
 ## 相关文档
 
+- [贡献指南](./CONTRIBUTING.md)
+- [开发与发布指南](./doc/DEVELOPMENT_AND_RELEASE.md)
 - [esa-cli 命令](https://github.com/aliyun/alibabacloud-esa-cli/blob/master/docs/Commands_zh_CN.md)
 - [ESA 配置文件说明](https://github.com/aliyun/alibabacloud-esa-cli/blob/master/docs/Config_zh_CN.md)
 - [阿里云 ESA 文档](https://help.aliyun.com/document_detail/2710021.html)

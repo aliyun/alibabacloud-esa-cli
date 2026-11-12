@@ -97,99 +97,163 @@ describe('fileUtils config paths', () => {
   });
 });
 
-describe('fileUtils credential file permissions', () => {
-  it.skipIf(process.platform === 'win32')(
-    'creates the credential directory as 0700 and config file as 0600',
-    async () => {
-      const projectRoot = makeTempDir();
-      const home = makeTempDir('esa-cli-home-');
-      const configDir = path.join(home, '.esa', 'config');
-      const configPath = path.join(configDir, 'default.toml');
-      const fileUtils = await loadFileUtils({ cwd: projectRoot, home });
+describe('fileUtils credential storage and platform permissions', () => {
+  it('creates, saves and reads credentials with POSIX hardening where supported', async () => {
+    const projectRoot = makeTempDir();
+    const home = makeTempDir('esa-cli-home-');
+    const configDir = path.join(home, '.esa', 'config');
+    const configPath = path.join(configDir, 'default.toml');
+    const fileUtils = await loadFileUtils({ cwd: projectRoot, home });
+    const chmodSync = vi.spyOn(fs, 'chmodSync');
+    const chmod = vi.spyOn(fs.promises, 'chmod');
 
-      fileUtils.generateDefaultConfig();
+    fileUtils.generateDefaultConfig();
 
+    expect(fs.statSync(configDir).isDirectory()).toBe(true);
+    expect(toml.parse(fs.readFileSync(configPath, 'utf8'))).toEqual({
+      endpoint: 'esa.cn-hangzhou.aliyuncs.com'
+    });
+    if (process.platform !== 'win32') {
       expect(fs.statSync(configDir).mode & 0o777).toBe(0o700);
       expect(fs.statSync(configPath).mode & 0o777).toBe(0o600);
     }
-  );
 
-  it.skipIf(process.platform === 'win32')(
-    'hardens existing credential directory and config file permissions',
-    async () => {
-      const projectRoot = makeTempDir();
-      const home = makeTempDir('esa-cli-home-');
-      const configDir = path.join(home, '.esa', 'config');
-      const configPath = path.join(configDir, 'default.toml');
-      fs.mkdirSync(configDir, { recursive: true, mode: 0o755 });
-      fs.writeFileSync(configPath, 'endpoint = "example.com"\n', {
-        mode: 0o644
-      });
+    const auth = {
+      accessKeyId: 'new-id',
+      accessKeySecret: 'new-secret',
+      securityToken: 'new-token'
+    };
+    await fileUtils.updateCliConfigFile({ auth });
+
+    const expected = { endpoint: 'esa.cn-hangzhou.aliyuncs.com', auth };
+    expect(toml.parse(fs.readFileSync(configPath, 'utf8'))).toEqual(expected);
+    expect(fileUtils.getCliConfig()).toEqual(expected);
+    expect(mockLogger.error).not.toHaveBeenCalled();
+    expect(mockLogger.warn).not.toHaveBeenCalled();
+    if (process.platform === 'win32') {
+      expect(chmodSync).not.toHaveBeenCalled();
+      expect(chmod).not.toHaveBeenCalled();
+    } else {
+      expect(fs.statSync(configDir).mode & 0o777).toBe(0o700);
+      expect(fs.statSync(configPath).mode & 0o777).toBe(0o600);
+    }
+  });
+
+  it('preserves existing credentials when regenerating config and applying supported POSIX hardening', async () => {
+    const projectRoot = makeTempDir();
+    const home = makeTempDir('esa-cli-home-');
+    const configDir = path.join(home, '.esa', 'config');
+    const configPath = path.join(configDir, 'default.toml');
+    const existing = {
+      endpoint: 'example.com',
+      auth: { accessKeyId: 'saved-id', accessKeySecret: 'saved-secret' }
+    };
+    const originalContents = toml.stringify(existing);
+    fs.mkdirSync(configDir, { recursive: true, mode: 0o755 });
+    fs.writeFileSync(configPath, originalContents, { mode: 0o644 });
+    if (process.platform !== 'win32') {
       fs.chmodSync(configDir, 0o755);
       fs.chmodSync(configPath, 0o644);
-      const fileUtils = await loadFileUtils({ cwd: projectRoot, home });
+    }
+    const fileUtils = await loadFileUtils({ cwd: projectRoot, home });
+    const chmodSync = vi.spyOn(fs, 'chmodSync');
+    const chmod = vi.spyOn(fs.promises, 'chmod');
 
-      fileUtils.generateDefaultConfig();
+    fileUtils.generateDefaultConfig();
 
+    expect(fs.readFileSync(configPath, 'utf8')).toBe(originalContents);
+    if (process.platform !== 'win32') {
       expect(fs.statSync(configDir).mode & 0o777).toBe(0o700);
       expect(fs.statSync(configPath).mode & 0o777).toBe(0o600);
     }
-  );
+    expect(fileUtils.getCliConfig()).toEqual(existing);
 
-  it.skipIf(process.platform === 'win32')(
-    'hardens legacy credential permissions when reading the config',
-    async () => {
-      const projectRoot = makeTempDir();
-      const home = makeTempDir('esa-cli-home-');
-      const configDir = path.join(home, '.esa', 'config');
-      const configPath = path.join(configDir, 'default.toml');
-      fs.mkdirSync(configDir, { recursive: true, mode: 0o755 });
-      fs.writeFileSync(
-        configPath,
-        [
-          '[auth]',
-          'accessKeyId = "legacy-id"',
-          'accessKeySecret = "legacy-secret"'
-        ].join('\n'),
-        { mode: 0o644 }
-      );
+    await fileUtils.updateCliConfigFile({ lang: 'zh' });
+
+    const expected = { ...existing, lang: 'zh' };
+    expect(toml.parse(fs.readFileSync(configPath, 'utf8'))).toEqual(expected);
+    expect(fileUtils.getCliConfig()).toEqual(expected);
+    expect(mockLogger.error).not.toHaveBeenCalled();
+    expect(mockLogger.warn).not.toHaveBeenCalled();
+    if (process.platform === 'win32') {
+      expect(chmodSync).not.toHaveBeenCalled();
+      expect(chmod).not.toHaveBeenCalled();
+    }
+  });
+
+  it('reads legacy credentials without rewriting content and applies POSIX hardening where supported', async () => {
+    const projectRoot = makeTempDir();
+    const home = makeTempDir('esa-cli-home-');
+    const configDir = path.join(home, '.esa', 'config');
+    const configPath = path.join(configDir, 'default.toml');
+    const existing = {
+      auth: {
+        accessKeyId: 'legacy-id',
+        accessKeySecret: 'legacy-secret',
+        securityToken: 'legacy-token'
+      }
+    };
+    const originalContents = toml.stringify(existing);
+    fs.mkdirSync(configDir, { recursive: true, mode: 0o755 });
+    fs.writeFileSync(configPath, originalContents, { mode: 0o644 });
+    if (process.platform !== 'win32') {
       fs.chmodSync(configDir, 0o755);
       fs.chmodSync(configPath, 0o644);
-      const fileUtils = await loadFileUtils({ cwd: projectRoot, home });
+    }
+    const fileUtils = await loadFileUtils({ cwd: projectRoot, home });
+    const chmodSync = vi.spyOn(fs, 'chmodSync');
 
-      expect(fileUtils.getCliConfig()?.auth?.accessKeyId).toBe('legacy-id');
+    expect(fileUtils.getCliConfig()).toEqual(existing);
+    expect(fs.readFileSync(configPath, 'utf8')).toBe(originalContents);
+    expect(mockLogger.error).not.toHaveBeenCalled();
+    expect(mockLogger.warn).not.toHaveBeenCalled();
+    if (process.platform === 'win32') {
+      expect(chmodSync).not.toHaveBeenCalled();
+    } else {
       expect(fs.statSync(configDir).mode & 0o777).toBe(0o700);
       expect(fs.statSync(configPath).mode & 0o777).toBe(0o600);
     }
-  );
+  });
 
-  it.skipIf(process.platform === 'win32')(
-    'warns without blocking reads when a mounted config cannot be chmodded',
-    async () => {
-      const projectRoot = makeTempDir();
-      const home = makeTempDir('esa-cli-home-');
-      const configDir = path.join(home, '.esa', 'config');
-      const configPath = path.join(configDir, 'default.toml');
-      fs.mkdirSync(configDir, { recursive: true });
-      fs.writeFileSync(
-        configPath,
-        [
-          '[auth]',
-          'accessKeyId = "mounted-id"',
-          'accessKeySecret = "mounted-secret"'
-        ].join('\n')
-      );
-      const fileUtils = await loadFileUtils({ cwd: projectRoot, home });
-      vi.spyOn(fs, 'chmodSync').mockImplementation(() => {
-        throw new Error('read-only mount');
-      });
+  it('keeps credentials readable and updatable when POSIX hardening fails or is unsupported', async () => {
+    const projectRoot = makeTempDir();
+    const home = makeTempDir('esa-cli-home-');
+    const configDir = path.join(home, '.esa', 'config');
+    const configPath = path.join(configDir, 'default.toml');
+    const existing = {
+      auth: { accessKeyId: 'mounted-id', accessKeySecret: 'mounted-secret' }
+    };
+    const originalContents = toml.stringify(existing);
+    fs.mkdirSync(configDir, { recursive: true });
+    fs.writeFileSync(configPath, originalContents);
+    const fileUtils = await loadFileUtils({ cwd: projectRoot, home });
+    const chmodSync = vi.spyOn(fs, 'chmodSync').mockImplementation(() => {
+      throw new Error('read-only mount');
+    });
+    const chmod = vi.spyOn(fs.promises, 'chmod');
 
-      expect(fileUtils.getCliConfig()?.auth?.accessKeyId).toBe('mounted-id');
+    expect(fileUtils.getCliConfig()).toEqual(existing);
+    expect(fileUtils.getCliConfig()).toEqual(existing);
+    expect(fs.readFileSync(configPath, 'utf8')).toBe(originalContents);
+
+    await fileUtils.updateCliConfigFile({ lang: 'en' });
+
+    const expected = { ...existing, lang: 'en' };
+    expect(toml.parse(fs.readFileSync(configPath, 'utf8'))).toEqual(expected);
+    expect(fileUtils.getCliConfig()).toEqual(expected);
+    expect(mockLogger.error).not.toHaveBeenCalled();
+    if (process.platform === 'win32') {
+      expect(chmodSync).not.toHaveBeenCalled();
+      expect(chmod).not.toHaveBeenCalled();
+      expect(mockLogger.warn).not.toHaveBeenCalled();
+    } else {
+      expect(chmodSync).toHaveBeenCalled();
+      expect(mockLogger.warn).toHaveBeenCalledTimes(1);
       expect(mockLogger.warn).toHaveBeenCalledWith(
         expect.stringContaining('Could not restrict permissions')
       );
     }
-  );
+  });
 });
 
 describe('fileUtils config readers and writers', () => {

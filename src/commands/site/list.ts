@@ -11,7 +11,7 @@ const list: CommandModule = {
   command: 'list',
   describe: `📋 ${t('site_describe_list').d('List all your sites')}`,
   builder: (yargs: Argv) => {
-    return yargs.usage(`${t('common_usage').d('Usage')}: \$0 list []`);
+    return yargs.usage(`${t('common_usage').d('Usage')}: $0 site list`);
   },
   handler: async () => {
     await handleList();

@@ -88,6 +88,7 @@ const main = async () => {
         console.error(
           t('common_sub_command_fail').d(`Use ${cliName} <command> -h to see help`)
         );
+        process.exit(1);
       } else {
         if (args.v) {
           handleCheckVersion();

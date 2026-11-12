@@ -1,12 +1,22 @@
-name: CI for CLI Project
+name: CI
 
 on:
   push:
-    branches:
-      - '**' 
+    branches: ['**']
   pull_request:
-    branches:
-      - '**' 
+    branches: ['**']
+  merge_group:
+  workflow_call:
+    inputs:
+      disable-cache:
+        description: Disable dependency caching when called by the release workflow
+        required: false
+        type: boolean
+        default: false
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: ${{ github.event_name != 'workflow_dispatch' }}
 
 permissions:
   contents: read
@@ -14,11 +24,12 @@ permissions:
 jobs:
   build:
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 25
     strategy:
       fail-fast: false
       matrix:
         os: [macos-latest, ubuntu-latest, windows-latest]
-        node-version: [18.x, 20.x, 22.x]
+        node-version: [18.x, 20.x, 22.x, 24.x]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -27,19 +38,25 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
-          
+
       - name: Install dependencies
         run: npm ci
 
       - name: Run lint
         run: npm run lint
-        
+
       - name: Run tests
-        run: npm test
-        
+        run: npm run test:ci -- --reporter=default --reporter=json --outputFile=reports/unit.json
+
+      - name: Reject skipped or missing unit tests
+        run: node scripts/release/check-test-report.mjs reports/unit.json 353
+
+      - name: Validate release tooling
+        run: npm run test:release-tools
+
       - name: Build project
-        run: npm run build  
-        
+        run: npm run build
+
       - name: Package CLI
         run: npm pack
 
@@ -51,10 +68,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Use Node.js 22.x
-        uses: actions/setup-node@v4
+      - name: Install dependencies without caching on Node.js 22.x
+        uses: ./.github/actions/setup-and-install
         with:
           node-version: 22.x
+          cache-enabled: 'false'
 
       - name: Setup package managers
         run: |
@@ -69,7 +87,6 @@ jobs:
 
       - name: Build package tarball
         run: |
-          npm ci
           npm run build
           mkdir -p "$RUNNER_TEMP/esa-pack" "$RUNNER_TEMP/esa-cli-home"
           npm pack --pack-destination "$RUNNER_TEMP/esa-pack"
@@ -136,3 +153,24 @@ jobs:
           bun add "$TARBALL" --cache-dir "$RUNNER_TEMP/bun-cache"
           HOME="$RUNNER_TEMP/esa-cli-home" ./node_modules/.bin/esa --version
           HOME="$RUNNER_TEMP/esa-cli-home" ./node_modules/.bin/esa-cli --version
+
+  behaviour:
+    uses: ./.github/workflows/compat.yml
+    with:
+      disable-cache: ${{ inputs.disable-cache == true }}
+
+  ci-gate:
+    name: CI Gate
+    if: always()
+    needs: [build, install-smoke, behaviour]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.x
+      - name: Require every mandatory job to succeed
+        env:
+          JOB_RESULTS: ${{ toJSON(needs) }}
+        run: node scripts/release/check-jobs.mjs build install-smoke behaviour

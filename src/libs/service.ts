@@ -5,6 +5,7 @@ import fetch from 'node-fetch';
 import ora, { Ora } from 'ora';
 
 import t from '../i18n/index.js';
+import { checkComputePlan } from '../utils/validateCredentials.js';
 
 import api from './api.js';
 import {
@@ -18,24 +19,11 @@ import { getProxyAgent } from './proxy.js';
 
 export const checkLogin = async (): Promise<ServiceOutput> => {
   const result = new ServiceOutput();
-  try {
-    const response = await api.getErService();
-
-    if (response.statusCode === 200) {
-      result.success = true;
-      result.message = t('login_success').d('Login success!');
-    } else if (response.statusCode === 403) {
-      result.message = t('login_permission_denied').d(
-        'Permission denied: Access key or secret is incorrect, or does not have the necessary permissions.'
-      );
-    } else {
-      result.message = `${t('common_error_occurred').d('An error occurred')}: ${response.statusCode}`;
-    }
-  } catch (error) {
-    result.message = t('login_failed').d(
-      'An error occurred while trying to log in.'
-    );
-  }
+  const status = await checkComputePlan(api.client);
+  result.success = status.valid;
+  result.message = status.valid
+    ? t('login_success').d('Login success!')
+    : status.message;
   return result;
 };
 

@@ -389,9 +389,8 @@ export async function handleLogin(argv?: ArgumentsCamelCase): Promise<void> {
       }
     } else {
       logger.error(
-        t('pre_login_failed').d(
-          'The previously entered Access Key ID (AK) and Secret Access Key (SK) are incorrect. Please enter them again.'
-        )
+        loginStatus.message ||
+          t('login_failed').d('An error occurred while trying to log in.')
       );
     }
   }

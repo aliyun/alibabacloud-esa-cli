@@ -68,7 +68,11 @@ beforeAll(async () => {
     (req, res) => {
       apiRequests.push(req);
       res.setHeader('content-type', 'application/json');
-      res.end(JSON.stringify({ Status: 'Running', RequestId: 'proxy-test' }));
+      const body =
+        req.headers['x-acs-action'] === 'GetSubscriptionPlan'
+          ? { Purchased: true }
+          : { Status: 'Running' };
+      res.end(JSON.stringify({ ...body, RequestId: 'proxy-test' }));
     }
   );
   const apiPort = await listen(api);
@@ -180,7 +184,9 @@ describe('proxy transport integration', () => {
       );
       expect(JSON.parse(stdout)).toEqual({ valid: true, endpoint });
       expect(connectRequests.map((req) => req.url)).toEqual([endpoint]);
-      expect(apiRequests[0].headers['x-acs-action']).toBe('GetErService');
+      expect(apiRequests.map((req) => req.headers['x-acs-action'])).toEqual([
+        'GetSubscriptionPlan'
+      ]);
     },
     25000
   );

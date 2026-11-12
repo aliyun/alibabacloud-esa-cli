@@ -186,7 +186,7 @@ describe('checkIsLoginSuccess credential resolution', () => {
     expect(process.exitCode).toBeUndefined();
   });
 
-  it('sets a failure exit code when the selected credential group is invalid', async () => {
+  it('reports a subscription query failure before configuring the API clients', async () => {
     const config = {
       auth: {
         accessKeyId: 'invalid-id',
@@ -202,13 +202,17 @@ describe('checkIsLoginSuccess credential resolution', () => {
     mocks.getApiConfig.mockReturnValue(config);
     mocks.validateCredentials.mockResolvedValue({
       valid: false,
-      message: 'Invalid credentials'
+      message: 'GetSubscriptionPlan failed: Forbidden.RAM'
     });
 
     await expect(checkIsLoginSuccess()).resolves.toBe(false);
 
     expect(mocks.server.updateConfig).not.toHaveBeenCalled();
     expect(mocks.apiUpdateConfig).not.toHaveBeenCalled();
+    expect(mocks.loggerError).toHaveBeenCalledWith(
+      'GetSubscriptionPlan failed: Forbidden.RAM'
+    );
+    expect(mocks.loggerLog).not.toHaveBeenCalled();
     expect(process.exitCode).toBe(1);
   });
 

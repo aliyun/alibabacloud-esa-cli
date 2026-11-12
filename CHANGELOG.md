@@ -4,11 +4,20 @@
 
 ### Added
 
-- Support new compute plan subscriptions for `esa login`, `esa deploy`, and other commands that validate account access. When the account has no new subscription, the CLI checks whether its legacy edge routine service is running.
+- Support new compute plans for `esa login`, `esa deploy`, and other commands that check account access. A purchased plan passes the check. If ESA reports no purchase, the CLI checks whether the legacy Functions and Pages service is running.
 
 ### Changed
 
 - Report which service query failed when the CLI cannot verify account access. If the legacy service is still activating, the CLI asks you to try again later.
+- Custom RAM policies must allow `esa:GetSubscriptionPlan`, including for legacy accounts. Legacy accounts also need `esa:GetErService`. If the subscription query is denied, validation stops before the legacy check.
+- Prompt for updates only when a newer version is available on the installed channel (`beta` for beta builds, `latest` for stable builds).
+
+### Fixed
+
+- Preserve URLs containing `//` when reading `esa.jsonc`.
+- Fix `mockCache is not defined` when workers use the cache API during `esa dev` on Windows.
+- Exit with status 1 for unknown top-level commands so scripts can detect the error.
+- Correct the usage examples for `esa project list`, `esa project delete`, and `esa site list`. Make `esa domain add -h` show help.
 
 ## [1.0.13] - 2026-09-18
 

@@ -1,5 +1,15 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- Support new compute plan subscriptions for `esa login`, `esa deploy`, and other commands that validate account access. When the account has no new subscription, the CLI checks whether its legacy edge routine service is running.
+
+### Changed
+
+- Report which service query failed when the CLI cannot verify account access. If the legacy service is still activating, the CLI asks you to try again later.
+
 ## [1.0.13] - 2026-09-18
 
 ### Added

@@ -123,6 +123,11 @@ export async function checkIsLoginSuccess(): Promise<boolean> {
       auth.accessKeySecret,
       auth.securityToken
     );
+    if (!result.valid && result.message) {
+      logger.error(result.message);
+      process.exitCode = 1;
+      return false;
+    }
     if (result.valid) {
       const server = await ApiService.getInstance();
       const fileConfig = getApiConfig();

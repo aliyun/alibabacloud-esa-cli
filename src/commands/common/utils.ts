@@ -119,7 +119,7 @@ export async function validateAndInitializeProject(
   logger.startSubStep('Checking login status');
   const isSuccess = await checkIsLoginSuccess();
   if (!isSuccess) {
-    logger.endSubStep('You are not logged in');
+    logger.endSubStep('Account validation failed');
     return null;
   }
   logger.endSubStep('Logged in');

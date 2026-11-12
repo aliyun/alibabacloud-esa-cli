@@ -129,14 +129,12 @@ describe('offline CLI login and configuration', () => {
           securityToken: fixtureToken
         });
         const requests = cloud.requestDetails.slice(before);
-        expect(requests.length).toBeGreaterThan(0);
-        expect(
-          requests.every(
-            (request) =>
-              request.action === 'GetErService' &&
-              request.securityToken === fixtureToken
-          )
-        ).toBe(true);
+        expect(requests).toEqual([
+          expect.objectContaining({
+            action: 'GetSubscriptionPlan',
+            securityToken: fixtureToken
+          })
+        ]);
       } finally {
         rmSync(home, { recursive: true, force: true });
       }
@@ -179,7 +177,9 @@ describe('offline CLI login and configuration', () => {
         'Fixture rejected credentials'
       );
       expect(auth(home)).toEqual({});
-      expect(cloud.calls.slice(before)).toContain('GetErService');
+      expect([...new Set(cloud.calls.slice(before))]).toEqual([
+        'GetSubscriptionPlan'
+      ]);
     } finally {
       rmSync(home, { recursive: true, force: true });
     }

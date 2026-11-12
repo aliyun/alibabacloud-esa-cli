@@ -226,7 +226,7 @@ describe('routineUtils', () => {
 
       expect(result).toBeNull();
       expect(ensureRoutineExists).not.toHaveBeenCalled();
-      expect(logger.endSubStep).toHaveBeenCalledWith('You are not logged in');
+      expect(logger.endSubStep).toHaveBeenCalledWith('Account validation failed');
     });
   });
 

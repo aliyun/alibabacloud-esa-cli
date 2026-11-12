@@ -2,9 +2,9 @@ import * as $OpenApi from '@alicloud/openapi-client';
 import FormData from 'form-data';
 import fetch from 'node-fetch';
 
-import t from '../i18n/index.js';
 import { getApiConfig } from '../utils/fileUtils/index.js';
 import { CliConfig } from '../utils/fileUtils/interface.js';
+import { checkComputePlan } from '../utils/validateCredentials.js';
 
 import { CLI_USER_AGENT } from './constants.js';
 import {
@@ -107,64 +107,10 @@ export class ApiService {
    *   - message: (Optional) A string providing additional information in case of failure.
    */
   async checkLogin(): Promise<{ success: boolean; message?: string }> {
-    try {
-      let params = {
-        action: 'GetErService',
-        version: '2024-09-10',
-        protocol: 'https',
-        method: 'GET',
-        authType: 'AK',
-        bodyType: 'json',
-        reqBodyType: 'json',
-        style: 'RPC',
-        pathname: '/',
-        toMap: function () {
-          return this;
-        }
-      };
-      let request = new $OpenApi.OpenApiRequest({
-        query: {}
-      });
-      let runtime = {
-        toMap: function () {
-          return this;
-        }
-      };
-
-      const response = await this.client.callApi(params, request, runtime);
-
-      if (response.statusCode === 200) {
-        if (response.body.Status === 'Running') {
-          return { success: true };
-        } else {
-          return {
-            success: false,
-            message: t('not_active').d(
-              'Functions and Pages is not active, please activate it first. Visit: https://esa.console.aliyun.com/edge/pages to activate.'
-            )
-          };
-        }
-      } else if (response.statusCode === 403) {
-        return {
-          success: false,
-          message: t('login_permission_denied').d(
-            'Permission denied: Access key or secret is incorrect, or does not have the necessary permissions.'
-          )
-        };
-      } else {
-        return {
-          success: false,
-          message: `${t('common_error_occurred').d('An error occurred')}: ${response.statusCode}`
-        };
-      }
-    } catch (error) {
-      return {
-        success: false,
-        message: t('login_failed').d(
-          'An error occurred while trying to log in.'
-        )
-      };
-    }
+    const result = await checkComputePlan(this.client);
+    return result.valid
+      ? { success: true }
+      : { success: false, message: result.message };
   }
 
   async quickDeployRoutine(edgeRoutine: EdgeRoutineProps) {

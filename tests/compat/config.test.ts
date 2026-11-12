@@ -195,7 +195,10 @@ notFoundStrategy = "singlePageApplication"
     );
     writeCredentials();
     const domain = 'config-contract.example.com';
-    const cloud = await startCloudFixture({ name: FULL_CONFIG.name, domain });
+    const cloud = await startCloudFixture({
+      project: { name: FULL_CONFIG.name, domain },
+      purchased: false
+    });
     try {
       const result = await runCli(['domain', 'list'], {
         cwd: projectDir,
@@ -203,6 +206,10 @@ notFoundStrategy = "singlePageApplication"
       });
       expect(result.exitCode).toBe(0);
       expect(result.stdout).toContain(domain);
+      expect(cloud.calls.slice(0, 2)).toEqual([
+        'GetSubscriptionPlan',
+        'GetErService'
+      ]);
       expect(cloud.requests).toContainEqual({
         action: 'GetRoutine',
         projectName: FULL_CONFIG.name

@@ -1,4 +1,5 @@
 import * as $OpenApi from '@alicloud/openapi-client';
+import { RuntimeOptions } from '@alicloud/tea-util';
 
 import { enableSdkProxy } from '../libs/proxy.js';
 
@@ -16,16 +17,79 @@ const DOMESTIC_ENDPOINT = 'esa.cn-hangzhou.aliyuncs.com';
 // International site endpoint
 const INTERNATIONAL_ENDPOINT = 'esa.ap-southeast-1.aliyuncs.com';
 
-/**
- * Validate credentials for a single endpoint
- * @param securityToken - Optional STS SecurityToken; when provided, uses STS auth
- */
+type ComputePlanResult = { valid: true } | { valid: false; message: string };
+
+export async function checkComputePlan(
+  client: Pick<$OpenApi.default, 'callApi'>
+): Promise<ComputePlanResult> {
+  let action: 'GetSubscriptionPlan' | 'GetErService' = 'GetSubscriptionPlan';
+  async function query() {
+    const params = new $OpenApi.Params({
+      action,
+      version: '2024-09-10',
+      protocol: 'https',
+      method: 'GET',
+      authType: 'AK',
+      bodyType: 'json',
+      reqBodyType: 'json',
+      style: 'RPC',
+      pathname: '/'
+    });
+    const response = await client.callApi(
+      params,
+      new $OpenApi.OpenApiRequest({ query: {} }),
+      new RuntimeOptions({})
+    );
+    if (response.statusCode !== 200) {
+      throw new Error(`HTTP ${response.statusCode}`);
+    }
+    return response.body;
+  }
+
+  try {
+    const plan = await query();
+    if (plan?.Purchased === true) return { valid: true };
+    if (plan?.Purchased !== false) {
+      return {
+        valid: false,
+        message: 'GetSubscriptionPlan returned an invalid Purchased value'
+      };
+    }
+
+    action = 'GetErService';
+    const legacy = await query();
+    switch (legacy?.Status) {
+      case 'Running':
+        return { valid: true };
+      case 'Creating':
+        return {
+          valid: false,
+          message: 'Functions and Pages is being activated. Try again later.'
+        };
+      case 'NotOpened':
+      case 'NotOpen':
+      case 'Discarded':
+        return { valid: false, message: 'Functions and Pages is not active' };
+      default:
+        return {
+          valid: false,
+          message: 'GetErService returned an unknown service status'
+        };
+    }
+  } catch (error) {
+    return {
+      valid: false,
+      message: `${action} failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+    };
+  }
+}
+
 async function validateEndpoint(
   accessKeyId: string,
   accessKeySecret: string,
   endpoint: string,
   securityToken?: string
-): Promise<{ valid: boolean; message?: string }> {
+): Promise<ComputePlanResult> {
   try {
     enableSdkProxy();
     const apiConfig = new $OpenApi.Config({
@@ -34,60 +98,11 @@ async function validateEndpoint(
       endpoint,
       ...(securityToken ? { securityToken } : {})
     });
-
-    const client = new $OpenApi.default.default(apiConfig);
-
-    const params = {
-      action: 'GetErService',
-      version: '2024-09-10',
-      protocol: 'https',
-      method: 'GET',
-      authType: 'AK',
-      bodyType: 'json',
-      reqBodyType: 'json',
-      style: 'RPC',
-      pathname: '/',
-      toMap: function () {
-        return this;
-      }
-    };
-
-    const request = new $OpenApi.OpenApiRequest({
-      query: {}
-    });
-
-    const runtime = {
-      toMap: function () {
-        return this;
-      }
-    };
-
-    const response = await client.callApi(params, request, runtime);
-
-    if (response.statusCode === 200) {
-      if (response.body.Status === 'Running') {
-        return { valid: true };
-      } else {
-        return {
-          valid: false,
-          message: 'Functions and Pages is not active'
-        };
-      }
-    } else if (response.statusCode === 403) {
-      return {
-        valid: false,
-        message: 'Permission denied: Access key or secret is incorrect'
-      };
-    } else {
-      return {
-        valid: false,
-        message: `Error: ${response.statusCode}`
-      };
-    }
+    return checkComputePlan(new $OpenApi.default.default(apiConfig));
   } catch (error) {
     return {
       valid: false,
-      message: error instanceof Error ? error.message : 'Unknown error'
+      message: error instanceof Error ? error.message : 'Invalid configuration'
     };
   }
 }
@@ -137,8 +152,8 @@ export async function validateCredentials(
   return {
     valid: false,
     message:
-      domesticResult.message ||
-      internationalResult.message ||
-      'Invalid credentials'
+      domesticResult.message === internationalResult.message
+        ? domesticResult.message
+        : `${DOMESTIC_ENDPOINT}: ${domesticResult.message}\n${INTERNATIONAL_ENDPOINT}: ${internationalResult.message}`
   };
 }

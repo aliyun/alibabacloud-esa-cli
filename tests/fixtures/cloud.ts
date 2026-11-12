@@ -11,10 +11,13 @@ interface FixtureVariable {
   Value: string;
 }
 
-export async function startCloudFixture(project?: {
-  name: string;
-  domain: string;
-}) {
+export async function startCloudFixture({
+  project,
+  purchased = true
+}: {
+  project?: { name: string; domain: string };
+  purchased?: boolean;
+} = {}) {
   const calls: string[] = [];
   const requests: { action: string; projectName: string | null }[] = [];
   const requestDetails: {
@@ -93,6 +96,10 @@ export async function startCloudFixture(project?: {
           },
           403
         );
+        return;
+      }
+      if (action === 'GetSubscriptionPlan') {
+        send({ Purchased: purchased, RequestId: 'fixture' });
         return;
       }
       if (action === 'GetErService') {

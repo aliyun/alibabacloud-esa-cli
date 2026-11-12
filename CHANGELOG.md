@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [1.0.14-beta.1]
 
 ### Added
 

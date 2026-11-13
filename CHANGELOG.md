@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.0.14]
+
+- Support new compute plans for login, deployment, and other commands that check account access. Custom RAM policies need `esa:GetSubscriptionPlan` even for legacy accounts. When ESA reports no new subscription, the CLI uses `esa:GetErService` to check the legacy service.
+- Report account validation failures and prompt for CLI updates only when a newer version is available on the installed channel.
+- Preserve URLs in `esa.jsonc`, fix the worker cache on Windows during `esa dev`, and return exit status 1 for unknown top-level commands. Correct help for project, site, and domain commands.
+
 ## [1.0.14-beta.1]
 
 ### Added

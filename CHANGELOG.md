@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [1.0.15-beta.1]
 
 - Add `esa deploy --output=json`: stdout contains one versioned deployment result, progress goes to stderr, and output is flushed before exit. Keep production defaults, environment validation, and `--no-preview`.
 - Preserve failed and partial deployment exit codes, and report launcher startup failures to stderr with a non-zero status.

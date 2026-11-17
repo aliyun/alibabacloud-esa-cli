@@ -218,6 +218,30 @@ esa-cli deploy --environment staging
 
 使用 `--version` 部署已有版本时，不会重新创建或绑定变量快照。如果版本绑定的环境与目标环境不同，CLI 会拒绝部署；没有环境绑定信息的旧版本仍保持兼容。
 
+**--output** _可选_
+输出格式：`text | json`，默认 `text`。JSON 模式的 stdout 只输出一个 JSON 文档，进度和诊断信息写入 stderr。
+
+```bash
+esa-cli deploy --name my-app --assets ./dist --environment production --output=json --skip-update-check
+```
+
+```json
+{
+  "schemaVersion": 1,
+  "app": "my-app",
+  "url": "https://my-app.example.com",
+  "deployments": [
+    {
+      "environment": "production",
+      "deploymentId": "deployment-id",
+      "codeVersions": [{ "codeVersion": "version-id", "percentage": 100 }]
+    }
+  ]
+}
+```
+
+URL 不包含临时访问 Token；查询失败或指定 `--no-preview` 时为 `null`，不影响部署结果。`deploymentId` 也允许为 `null`。成功退出码为 `0`，失败为 `1`；失败时保留已经成功的环境记录。必须先检查退出码再使用 JSON。参数解析失败或未预期异常可能只在 stderr 输出错误。省略环境时仍只部署到 production。
+
 ---
 
 ## env
@@ -464,7 +488,7 @@ esa-cli route add [<ROUTE>] [<SITE>] [OPTIONS]
 ```
 
 **ROUTE** _可选_
-**路由值，例如：example.com/_ 或 _.example.com/\***
+**路由值，例如：example.com/\_ 或 \_.example.com/\***
 
 **SITE** _可选_
 **站点名称，例如：example.com**

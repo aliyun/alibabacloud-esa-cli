@@ -7,6 +7,7 @@ import {
   deployWithVersionPercentages,
   displayDeploySuccess,
   generateCodeVersion,
+  getDeployPreviewUrl,
   validateAndInitializeProject,
   waitForCodeVersionReady
 } from '../../../src/commands/common/utils.js';
@@ -53,7 +54,6 @@ describe('routineUtils', () => {
       .flatMap((log) => vi.mocked(log).mock.calls)
       .flat()
       .join('\n');
-
   const mockApiService = () => ({
     CreateRoutineWithAssetsCodeVersion: vi.fn().mockResolvedValue({
       code: '200',
@@ -77,15 +77,25 @@ describe('routineUtils', () => {
       data: {
         PageNumber: 1,
         PageSize: 100,
-        TotalCount: 3,
+        TotalCount: 4,
         CodeVersions: [
           { CodeVersion: 'test-version' },
           { CodeVersion: 'v1' },
-          { CodeVersion: 'v2' }
+          { CodeVersion: 'v2' },
+          { CodeVersion: 'requested-v1' }
         ]
       }
     }),
-    createRoutineCodeDeployment: vi.fn().mockResolvedValue({ data: {} }),
+    createRoutineCodeDeployment: vi
+      .fn()
+      .mockImplementation(({ Env, CodeVersions }) => ({
+        data: {
+          RequestId: `request-${Env}`,
+          Strategy: 'percentage',
+          DeploymentId: `deployment-${Env}`,
+          CodeVersions
+        }
+      })),
     getRoutine: vi.fn().mockResolvedValue({
       data: { DefaultRelatedRecord: 'routine.example.com' }
     }),
@@ -226,7 +236,9 @@ describe('routineUtils', () => {
 
       expect(result).toBeNull();
       expect(ensureRoutineExists).not.toHaveBeenCalled();
-      expect(logger.endSubStep).toHaveBeenCalledWith('Account validation failed');
+      expect(logger.endSubStep).toHaveBeenCalledWith(
+        'Account validation failed'
+      );
     });
   });
 
@@ -434,6 +446,30 @@ describe('routineUtils', () => {
     });
   });
 
+  describe('getDeployPreviewUrl', () => {
+    it('normalizes hostnames and preserves absolute URLs', async () => {
+      const server = mockApiService();
+      (ApiService.getInstance as any).mockResolvedValue(server);
+
+      await expect(getDeployPreviewUrl('test-project')).resolves.toBe(
+        'https://routine.example.com'
+      );
+
+      server.getRoutine.mockResolvedValue({
+        data: { DefaultRelatedRecord: 'http://routine.example.com/path' }
+      });
+      await expect(getDeployPreviewUrl('test-project')).resolves.toBe(
+        'http://routine.example.com/path'
+      );
+    });
+
+    it('returns null when preview metadata lookup fails', async () => {
+      (ApiService.getInstance as any).mockRejectedValue(new Error('offline'));
+
+      await expect(getDeployPreviewUrl('test-project')).resolves.toBeNull();
+    });
+  });
+
   describe('deploy helpers', () => {
     it('should deploy a ready code version', async () => {
       const server = mockApiService();
@@ -441,7 +477,11 @@ describe('routineUtils', () => {
 
       const result = await deployCodeVersion('test-project', 'v1', 'staging');
 
-      expect(result).toBe(true);
+      expect(result).toEqual({
+        environment: 'staging',
+        deploymentId: 'deployment-staging',
+        codeVersions: [{ codeVersion: 'v1', percentage: 100 }]
+      });
       expect(server.createRoutineCodeDeployment).toHaveBeenCalledWith({
         Name: 'test-project',
         CodeVersions: [{ Percentage: 100, CodeVersion: 'v1' }],
@@ -459,7 +499,7 @@ describe('routineUtils', () => {
 
       const result = await deployCodeVersion('test-project', 'v1', 'staging');
 
-      expect(result).toBe(false);
+      expect(result).toBeNull();
       expect(server.createRoutineCodeDeployment).not.toHaveBeenCalled();
     });
 
@@ -476,7 +516,27 @@ describe('routineUtils', () => {
         'all'
       );
 
-      expect(result).toBe(true);
+      expect(result).toEqual({
+        success: true,
+        deployments: [
+          {
+            environment: 'staging',
+            deploymentId: 'deployment-staging',
+            codeVersions: [
+              { codeVersion: 'v1', percentage: 80 },
+              { codeVersion: 'v2', percentage: 20 }
+            ]
+          },
+          {
+            environment: 'production',
+            deploymentId: 'deployment-production',
+            codeVersions: [
+              { codeVersion: 'v1', percentage: 80 },
+              { codeVersion: 'v2', percentage: 20 }
+            ]
+          }
+        ]
+      });
       expect(server.createRoutineCodeDeployment).toHaveBeenCalledTimes(2);
       expect(server.createRoutineCodeDeployment).toHaveBeenNthCalledWith(
         1,
@@ -486,6 +546,131 @@ describe('routineUtils', () => {
         2,
         expect.objectContaining({ Env: 'production' })
       );
+    });
+
+    it('should preserve a successful environment when another environment fails', async () => {
+      const server = mockApiService();
+      server.createRoutineCodeDeployment
+        .mockResolvedValueOnce({
+          data: { DeploymentId: 'deployment-staging' }
+        })
+        .mockResolvedValueOnce(null);
+      (ApiService.getInstance as any).mockResolvedValue(server);
+
+      const result = await deployCodeVersions(
+        'test-project',
+        [{ codeVersion: 'v1', percentage: 100 }],
+        'all'
+      );
+
+      expect(result).toEqual({
+        success: false,
+        deployments: [
+          {
+            environment: 'staging',
+            deploymentId: 'deployment-staging',
+            codeVersions: [{ codeVersion: 'v1', percentage: 100 }]
+          }
+        ]
+      });
+    });
+
+    it('should accept an HTTP-success response even when deployment id is absent', async () => {
+      const server = mockApiService();
+      server.createRoutineCodeDeployment.mockResolvedValue({ data: {} });
+      (ApiService.getInstance as any).mockResolvedValue(server);
+
+      await expect(
+        deployCodeVersion('test-project', 'v1', 'production')
+      ).resolves.toEqual({
+        environment: 'production',
+        deploymentId: null,
+        codeVersions: [{ codeVersion: 'v1', percentage: 100 }]
+      });
+    });
+
+    it('should prefer the code versions confirmed by the deployment response', async () => {
+      const server = mockApiService();
+      server.createRoutineCodeDeployment.mockResolvedValue({
+        data: {
+          DeploymentId: 'deployment-production',
+          CodeVersions: [{ CodeVersion: 'confirmed-v1', Percentage: 100 }]
+        }
+      });
+      (ApiService.getInstance as any).mockResolvedValue(server);
+
+      await expect(
+        deployCodeVersion('test-project', 'requested-v1', 'production')
+      ).resolves.toEqual({
+        environment: 'production',
+        deploymentId: 'deployment-production',
+        codeVersions: [{ codeVersion: 'confirmed-v1', percentage: 100 }]
+      });
+    });
+
+    it('should fall back to requested versions when any response version is invalid', async () => {
+      const server = mockApiService();
+      server.createRoutineCodeDeployment.mockResolvedValue({
+        data: {
+          DeploymentId: 'deployment-production',
+          CodeVersions: [
+            { CodeVersion: 'v1', Percentage: 80 },
+            { CodeVersion: '', Percentage: 20 }
+          ]
+        }
+      });
+      (ApiService.getInstance as any).mockResolvedValue(server);
+
+      await expect(
+        deployCodeVersions(
+          'test-project',
+          [
+            { codeVersion: 'v1', percentage: 80 },
+            { codeVersion: 'v2', percentage: 20 }
+          ],
+          'production'
+        )
+      ).resolves.toMatchObject({
+        deployments: [
+          {
+            codeVersions: [
+              { codeVersion: 'v1', percentage: 80 },
+              { codeVersion: 'v2', percentage: 20 }
+            ]
+          }
+        ]
+      });
+    });
+
+    it('should fall back when response percentages do not describe a complete rollout', async () => {
+      const server = mockApiService();
+      server.createRoutineCodeDeployment.mockResolvedValue({
+        data: {
+          DeploymentId: 'deployment-production',
+          CodeVersions: [{ CodeVersion: 'v1', Percentage: 80 }]
+        }
+      });
+      (ApiService.getInstance as any).mockResolvedValue(server);
+
+      await expect(
+        deployCodeVersions(
+          'test-project',
+          [
+            { codeVersion: 'v1', percentage: 80 },
+            { codeVersion: 'v2', percentage: 20 }
+          ],
+          'production'
+        )
+      ).resolves.toMatchObject({
+        deployments: [
+          {
+            codeVersions: [
+              { codeVersion: 'v1', percentage: 80 },
+              { codeVersion: 'v2', percentage: 20 }
+            ]
+          }
+        ]
+      });
     });
 
     it('should deploy an existing version through commitAndDeployVersion', async () => {
@@ -503,13 +688,49 @@ describe('routineUtils', () => {
         'v1'
       );
 
-      expect(result).toBe(true);
+      expect(result).toMatchObject({
+        success: true,
+        app: 'test-project',
+        deployments: [
+          {
+            environment: 'production',
+            deploymentId: 'deployment-production',
+            codeVersions: [{ codeVersion: 'v1', percentage: 100 }]
+          }
+        ]
+      });
       expect(server.createRoutineCodeDeployment).toHaveBeenCalledWith(
         expect.objectContaining({
           Name: 'test-project',
           Env: 'production'
         })
       );
+    });
+
+    it('should return the generated version deployment details', async () => {
+      const server = mockApiService();
+      (ApiService.getInstance as any).mockResolvedValue(server);
+
+      const result = await commitAndDeployVersion(
+        'test-project',
+        undefined,
+        undefined,
+        '',
+        undefined,
+        'staging'
+      );
+
+      expect(result).toMatchObject({
+        success: true,
+        app: 'test-project',
+        deployments: [
+          {
+            environment: 'staging',
+            deploymentId: 'deployment-staging',
+            codeVersions: [{ codeVersion: 'test-version', percentage: 100 }]
+          }
+        ]
+      });
     });
   });
 
@@ -560,41 +781,15 @@ describe('routineUtils', () => {
   });
 
   describe('deployWithVersionPercentages', () => {
-    it.each(['staging', 'production'] as const)(
-      'should keep the %s rollout visible without fetching or printing a preview',
-      async (environment) => {
-        const server = mockApiService();
-        (ApiService.getInstance as any).mockResolvedValue(server);
+    it('should reject an empty versions option', async () => {
+      await expect(
+        deployWithVersionPercentages('test-project', [], 'production')
+      ).resolves.toMatchObject({ success: false, deployments: [] });
 
-        await expect(
-          deployWithVersionPercentages(
-            'test-project',
-            ['v1:70,v2:30'],
-            environment,
-            undefined,
-            false
-          )
-        ).resolves.toBe(true);
-
-        expect(server.createRoutineCodeDeployment).toHaveBeenCalledWith(
-          expect.objectContaining({
-            Env: environment,
-            CodeVersions: [
-              { Percentage: 70, CodeVersion: 'v1' },
-              { Percentage: 30, CodeVersion: 'v2' }
-            ]
-          })
-        );
-        expect(server.getRoutineAccessToken).not.toHaveBeenCalled();
-        const output = loggedOutput();
-        expect(output).not.toContain('routine.example.com');
-        expect(output).not.toContain('esa_er_token');
-        expect(output).not.toContain('Token is valid');
-        expect(output).toContain('Deploy Success');
-        expect(output).toContain('- v1: 70%');
-        expect(output).toContain('- v2: 30%');
-      }
-    );
+      expect(logger.error).toHaveBeenCalledWith(
+        'Deploy failed: --versions requires at least one version'
+      );
+    });
 
     it('should reject more than two versions', async () => {
       await expect(
@@ -603,7 +798,7 @@ describe('routineUtils', () => {
           ['v1:50,v2:30,v3:20'],
           'production'
         )
-      ).resolves.toBe(false);
+      ).resolves.toMatchObject({ success: false, deployments: [] });
 
       expect(logger.error).toHaveBeenCalledWith(
         'Deploy failed: at most two versions are supported'
@@ -613,7 +808,7 @@ describe('routineUtils', () => {
     it('should reject invalid version percentage format', async () => {
       await expect(
         deployWithVersionPercentages('test-project', ['v1:not-a-number'], 'all')
-      ).resolves.toBe(false);
+      ).resolves.toMatchObject({ success: false, deployments: [] });
 
       expect(logger.error).toHaveBeenCalledWith(
         'Deploy failed: invalid --versions format. Use v1:80,v2:20'
@@ -623,7 +818,7 @@ describe('routineUtils', () => {
     it('should reject single version that is not 100 percent', async () => {
       await expect(
         deployWithVersionPercentages('test-project', ['v1:80'], 'production')
-      ).resolves.toBe(false);
+      ).resolves.toMatchObject({ success: false, deployments: [] });
 
       expect(logger.error).toHaveBeenCalledWith(
         'Deploy failed: single version must be 100%'
@@ -633,20 +828,33 @@ describe('routineUtils', () => {
     it('should reject two versions whose percentages do not sum to 100', async () => {
       await expect(
         deployWithVersionPercentages('test-project', ['v1:80,v2:10'], 'all')
-      ).resolves.toBe(false);
+      ).resolves.toMatchObject({ success: false, deployments: [] });
 
       expect(logger.error).toHaveBeenCalledWith(
         'Deploy failed: percentages must sum to 100'
       );
     });
 
-    it('should deploy valid version percentages and print the rollout', async () => {
+    it('should deploy valid version percentages and return the rollout', async () => {
       const server = mockApiService();
       (ApiService.getInstance as any).mockResolvedValue(server);
 
       await expect(
         deployWithVersionPercentages('test-project', ['v1:70,v2:30'], 'staging')
-      ).resolves.toBe(true);
+      ).resolves.toEqual({
+        success: true,
+        app: 'test-project',
+        deployments: [
+          {
+            environment: 'staging',
+            deploymentId: 'deployment-staging',
+            codeVersions: [
+              { codeVersion: 'v1', percentage: 70 },
+              { codeVersion: 'v2', percentage: 30 }
+            ]
+          }
+        ]
+      });
 
       expect(server.createRoutineCodeDeployment).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -657,9 +865,7 @@ describe('routineUtils', () => {
           ]
         })
       );
-      expect(logger.log).toHaveBeenCalledWith('📦 Versions rollout:');
-      expect(logger.log).toHaveBeenCalledWith('- v1: 70%');
-      expect(logger.log).toHaveBeenCalledWith('- v2: 30%');
+      expect(logger.log).not.toHaveBeenCalledWith('📦 Versions rollout:');
     });
   });
 });

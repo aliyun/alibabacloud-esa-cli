@@ -1,5 +1,6 @@
 import { execSync } from 'child_process';
 import path from 'path';
+import { exit } from 'process';
 
 import { confirm as clackConfirm, isCancel, log, outro } from '@clack/prompts';
 import fs from 'fs-extra';
@@ -45,6 +46,12 @@ const templateMocks = vi.hoisted(() => ({
 }));
 
 vi.mock('child_process');
+vi.mock('process', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('process')>()),
+  exit: vi.fn(() => {
+    throw new Error('deployment exited');
+  })
+}));
 vi.mock('@clack/prompts', () => ({
   confirm: vi.fn(),
   isCancel: vi.fn().mockReturnValue(false),
@@ -243,7 +250,11 @@ beforeEach(() => {
   mockGetProjectConfig.mockReturnValue({ name: 'template-project' } as any);
   mockGenerateConfigFile.mockResolvedValue(undefined);
   mockUpdateProjectConfigFile.mockResolvedValue(undefined);
-  mockCommitAndDeployVersion.mockResolvedValue(true);
+  mockCommitAndDeployVersion.mockResolvedValue({
+    success: true,
+    app: 'demo',
+    deployments: []
+  });
   vi.mocked(getCliConfig).mockReturnValue({ lang: 'en' } as any);
   vi.mocked(getTemplatesConfig).mockReturnValue([]);
 });
@@ -943,5 +954,17 @@ describe('git, build, and deploy helpers', () => {
       demoPath,
       'production'
     );
+  });
+
+  it('does not treat a structured deployment failure as success', async () => {
+    mockCommitAndDeployVersion.mockResolvedValue({
+      success: false,
+      app: 'demo',
+      deployments: []
+    });
+    await expect(deployProject({ name: 'demo', deploy: true })).rejects.toThrow(
+      'deployment exited'
+    );
+    expect(exit).toHaveBeenCalledWith(1);
   });
 });

@@ -59,7 +59,8 @@ const main = () => {
     }
   )
     .on('error', (err) => {
-      console.log('Get Error', err);
+      console.error('Failed to start esa-cli:', err);
+      process.exitCode = 1;
     })
     .on('exit', (code, signal) => {
       if (code !== null) {

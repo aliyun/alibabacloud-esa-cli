@@ -52,6 +52,11 @@ export async function startCloudFixture({
       let rawBody = '';
       for await (const chunk of req) rawBody += chunk;
       const url = new URL(req.url ?? '/', 'http://fixture');
+      if (url.pathname === '/fixture-upload' && req.method === 'POST') {
+        res.statusCode = 204;
+        res.end();
+        return;
+      }
       const body = new URLSearchParams(rawBody);
       const fields = new URLSearchParams(url.searchParams);
       for (const [key, value] of body) fields.set(key, value);
@@ -143,6 +148,42 @@ export async function startCloudFixture({
       }
       if (action === 'ListRoutineRelatedRecords') {
         send({ RelatedRecords: [{ RecordName: domain }], TotalCount: 1 });
+        return;
+      }
+      if (action === 'CreateRoutineWithAssetsCodeVersion') {
+        send({
+          CodeVersion:
+            parameters.get('DeployEnv') === 'staging' ? 'staging-v1' : 'v1',
+          OssPostConfig: {
+            Url: `http://127.0.0.1:${(server.address() as AddressInfo).port}/fixture-upload`,
+            OSSAccessKeyId: 'fixture-upload-key',
+            Signature: 'fixture-signature',
+            Key: 'fixture-archive',
+            Policy: 'fixture-policy'
+          }
+        });
+        return;
+      }
+      if (action === 'GetRoutineCodeVersionInfo') {
+        send({ Status: 'available' });
+        return;
+      }
+      if (action === 'ListRoutineCodeVersions') {
+        send({
+          CodeVersions: [
+            { CodeVersion: 'v1', DeployEnv: 'production' },
+            { CodeVersion: 'v2', DeployEnv: 'production' },
+            { CodeVersion: 'staging-v1', DeployEnv: 'staging' }
+          ],
+          TotalCount: 3
+        });
+        return;
+      }
+      if (action === 'CreateRoutineCodeDeployment') {
+        send({
+          DeploymentId: `deployment-${environment}`,
+          CodeVersions: JSON.parse(parameters.get('CodeVersions') || '[]')
+        });
         return;
       }
       if (!environmentAction) {

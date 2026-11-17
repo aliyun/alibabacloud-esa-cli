@@ -77,6 +77,7 @@ const COMMAND_TREE: CommandSpec[] = [
       { long: '--no-bundle' },
       { long: '--preview' },
       { long: '--no-preview' },
+      { long: '--output' },
       { long: '--versions' }
     ]
   },

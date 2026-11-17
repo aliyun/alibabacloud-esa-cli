@@ -1,4 +1,8 @@
 {
+  "deploy_option_output": {
+    "en": "Output format: text or json",
+    "zh_CN": "输出格式：text 或 json"
+  },
   "commit_describe": {
     "en": "Commit your code, save as a new version",
     "zh_CN": "提交代码，保存为一个版本"

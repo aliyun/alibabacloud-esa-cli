@@ -26,6 +26,14 @@ const cliName = process.env.ALIBABA_CLOUD_ESA_CLI_COMPAT_MODE || 'esa-cli';
 
 const main = async () => {
   const argv = hideBin(process.argv);
+  if (
+    argv.some(
+      (arg, index) =>
+        arg === '--output=json' ||
+        (arg === '--output' && argv[index + 1] === 'json')
+    )
+  )
+    logger.setOutputStream('stderr');
   const cliConfig = getCliConfig();
   const esa = yargs(argv)
     .strict()
@@ -40,6 +48,7 @@ const main = async () => {
     .wrap(null)
     .help()
     .middleware(async (argv) => {
+      if (argv.output === 'json') logger.setOutputStream('stderr');
       if (argv.debug) {
         logger.setLogLevel('debug');
       }
@@ -52,8 +61,7 @@ const main = async () => {
           (argv._ && argv._[0] ? String(argv._[0]) : '') as string
         );
       } catch (e) {
-        console.log(e);
-        console.log('error');
+        console.error(e);
       }
     })
     .epilogue(
@@ -86,7 +94,9 @@ const main = async () => {
       if (args._.length > 0) {
         // Unknown command
         console.error(
-          t('common_sub_command_fail').d(`Use ${cliName} <command> -h to see help`)
+          t('common_sub_command_fail').d(
+            `Use ${cliName} <command> -h to see help`
+          )
         );
         process.exit(1);
       } else {
@@ -133,7 +143,11 @@ const main = async () => {
 
   esa.group(['help', 'version'], 'Options:');
 
-  esa.parse();
+  await esa.parseAsync();
 };
 
-main();
+main().catch((error: unknown) => {
+  logger.stopSpinner();
+  console.error(error instanceof Error ? error.message : String(error));
+  process.exitCode = 1;
+});

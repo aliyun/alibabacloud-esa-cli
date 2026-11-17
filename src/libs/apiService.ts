@@ -582,7 +582,7 @@ export class ApiService {
       }
     } catch (error) {
       if (isShowError) {
-        console.log(error);
+        console.error(error);
       }
     }
     return null;
@@ -630,7 +630,7 @@ export class ApiService {
         return ret;
       }
     } catch (error) {
-      console.log(error);
+      console.error(error);
     }
     return null;
   }
@@ -1257,7 +1257,7 @@ export class ApiService {
         return ret;
       }
     } catch (error) {
-      console.log(error);
+      console.error(error);
     }
     return null;
   }
@@ -1302,7 +1302,7 @@ export class ApiService {
         return ret;
       }
     } catch (error) {
-      console.log(error);
+      console.error(error);
     }
     return null;
   }

@@ -16,14 +16,12 @@ localUpstream = ''
 
 import fs from 'fs';
 import path from 'path';
-import { exit } from 'process';
 
 import AdmZip from 'adm-zip';
 import chalk from 'chalk';
 
 import prodBuild from '../commands/commit/prodBuild.js';
 import t from '../i18n/index.js';
-import logger from '../libs/logger.js';
 
 import { checkEdgeRoutineType, EDGE_ROUTINE_TYPE } from './checkAssetsExist.js';
 import { getProjectConfig, readEdgeRoutineFile } from './fileUtils/index.js';
@@ -52,7 +50,7 @@ const compress = async (
   const routineType = checkEdgeRoutineType(scriptEntry, assetsDir, projectPath);
 
   if (!projectConfig && !scriptEntry && !assetsDir) {
-    logger.error(
+    throw new Error(
       [
         'esa.jsonc (recommended) or esa.toml is not found and script entry or assets directory is not provided by command line',
         '',
@@ -61,7 +59,6 @@ const compress = async (
         `- 中文: ${chalk.underline('https://github.com/aliyun/alibabacloud-esa-cli/blob/master/docs/Config_zh_CN.md')}`
       ].join('\n')
     );
-    exit(1);
   }
 
   // Parameter priority: use parameters if available, otherwise use values from config file
@@ -121,8 +118,7 @@ const compress = async (
       ''
     ].join('\n');
 
-    logger.error(errorMessage);
-    exit(1);
+    throw new Error(errorMessage);
   }
 
   if (

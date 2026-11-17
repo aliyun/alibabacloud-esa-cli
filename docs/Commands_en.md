@@ -205,6 +205,30 @@ Later variable or secret changes do not modify an existing version; run deploy f
 
 Deploying an existing version with `--version` does not recreate or rebind its variable snapshot. The CLI rejects deployment when the version's bound environment differs from the target environment; older versions without an environment binding remain compatible.
 
+**--output** _optional_
+Output format: `text | json`, default `text`. JSON mode writes one JSON document to stdout and progress and diagnostics to stderr.
+
+```bash
+esa-cli deploy --name my-app --assets ./dist --environment production --output=json --skip-update-check
+```
+
+```json
+{
+  "schemaVersion": 1,
+  "app": "my-app",
+  "url": "https://my-app.example.com",
+  "deployments": [
+    {
+      "environment": "production",
+      "deploymentId": "deployment-id",
+      "codeVersions": [{ "codeVersion": "version-id", "percentage": 100 }]
+    }
+  ]
+}
+```
+
+The URL contains no temporary access token. A failed URL lookup or `--no-preview` makes `url` null without changing deployment success. `deploymentId` may be null. Success exits 0; failure exits 1 and retains successful environments. Check the exit code before using the JSON. Parser failures and unexpected errors may report only to stderr. Production remains the default target.
+
 ---
 
 ## env

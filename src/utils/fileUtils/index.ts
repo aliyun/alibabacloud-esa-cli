@@ -251,8 +251,7 @@ export function readConfigFile(
         return config as CliConfig | ProjectConfig;
       }
     } catch (error) {
-      logger.error(`Error parsing config file: ${error}`);
-      process.exit(1);
+      throw new Error(`Error parsing config file ${configPath}: ${error}`);
     }
   }
   return null;

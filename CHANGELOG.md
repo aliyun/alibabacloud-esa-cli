@@ -1,5 +1,10 @@
 # Changelog
 
+## [Unreleased]
+
+- Add `esa deploy --output=json`: stdout contains one versioned deployment result, progress goes to stderr, and output is flushed before exit. Keep production defaults, environment validation, and `--no-preview`.
+- Preserve failed and partial deployment exit codes, and report launcher startup failures to stderr with a non-zero status.
+
 ## [1.0.14]
 
 - Support new compute plans for login, deployment, and other commands that check account access. Custom RAM policies need `esa:GetSubscriptionPlan` even for legacy accounts. When ESA reports no new subscription, the CLI uses `esa:GetErService` to check the legacy service.

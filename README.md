@@ -186,6 +186,14 @@ Split traffic between two versions:
 npx esa-cli deploy --versions v1:80,v2:20 --environment production
 ```
 
+For scripts, use `--output=json` to write one versioned deployment result to stdout and progress to stderr:
+
+```bash
+npx esa-cli deploy --name my-app --assets ./dist --output=json --skip-update-check
+```
+
+Check the exit code before using the JSON. The URL contains no temporary access token; `--no-preview` sets it to null. Production remains the default target. See the [JSON output contract](./docs/Commands_en.md#deploy).
+
 Manage runtime variables and secrets for an environment:
 
 ```bash

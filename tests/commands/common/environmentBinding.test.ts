@@ -143,7 +143,7 @@ describe('routine code version environment binding', () => {
         undefined,
         'production release'
       )
-    ).resolves.toBe(true);
+    ).resolves.toMatchObject({ success: true });
 
     expect(server.CreateRoutineWithAssetsCodeVersion).toHaveBeenCalledWith(
       expect.objectContaining({ DeployEnv: 'production' })
@@ -170,7 +170,7 @@ describe('routine code version environment binding', () => {
         undefined,
         'all'
       )
-    ).resolves.toBe(true);
+    ).resolves.toMatchObject({ success: true });
 
     const versionRequest =
       server.CreateRoutineWithAssetsCodeVersion.mock.calls[0][0];
@@ -201,7 +201,7 @@ describe('routine code version environment binding', () => {
 
     await expect(
       deployCodeVersion('my-routine', 'version-1', 'production')
-    ).resolves.toBe(false);
+    ).resolves.toBeNull();
     expect(server.listRoutineCodeVersionsMetadata).toHaveBeenCalledWith(
       expect.objectContaining({ Name: 'my-routine' })
     );
@@ -228,7 +228,7 @@ describe('routine code version environment binding', () => {
 
     await expect(
       deployCodeVersion('my-routine', 'version-1', 'production')
-    ).resolves.toBe(true);
+    ).resolves.not.toBeNull();
 
     expect(server.listRoutineCodeVersionsMetadata).toHaveBeenCalledTimes(2);
     expect(server.listRoutineCodeVersionsMetadata).toHaveBeenNthCalledWith(1, {
@@ -267,7 +267,7 @@ describe('routine code version environment binding', () => {
         ],
         'production'
       )
-    ).resolves.toBe(true);
+    ).resolves.toMatchObject({ success: true });
 
     expect(server.listRoutineCodeVersionsMetadata).toHaveBeenCalledWith(
       expect.objectContaining({ Name: 'my-routine' })
@@ -294,7 +294,7 @@ describe('routine code version environment binding', () => {
         ],
         'production'
       )
-    ).resolves.toBe(false);
+    ).resolves.toMatchObject({ success: false });
 
     expect(server.createRoutineCodeDeployment).not.toHaveBeenCalled();
   });
